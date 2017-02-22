@@ -15,7 +15,7 @@ git clone --recursive https://github.com/Azure/azure-iot-gateway-sdk.git
 git checkout 09bbcb7feaf5acc3913abd722b96e993238edd0c
 ```
 
-The gateway needs to be build with the ```--enable_dotnetcore_binding``` flag to enable it to run this module.
+The gateway needs to be build with the ```--enable-dotnet-core-binding``` flag to enable it to run this module.
 # Directory Structure
 
 ## /samples
