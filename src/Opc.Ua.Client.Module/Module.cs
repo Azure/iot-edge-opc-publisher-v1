@@ -361,36 +361,46 @@ namespace Opc.Ua.Client
                 ConfiguredEndpoint configuredEndpoint = new ConfiguredEndpoint(
                     endpoint.Server, EndpointConfiguration.Create(Module.Configuration));
                 configuredEndpoint.Update(endpoint);
-
-                _session = await Session.Create(
-                    Module.Configuration,
-                    configuredEndpoint,
-                    true,
-                    false,
-                    Module.Configuration.ApplicationName,
-                    60000,
-                    new UserIdentity(new AnonymousIdentityToken()),
-                    null);
-
-                if (_session != null)
+                try 
                 {
-                    var subscription = new Subscription(_session.DefaultSubscription);
-                    subscription.PublishingInterval = PublishingInterval;
+                    Console.WriteLine($"Opc.Ua.Client.SampleModule: Establishing session with mode: {endpoint.SecurityMode}, level:{endpoint.SecurityLevel} to {configuredEndpoint.EndpointUrl}...");
+                    _session = await Session.Create(
+                        Module.Configuration,
+                        configuredEndpoint,
+                        true,
+                        false,
+                        Module.Configuration.ApplicationName,
+                        60000,
+                        new UserIdentity(new AnonymousIdentityToken()),
+                        null);
 
-                    // TODO: Make other subscription settings configurable...
+                    if (_session != null) 
+                    {
+                        var subscription = new Subscription(_session.DefaultSubscription);
+                        subscription.PublishingInterval = PublishingInterval;
 
-                    subscription.AddItems(MonitoredItems);
-                    _session.AddSubscription(subscription);
-                    subscription.Create();
+                        // TODO: Make other subscription settings configurable...
 
-                    Console.WriteLine($"Opc.Ua.Client.SampleModule: Created session with updated endpoint {configuredEndpoint.EndpointUrl} from server!");
-                    _session.KeepAlive += new KeepAliveEventHandler(StandardClient_KeepAlive);
+                        subscription.AddItems(MonitoredItems);
+                        _session.AddSubscription(subscription);
+                        subscription.Create();
 
-                    // Done
-                    return;
+                        Console.WriteLine($"Opc.Ua.Client.SampleModule: Session with server endpoint {configuredEndpoint.EndpointUrl} established!");
+                        _session.KeepAlive += new KeepAliveEventHandler(StandardClient_KeepAlive);
+
+                        // Done
+                        return;
+                    }
+                    else 
+                    {
+                        Console.WriteLine($"Opc.Ua.Client.SampleModule: WARNING Could not create session to endpoint {endpoint.ToString()}...");
+                    }
                 }
-
-                Console.WriteLine($"Opc.Ua.Client.SampleModule: WARNING Could not create session to endpoint {endpoint.ToString()}...");
+                catch (Exception ex) 
+                {
+                    Console.WriteLine($"Opc.Ua.Client.SampleModule: ERROR Exception creating session to endpoint {endpoint.ToString()}...");
+                    Console.WriteLine($"Opc.Ua.Client.SampleModule: {ex.ToString()}");
+                }
                 //  ... try another endpoint until we do not have any more...
             }
 
