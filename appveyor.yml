@@ -3,6 +3,8 @@ branches:
   except:
     - gh-pages
 image: Visual Studio 2015
+before_build:
+  - dotnet restore
 matrix:
   fast_finish: true
 configuration:
