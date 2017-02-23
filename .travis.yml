@@ -1,0 +1,10 @@
+sudo: required
+os: linux
+dist: trusty
+env:
+  matrix:
+    - module=default build_args=""
+language: c
+compiler: gcc
+dotnet: 1.0.0-preview2-003121
+script: "bash bld/build.sh -c $build_args"
