@@ -344,6 +344,10 @@ namespace Opc.Ua.Client
                     endpoint.SecurityLevel >= MinimumSecurityLevel &&
                     endpoint.SecurityMode >= MinimumSecurityMode)
                 {
+                    // patch endpoint to set the original host name we want to connect to.
+                    var url = new UriBuilder(endpoint.EndpointUrl);
+                    url.Host = ServerUrl.Host;
+                    endpoint.EndpointUrl = url.ToString();
                     selectedEndpoints.Add(endpoint);
                 }
             }
@@ -371,6 +375,7 @@ namespace Opc.Ua.Client
                         false,
                         Module.Configuration.ApplicationName,
                         60000,
+                        // TODO: Make user identity configurable, plus add dedicated security policy
                         new UserIdentity(new AnonymousIdentityToken()),
                         null);
 
@@ -380,7 +385,6 @@ namespace Opc.Ua.Client
                         subscription.PublishingInterval = PublishingInterval;
 
                         // TODO: Make other subscription settings configurable...
-
                         subscription.AddItems(MonitoredItems);
                         _session.AddSubscription(subscription);
                         subscription.Create();
