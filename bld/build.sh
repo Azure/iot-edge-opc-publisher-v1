@@ -147,24 +147,25 @@ sdk_build()
 # -----------------------------------------------------------------------------
 module_build()
 {
-	pushd "${repo_root}" > /dev/null
 	echo -e "\033[1mBuilding module...\033[0m"
-	dotnet restore || exit 1
 	for c in ${build_configs[@]}; do
 		echo -e "\033[1m    ${c}...\033[0m"
-
 		mkdir -p "${build_root}/module/${c}"
 
-        dotnet build -c ${c} --framework netstandard1.6 \
-                ./src/Opc.Ua.Client.Module \
-            || return $?
+		pushd "${repo_root}/src/Opc.Ua.Client.Module" > /dev/null
+			dotnet restore \
+				|| return $?
+			dotnet build -c ${c} --framework netstandard1.6 \
+				|| return $?
+		popd > /dev/null
 
-        dotnet publish -c ${c} -o "${build_root}/module/${c}" --framework netcoreapp1.1 \
-                -r ${build_runtime} ./bld/publish \
-            || return $?
-
+		pushd "${repo_root}/bld/publish" > /dev/null
+			dotnet restore \
+				|| return $?
+			dotnet publish -c ${c} -o "${build_root}/module/${c}" --framework netcoreapp1.1 \
+				|| return $?
+		popd > /dev/null
 	done
-    popd > /dev/null
 	return 0
 }
 
