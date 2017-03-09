@@ -1,8 +1,8 @@
-version: 0.1.7.{build}-{branch}
+version: 0.2.0.{build}-{branch}
 branches:
   except:
     - gh-pages
-image: Visual Studio 2015
+image: Visual Studio 2017
 before_build:
   - dotnet restore
 matrix:

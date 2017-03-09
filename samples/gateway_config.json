@@ -1,10 +1,22 @@
 {
+	"loaders": [
+		{
+			"type": "dotnetcore",
+			"name": "dotnetcore",
+			"configuration":{
+			  "dotnetcore.options":{
+				"binding.coreclrpath": "test",
+				"binding.trustedplatformassemblieslocation": "test"
+			  }
+			}
+		}
+	],
     "modules": [
         {
             "name": "opc_ua",
             "loader": {
                 "name": "dotnetcore",
-                "entrypoint": {
+				"entrypoint": {
                     "assembly.name": "Opc.Ua.Client.Module",
                     "entry.type": "Opc.Ua.Client.SampleModule"
                 }
