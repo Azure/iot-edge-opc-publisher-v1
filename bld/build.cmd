@@ -121,18 +121,39 @@ rem // Build the sdk for 1 configuration
 if /I not "%~1" == "Release" if /I not "%~1" == "Debug" if /I not "%~1" == "MinSizeRel" if /I not "%~1" == "RelWithDebInfo" goto :eof
 rem // If incremental, check if we had a successful build before...
 if exist %build-root%\sdk\%build-platform%-%~1.done goto :eof
-rem // Clean bindings project output
-pushd %build-sdk-root%\bindings
-for /f %%i in ('dir /b /s project.json') do call :dotnet-project-clean "%%i"
-popd
-rem // First build the dotnetcore binding for configuration.  TODO: Remove once build script is fixed.
-call build_dotnet_core.cmd --config %~1
 rem // Force clean cmake output and install-deps to avoid errors.
 call :rmdir-force %build-sdk-root%\build
 call :rmdir-force %build-sdk-root%\install-deps
 rem // Build sdk
 echo Building SDK (%~1) ...
+rem // TODO: Remove this once sdk build uses VS 2017 and 1.0.1 cli.
+	pushd %build-sdk-root%\bindings\dotnetcore\dotnet-core-binding
+	call dotnet migrate
+	call dotnet restore
+	call dotnet build
+	popd
+	pushd %build-sdk-root%\samples\dotnet_core_module_sample\modules
+	call dotnet migrate
+	call dotnet restore
+	call dotnet build
+	popd
+	rem // Patch sdk build to avoid conflicts with dotnet tooling
+	move /y build_dotnet_core.cmd build_dotnet_core.bak
+	echo. > build_dotnet_core.cmd
+rem // TODO END
 call build.cmd --config %~1 --platform %build-platform% --enable-dotnet-core-binding --disable-ble-module
+rem // TODO: Remove this once sdk build uses VS 2017 and 1.0.1 cli.
+	rem // Undo patching
+	move /y build_dotnet_core.bak build_dotnet_core.cmd
+	pushd %build-sdk-root%\bindings\dotnetcore\dotnet-core-binding
+	call git checkout -- **
+	call git clean -xdf .
+	popd
+	pushd %build-sdk-root%\samples\dotnet_core_module_sample\modules
+	call git checkout -- **
+	call git clean -xdf .
+	popd
+rem // TODO END
 echo Finished building SDK (%~1)
 if not !ERRORLEVEL! == 0 exit /b !ERRORLEVEL!
 rem // Copy build output over and mark it as successfully built.
@@ -184,8 +205,7 @@ goto :eof
 rem // Clean a project
 :dotnet-project-clean
 pushd "%~dp1"
-call :rmdir-force bin
-call :rmdir-force obj
+call dotnet clean
 popd
 goto :eof
 
