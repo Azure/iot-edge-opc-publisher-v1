@@ -99,16 +99,13 @@ sdk_build()
                         || return $?
                     dotnet restore \
                         || return $?
-                    dotnet build -c ${c} -r ${build_runtime} \
+                    dotnet build -c ${c} \
                         || return $?
                 popd > /dev/null
                 pushd "${build_sdk_root}/samples/dotnet_core_module_sample/modules" > /dev/null
-                    dotnet migrate \
-                        || return $?
-                    dotnet restore \
-                        || return $?
-                    dotnet build -c ${c} -r ${build_runtime} \
-                        || return $?
+                    dotnet migrate
+                    dotnet restore
+                    dotnet build -c ${c}
                 popd > /dev/null
 				# TODO END
 
@@ -120,16 +117,16 @@ sdk_build()
                 pushd ${build_sdk_root}/tools > /dev/null
 				
                     # TODO Remove this once sdk is fixed
-					mv build_dotnet_core.sh build_dotnet_core.bak
+					mv -f build_dotnet_core.sh build_dotnet_core.bak
 					echo "#!/bin/bash" >> "build_dotnet_core.sh"
+					chmod +x build_dotnet_core.sh
 					# TODO END
 					
 					( ./build.sh --config ${c} --enable-dotnet-core-binding --disable-ble-module )
 					build_error=$?
 					
 					# TODO Remove this once sdk is fixed
-					rm -f build_dotnet_core.sh
-					mv build_dotnet_core.bak build_dotnet_core.sh
+					mv -f build_dotnet_core.bak build_dotnet_core.sh
 					# TODO END
 
 					[ $build_error -eq 0 ] || return $build_error
@@ -159,7 +156,7 @@ module_build()
 		mkdir -p "${build_root}/module/${c}"
 
         dotnet build -c ${c} --framework netstandard1.6 \
-                -r ${build_runtime} ./src/Opc.Ua.Client.Module \
+                ./src/Opc.Ua.Client.Module \
             || return $?
 
         dotnet publish -c ${c} -o "${build_root}/module/${c}" --framework netcoreapp1.1 \
@@ -215,7 +212,7 @@ pushd "${repo_root}" > /dev/null
 process_args $*
 
 if [ -z "$build_runtime" ]; then
-	build_runtime=ubuntu.16.10
+	build_runtime=unix
 fi
 
 if [ -z "$build_configs" ]; then
