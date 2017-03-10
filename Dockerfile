@@ -17,7 +17,9 @@ RUN \
 	&& \
 		git clone --no-checkout https://github.com/Azure/azure-iot-gateway-sdk /build/gateway \
 	&& \
-        git -C /build/gateway checkout 2017-03-06 && git -C /build/gateway submodule update --recursive --init \
+        git -C /build/gateway checkout 287beed07490d98a24a4e9ddd33ec7127fc3acbf \
+	&& \
+		git -C /build/gateway submodule update --recursive --init \
 	&& \
         /build/module/bld/build.sh -C Release -i /build/gateway -o /gateway \
 	&& \

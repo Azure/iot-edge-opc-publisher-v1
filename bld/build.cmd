@@ -126,34 +126,7 @@ call :rmdir-force %build-sdk-root%\build
 call :rmdir-force %build-sdk-root%\install-deps
 rem // Build sdk
 echo Building SDK (%~1) ...
-rem // TODO: Remove this once sdk build uses VS 2017 and 1.0.1 cli.
-	pushd %build-sdk-root%\bindings\dotnetcore\dotnet-core-binding
-	call dotnet migrate
-	call dotnet restore
-	call dotnet build -c %~1
-	popd
-	pushd %build-sdk-root%\samples\dotnet_core_module_sample\modules
-	call dotnet migrate
-	call dotnet restore
-	call dotnet build -c %~1
-	popd
-	rem // Patch sdk build to avoid conflicts with dotnet tooling
-	move /y build_dotnet_core.cmd build_dotnet_core.bak
-	echo. > build_dotnet_core.cmd
-rem // TODO END
 call build.cmd --config %~1 --platform %build-platform% --enable-dotnet-core-binding --disable-ble-module
-rem // TODO: Remove this once sdk build uses VS 2017 and 1.0.1 cli.
-	rem // Undo patching
-	move /y build_dotnet_core.bak build_dotnet_core.cmd
-	pushd %build-sdk-root%\bindings\dotnetcore\dotnet-core-binding
-	call git checkout -- **
-	call git clean -xdf .
-	popd
-	pushd %build-sdk-root%\samples\dotnet_core_module_sample\modules
-	call git checkout -- **
-	call git clean -xdf .
-	popd
-rem // TODO END
 echo Finished building SDK (%~1)
 if not !ERRORLEVEL! == 0 exit /b !ERRORLEVEL!
 rem // Copy build output over and mark it as successfully built.

@@ -10,13 +10,13 @@ This module uses the OPC Foundations's OPC UA reference stack and therefore lice
 |master|[![Build status](https://ci.appveyor.com/api/projects/status/6t7ru6ow7t9uv74r/branch/master?svg=true)](https://ci.appveyor.com/project/marcschier/iot-gateway-opc-ua-r4ba5/branch/master) [![Build Status](https://travis-ci.org/Azure/iot-gateway-opc-ua.svg?branch=master)](https://travis-ci.org/Azure/iot-gateway-opc-ua)|
 
 # Azure IoT Gateway SDK compatibility
-The current version of the Proxy module is targeted at the Azure IoT Gateway SDK at commit '2017-03-06'.
+The current version of the Proxy module is targeted at the Azure IoT Gateway SDK at commit '287beed07490d98a24a4e9ddd33ec7127fc3acbf'.
 
 Use the following command line to clone the compatible version Azure IoT Gateway SDK, then follow the build instructions included:
 
 ```
 git clone --recursive https://github.com/Azure/azure-iot-gateway-sdk.git
-git checkout 2017-03-06
+git checkout 287beed07490d98a24a4e9ddd33ec7127fc3acbf
 ```
 
 The gateway needs to be build with the ```--enable-dotnet-core-binding``` flag to enable it to run this module.

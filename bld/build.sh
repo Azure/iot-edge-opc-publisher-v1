@@ -87,43 +87,14 @@ sdk_build()
 
                 mkdir -p "${build_root}/sdk/${c}"
 
-                # TODO Remove this once sdk is fixed
-                pushd "${build_sdk_root}/bindings/dotnetcore/dotnet-core-binding" > /dev/null
-                    dotnet migrate \
-                        || return $?
-                    dotnet restore \
-                        || return $?
-                    dotnet build -c ${c} \
-                        || return $?
-                popd > /dev/null
-                pushd "${build_sdk_root}/samples/dotnet_core_module_sample/modules" > /dev/null
-                    dotnet migrate
-                    dotnet restore
-                    dotnet build -c ${c}
-                popd > /dev/null
-				# TODO END
-
-                rm -r -f "${build_sdk_root}/build" || \
-                    return 1
-                rm -r -f "${build_sdk_root}/install-deps" || \
-                    return 1
+                rm -r -f "${build_sdk_root}/build" \
+                    || return 1
+                rm -r -f "${build_sdk_root}/install-deps" \
+                    || return 1
 
                 pushd ${build_sdk_root}/tools > /dev/null
-				
-                    # TODO Remove this once sdk is fixed
-					mv -f build_dotnet_core.sh build_dotnet_core.bak
-					echo "#!/bin/bash" >> "build_dotnet_core.sh"
-					chmod +x build_dotnet_core.sh
-					# TODO END
-					
-					( ./build.sh --config ${c} --enable-dotnet-core-binding --disable-ble-module )
-					build_error=$?
-					
-					# TODO Remove this once sdk is fixed
-					mv -f build_dotnet_core.bak build_dotnet_core.sh
-					# TODO END
-
-					[ $build_error -eq 0 ] || return $build_error
+					( ./build.sh --config ${c} --enable-dotnet-core-binding --disable-ble-module ) \
+						|| return $build_error
                 popd > /dev/null
 
                 cp -r "${build_sdk_root}/build/"* "${build_root}/sdk/${c}" || \
