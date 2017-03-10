@@ -10,6 +10,6 @@ install:
   - cmd /c dotnet_1_1_1_install.exe /install /quiet /norestart
 build:
 build_script:
-  - bld\build.cmd -c %build_args%
+  - cmd /c bld\build.cmd -c %build_args%
 matrix:
     fast_finish: true
