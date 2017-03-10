@@ -164,6 +164,9 @@ release_all()
                 find . -wholename *gateway*.so -type f -print0 | xargs -0 \
                         -I%%% cp %%% "${build_rel_root}/${c}" || \
                     return 1
+                find . -wholename *aziotsharedutil*.so -type f -print0 | xargs -0 \
+                        -I%%% cp %%% "${build_rel_root}/${c}" || \
+                    return 1
                 cp -r "samples/dotnet_core_module_sample/dotnet_core_module_sample" \
                         "${build_rel_root}/${c}/sample_gateway" || \
                     return 1

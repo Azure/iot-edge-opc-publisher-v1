@@ -23,9 +23,7 @@ RUN \
 	&& \
         /build/module/bld/build.sh -C Release -i /build/gateway -o /gateway \
 	&& \
-		ldconfig /gateway/Release \
-	&& \
-		rm -rf /build
+		ldconfig /gateway/Release
 
 WORKDIR /gateway/Release
 ENTRYPOINT ["sample_gateway"]

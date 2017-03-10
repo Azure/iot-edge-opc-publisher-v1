@@ -1,17 +1,5 @@
 {
-	"loaders": [
-		{
-			"type": "dotnetcore",
-			"name": "dotnetcore",
-			"configuration":{
-			  "dotnetcore.options":{
-				"binding.coreclrpath": "test",
-				"binding.trustedplatformassemblieslocation": "test"
-			  }
-			}
-		}
-	],
-    "modules": [
+   "modules": [
         {
             "name": "opc_ua",
             "loader": {
