@@ -186,7 +186,7 @@ goto :eof
 rem // Build module and publish for 1 configuration
 :dotnet-build-and-publish
 if /I not "%~1" == "Release" if /I not "%~1" == "Debug" if /I not "%~1" == "Signed" goto :eof
-pushd %repo-root%\src\Opc.Ua.Client.Module
+pushd %repo-root%
 rem // Restore packages
 call dotnet restore
 call dotnet build %build-runtime% -c %~1
@@ -203,7 +203,7 @@ goto :eof
 
 rem // Clean a project
 :dotnet-project-clean
-pushd "%~dp1"
+pushd "%~1"
 call dotnet clean
 popd
 goto :eof
