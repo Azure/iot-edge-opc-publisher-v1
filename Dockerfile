@@ -21,6 +21,8 @@ RUN \
 	&& \
         /build/module/bld/build.sh -C Release -i /build/gateway -o /gateway \
 	&& \
+		ldconfig /gateway/Release \
+	&& \
 		rm -rf /build
 
 WORKDIR /gateway/Release

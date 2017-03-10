@@ -24,7 +24,6 @@ usage ()
     echo "options"
     echo " -c --clean                  Build clean (Removes previous build output)."
     echo " -C --config ^<value^>         [Debug, Release] build configuration"
-    echo " -r --runtime ^<value^>        Runtime to publish for."
     echo " -i --sdk-root ^<value^>       [../azure-iot-gateway-sdk] Gateway SDK repo root."
     echo " -o --output ^<value^>         [/build/release] Root in which to place release."
     echo " -x --xtrace                 print a trace of each command"
@@ -47,9 +46,6 @@ process_args ()
 		elif [ $save_next_arg == 3 ]; then
 			build_sdk_root="$arg"
 			save_next_arg=0
-		elif [ $save_next_arg == 4 ]; then
-			build_runtime="$arg"
-			save_next_arg=0
 		else
 			case "$arg" in
 				-x | --xtrace)
@@ -62,8 +58,6 @@ process_args ()
 					build_clean=1;;
 				-i | --sdk-root)
 					save_next_arg=3;;
-				-r | --runtime)
-					save_next_arg=4;;
 				*)
 					usage;;
 			esac
@@ -179,7 +173,9 @@ release_all()
         mkdir -p "${build_rel_root}/${c}"
 
         pushd "${build_root}/module/${c}" > /dev/null
-            find . -type f -print0 | xargs -0 -I%%% cp %%% "${build_rel_root}/${c}" || \
+			cp * "${build_rel_root}/${c}" > /dev/null
+			[ $? -eq 0 ] || return $?
+            find ./runtimes/unix -type f -print0 | xargs -0 -I%%% cp %%% "${build_rel_root}/${c}" || \
                 return 1
         popd > /dev/null
 
@@ -211,10 +207,6 @@ release_all()
 
 pushd "${repo_root}" > /dev/null
 process_args $*
-
-if [ -z "$build_runtime" ]; then
-	build_runtime=unix
-fi
 
 if [ -z "$build_configs" ]; then
 	build_configs=(Debug Release)
