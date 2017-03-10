@@ -174,7 +174,6 @@ release_all()
 
         pushd "${build_root}/module/${c}" > /dev/null
 			cp * "${build_rel_root}/${c}" > /dev/null
-			[ $? -eq 0 ] || return $?
             find ./runtimes/unix -type f -print0 | xargs -0 -I%%% cp %%% "${build_rel_root}/${c}" || \
                 return 1
         popd > /dev/null
