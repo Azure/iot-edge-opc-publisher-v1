@@ -21,7 +21,7 @@ This folder contains the source code of the module, a managed gateway loader and
 This module requires the .NET Core SDK V1.1. You can build the module from Visual Studio 2017 by opening the solution file, right clicking the GatewayApp.NetCore project and selecting "publish".
 
 # Configuring the Module
-The OPC UA nodes whose values should be published to Azure IoT Hub can be configured by creating a "publishednodes.json" file. This file is auto-generated and persisted by the module automatically when using the Publisher's OPC UA server interface from a client. If you want to create the file manually, below is a sample publishednodes.json file:
+The OPC UA nodes whose values should be published to Azure IoT Hub can be configured by creating a "publishednodes.json" file. This file is auto-generated and persisted by the module automatically when using the Publisher's OPC UA server interface from a client. If you want to create the file manually instead, below is the format of the SAMPLE publishednodes.json file:
 ```
 [
   {
@@ -34,6 +34,7 @@ The OPC UA nodes whose values should be published to Azure IoT Hub can be config
   }
 ]
 ```
+The "Identifier" tag follows the string representation of an OPC UA node ID as described in the OPC UA specifications.
 
 # Configuring the Gateway
 The ```Configuration``` Section must contain at a minimum all items shown in the provide file. The JSON type conforms to the OPC UA reference stack serialization of the ```ApplicationConfiguration``` type.  
@@ -42,8 +43,10 @@ You should pass your application name and the IoT Hub owner connection string (w
 
 # Running the module
 
-You can run the module through the supplied gateway app GatewayApp.NetCore on Windows along with the Gateway SDK and IoT Hub module directly via Visual Studio 2017 by hitting F5 (after publishing GatewayApp.NetCore). Don't forget your command line arguments!
+## From Visual Studio 2017
+You can run the module through the supplied gateway app GatewayApp.NetCore on Windows along with the Gateway SDK and IoT Hub module directly via Visual Studio 2017 by hitting F5 (after publishing GatewayApp.NetCore). Don't forget your command line arguments, i.e. ```<yourApplicationName>``` (needs to be specified always) and the ```<IoTHubOwnerConnectionString>``` (needs to be specified on first run ONLY)!
 
+## From Docker
 You can also run the module in a Docker container using the Dockerfile provided. From the root of the repo, in a console, type:
 
 ```docker build -t gw .```
@@ -55,3 +58,5 @@ On first run, for one-time IoT Hub registration:
 From then on:
 
 ```docker run -it --rm gw <applicationName>```
+
+For detailed instructions on using Docker with the OPC Publisher, see [here](https://docs.microsoft.com/en-us/azure/iot-suite/iot-suite-connected-factory-gateway-deployment).
