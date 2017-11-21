@@ -137,7 +137,7 @@ namespace OpcPublisher
                 }
                 else
                 {
-                    Trace($"Attempting to register ourselves with IoT Hub using owner connection string: {_iotHubOwnerConnectionString}");
+                    Trace($"Attempting to register ourselves with IoT Hub using owner connection string.");
                     RegistryManager manager = RegistryManager.CreateFromConnectionString(_iotHubOwnerConnectionString);
 
                     // remove any existing device
@@ -154,13 +154,13 @@ namespace OpcPublisher
                     {
                         string hostname = _iotHubOwnerConnectionString.Substring(0, _iotHubOwnerConnectionString.IndexOf(";"));
                         deviceConnectionString = hostname + ";DeviceId=" + ApplicationName + ";SharedAccessKey=" + newDevice.Authentication.SymmetricKey.PrimaryKey;
-                        Trace($"Device connection string is: {deviceConnectionString}");
+                        Trace($"Generated device connection string.");
                         Trace($"Adding it to device cert store.");
                         await SecureIoTHubToken.WriteAsync(ApplicationName, deviceConnectionString, IotDeviceCertStoreType, IotDeviceCertStorePath);
                     }
                     else
                     {
-                        Trace($"Could not register ourselves with IoT Hub using owner connection string: {_iotHubOwnerConnectionString}");
+                        Trace($"Could not register ourselves with IoT Hub using owner connection string.");
                         Trace("exiting...");
                         return false;
                     }
@@ -171,7 +171,7 @@ namespace OpcPublisher
                 deviceConnectionString = await SecureIoTHubToken.ReadAsync(ApplicationName, IotDeviceCertStoreType, IotDeviceCertStorePath);
                 if (!string.IsNullOrEmpty(deviceConnectionString))
                 {
-                    Trace($"Create Publisher IoTHub client with device connection string: '{deviceConnectionString}' using '{IotHubProtocol}' for communication.");
+                    Trace($"Create Publisher IoTHub client with device connection string using '{IotHubProtocol}' for communication.");
                     _iotHubClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, IotHubProtocol);
                     ExponentialBackoff exponentialRetryPolicy = new ExponentialBackoff(int.MaxValue, TimeSpan.FromMilliseconds(2), TimeSpan.FromMilliseconds(1024), TimeSpan.FromMilliseconds(3));
                     _iotHubClient.SetRetryPolicy(exponentialRetryPolicy);
@@ -270,16 +270,12 @@ namespace OpcPublisher
         /// </summary>
         private async Task MonitoredItemsProcessor(CancellationToken ct)
         {
-            string contentPropertyKey = "content-type";
-            string contentPropertyValue = "application/opcua+uajson";
-            string devicenamePropertyKey = "devicename";
-            string devicenamePropertyValue = ApplicationName;
-            int userPropertyLength = contentPropertyKey.Length + contentPropertyValue.Length + devicenamePropertyKey.Length + devicenamePropertyValue.Length;
+            uint jsonSquareBracketLength = 2;
             Microsoft.Azure.Devices.Client.Message tempMsg = new Microsoft.Azure.Devices.Client.Message();
             // the system properties are MessageId (max 128 byte), Sequence number (ulong), ExpiryTime (DateTime) and more. ideally we get that from the client.
             int systemPropertyLength = 128 + sizeof(ulong) + tempMsg.ExpiryTimeUtc.ToString().Length;
             // if batching is requested the buffer will have the requested size, otherwise we reserve the max size
-            uint iotHubMessageBufferSize = (_iotHubMessageSize > 0 ? _iotHubMessageSize : IotHubMessageSizeMax) - (uint)userPropertyLength - (uint)systemPropertyLength;
+            uint iotHubMessageBufferSize = (_iotHubMessageSize > 0 ? _iotHubMessageSize : IotHubMessageSizeMax) - (uint)systemPropertyLength - (uint)jsonSquareBracketLength;
             byte[] iotHubMessageBuffer = new byte[iotHubMessageBufferSize];
             MemoryStream iotHubMessage = new MemoryStream(iotHubMessageBuffer);
             DateTime nextSendTime = DateTime.UtcNow + TimeSpan.FromSeconds(_defaultSendIntervalSeconds);
@@ -295,6 +291,7 @@ namespace OpcPublisher
 
                     iotHubMessage.Position = 0;
                     iotHubMessage.SetLength(0);
+                    iotHubMessage.Write(Encoding.UTF8.GetBytes("["), 0, 1);
                     while (true)
                     {
                         // sanity check the send interval, compute the timeout and get the next monitored item message
@@ -327,7 +324,7 @@ namespace OpcPublisher
                             // sanity check that the user has set a large enough IoTHub messages size
                             if ((_iotHubMessageSize > 0 && jsonMessageSize > _iotHubMessageSize) || (_iotHubMessageSize == 0 && jsonMessageSize > iotHubMessageBufferSize))
                             {
-                                Trace(Utils.TraceMasks.Error, $"There is a telemetry message (size: {jsonMessageSize}), which will not fit into an IoTHub message (max size: {_iotHubMessageSize}].");
+                                Trace(Utils.TraceMasks.Error, $"There is a telemetry message (size: {jsonMessageSize}), which will not fit into an IoTHub message (max size: {iotHubMessageBufferSize}].");
                                 Trace(Utils.TraceMasks.Error, $"Please check your IoTHub message size settings. The telemetry message will be discarded silently. Sorry:(");
                                 _tooLargeCount++;
                                 continue;
@@ -338,10 +335,12 @@ namespace OpcPublisher
                             if (_iotHubMessageSize > 0 || (_iotHubMessageSize == 0 && _defaultSendIntervalSeconds > 0))
                             {
                                 // if there is still space to batch, do it. otherwise send the buffer and flag the message for later buffering
-                                if (iotHubMessage.Position + jsonMessageSize <= iotHubMessage.Capacity)
+                                if (iotHubMessage.Position + jsonMessageSize + 1 <= iotHubMessage.Capacity)
                                 {
+                                    // add the message and a comma to the buffer
                                     iotHubMessage.Write(Encoding.UTF8.GetBytes(jsonMessage.ToString()), 0, jsonMessageSize);
-                                    Trace(Utils.TraceMasks.OperationDetail, $"Added new message with size {jsonMessageSize} to IoTHub message (size is now {iotHubMessage.Position}).");
+                                    iotHubMessage.Write(Encoding.UTF8.GetBytes(","), 0, 1);
+                                    Trace(Utils.TraceMasks.OperationDetail, $"Added new message with size {jsonMessageSize} to IoTHub message (size is now {(iotHubMessage.Position - 1)}).");
                                     continue;
                                 }
                                 else
@@ -368,25 +367,28 @@ namespace OpcPublisher
                             Microsoft.Azure.Devices.Client.Message encodedIotHubMessage = null;
 
                             // if we reached the send interval, but have nothing to send, we continue
-                            if (!gotItem && iotHubMessage.Position == 0)
+                            if (!gotItem && iotHubMessage.Position == 1)
                             {
                                 nextSendTime += TimeSpan.FromSeconds(_defaultSendIntervalSeconds);
                                 iotHubMessage.Position = 0;
                                 iotHubMessage.SetLength(0);
+                                iotHubMessage.Write(Encoding.UTF8.GetBytes("["), 0, 1);
                                 continue;
                             }
 
                             // if there is no batching and not interval configured, we send the JSON message we just got, otherwise we send the buffer
                             if (_iotHubMessageSize == 0 && _defaultSendIntervalSeconds == 0)
                             {
-                                encodedIotHubMessage = new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(jsonMessage.ToString()));
+                                // we use also an array for a single message to make backend processing more consistent
+                                encodedIotHubMessage = new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes("[" + jsonMessage.ToString() + "]"));
                             }
                             else
                             {
+                                // remove the trailing comma and add a closing square bracket
+                                iotHubMessage.SetLength(iotHubMessage.Length - 1);
+                                iotHubMessage.Write(Encoding.UTF8.GetBytes("]"), 0, 1);
                                 encodedIotHubMessage = new Microsoft.Azure.Devices.Client.Message(iotHubMessage.ToArray());
                             }
-                            encodedIotHubMessage.Properties.Add(contentPropertyKey, contentPropertyValue);
-                            encodedIotHubMessage.Properties.Add(devicenamePropertyKey, devicenamePropertyValue);
                             if (_iotHubClient != null)
                             {
                                 nextSendTime += TimeSpan.FromSeconds(_defaultSendIntervalSeconds);
@@ -406,11 +408,14 @@ namespace OpcPublisher
                                 // reset the messaage
                                 iotHubMessage.Position = 0;
                                 iotHubMessage.SetLength(0);
+                                iotHubMessage.Write(Encoding.UTF8.GetBytes("["), 0, 1);
 
                                 // if we had not yet buffered the last message because there was not enough space, buffer it now
                                 if (needToBufferMessage)
                                 {
+                                    // add the message and a comma to the buffer
                                     iotHubMessage.Write(Encoding.UTF8.GetBytes(jsonMessage.ToString()), 0, jsonMessageSize);
+                                    iotHubMessage.Write(Encoding.UTF8.GetBytes(","), 0, 1);
                                 }
                             }
                             else
@@ -459,23 +464,5 @@ namespace OpcPublisher
         private static CancellationTokenSource _tokenSource;
         private static Task _monitoredItemsProcessorTask;
         private static DeviceClient _iotHubClient;
-
-        /// <summary>
-        /// Classes for the telemetry message sent to IoTHub.
-        /// </summary>
-        private class OpcUaMessage
-        {
-            public string ApplicationUri;
-            public string DisplayName;
-            public string NodeId;
-            public OpcUaValue Value;
-        }
-
-        private class OpcUaValue
-        {
-            public string Value;
-            public string SourceTimestamp;
-        }
-
     }
 }

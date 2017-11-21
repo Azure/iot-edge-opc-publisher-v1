@@ -86,11 +86,15 @@ namespace OpcPublisher
             set => _opcKeepAliveIntervalInSec = value;
         }
 
+        public const int OpcSamplingIntervalDefault = 1000;
+
         public static int OpcSamplingInterval
         {
             get => _opcSamplingInterval;
             set => _opcSamplingInterval = value;
         }
+
+        public const int OpcPublishingIntervalDefault = 0;
 
         public static int OpcPublishingInterval
         {
@@ -408,8 +412,8 @@ namespace OpcPublisher
         private static uint _opcSessionCreationBackoffMax = 5;
         private static uint _opcKeepAliveDisconnectThreshold = 5;
         private static int _opcKeepAliveIntervalInSec = 2;
-        private static int _opcSamplingInterval = 1000;
-        private static int _opcPublishingInterval = 0;
+        private static int _opcSamplingInterval = OpcSamplingIntervalDefault;
+        private static int _opcPublishingInterval = OpcPublishingIntervalDefault;
         private static string _publisherServerSecurityPolicy = SecurityPolicies.Basic128Rsa15;
         private static string _opcOwnCertStoreType = X509Store;
         private static string _opcOwnCertStorePath = OpcOwnCertX509StorePathDefault;
