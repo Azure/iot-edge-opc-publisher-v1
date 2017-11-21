@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace OpcPublisher
 {
+    using System.ComponentModel;
     using System.IO;
     using System.Linq;
     using System.Threading;
@@ -384,9 +385,12 @@ namespace OpcPublisher
     public class OpcNodeOnEndpointUrl
     {
         public string ExpandedNodeId;
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        [DefaultValue(OpcSamplingIntervalDefault)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate, NullValueHandling = NullValueHandling.Ignore)]
         public int? OpcSamplingInterval;
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+
+        [DefaultValue(OpcPublishingIntervalDefault)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate, NullValueHandling = NullValueHandling.Ignore)]
         public int? OpcPublishingInterval;
     }
 

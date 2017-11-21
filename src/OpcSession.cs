@@ -47,6 +47,7 @@ namespace OpcPublisher
         public MonitoredItem OpcUaClientMonitoredItem;
         public NodeId ConfigNodeId;
         public ExpandedNodeId ConfigExpandedNodeId;
+        public ExpandedNodeId ConfigExpandedNodeIdOriginal;
         public OpcMonitoredItemConfigurationType ConfigType;
 
         /// <summary>
@@ -56,6 +57,7 @@ namespace OpcPublisher
         {
             ConfigNodeId = nodeId;
             ConfigExpandedNodeId = null;
+            ConfigExpandedNodeIdOriginal = null;
             ConfigType = OpcMonitoredItemConfigurationType.NodeId;
             Init(sessionEndpointUri);
             if (requestNamespaceUpdate)
@@ -71,6 +73,7 @@ namespace OpcPublisher
         {
             ConfigNodeId = null;
             ConfigExpandedNodeId = expandedNodeId;
+            ConfigExpandedNodeIdOriginal = expandedNodeId;
             ConfigType = OpcMonitoredItemConfigurationType.ExpandedNodeId;
             Init(sessionEndpointUri);
             if (requestNamespaceUpdate)
@@ -166,7 +169,7 @@ namespace OpcPublisher
                 encoder.WriteString("DisplayName", monitoredItem.DisplayName);
 
                 // use the node Id as configured, to also have the namespace URI in case of a ExpandedNodeId.
-                encoder.WriteString("NodeId", ConfigType == OpcMonitoredItemConfigurationType.NodeId ? ConfigNodeId.ToString() : ConfigExpandedNodeId.ToString());
+                encoder.WriteString("NodeId", ConfigType == OpcMonitoredItemConfigurationType.NodeId ? ConfigNodeId.ToString() : ConfigExpandedNodeIdOriginal.ToString());
 
                 // suppress output of server timestamp in json by setting it to minvalue
                 value.ServerTimestamp = DateTime.MinValue;
