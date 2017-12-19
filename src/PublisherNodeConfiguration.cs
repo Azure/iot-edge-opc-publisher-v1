@@ -314,7 +314,7 @@ namespace OpcPublisher
                                         }
                                         else
                                         {
-                                            opcNodeOnEndpointUrl.ExpandedNodeId = monitoredItem.ConfigExpandedNodeId.ToString();
+                                            opcNodeOnEndpointUrl.ExpandedNodeId = monitoredItem.ConfigExpandedNodeIdOriginal.ToString();
                                             opcNodeOnEndpointUrl.OpcPublishingInterval = (int)subscription.RequestedPublishingInterval;
                                             opcNodeOnEndpointUrl.OpcSamplingInterval = monitoredItem.RequestedSamplingInterval;
                                             if (publisherConfigurationFileEntry.OpcNodes == null)

@@ -51,6 +51,7 @@ namespace OpcPublisher.Workarounds
             Utils.Trace(e, format, args);
             WriteLine(DateTime.Now.ToString() + ": " + e.Message.ToString());
             WriteLine(DateTime.Now.ToString() + ": " + format, args);
+            WriteLine(DateTime.Now.ToString() + ": " + e.StackTrace);
         }
 
         private static bool _verboseConsole = false;

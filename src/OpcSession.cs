@@ -496,11 +496,8 @@ namespace OpcPublisher
                         NodeId currentNodeId = null;
                         try
                         {
-                            // update the namespace of the node if requested. there are two cases where this is requested:
-                            // 1) publishing requests via the OPC server method are raised using a NodeId format. for those
-                            //    the NodeId format is converted into an ExpandedNodeId format
-                            // 2) ExpandedNodeId configuration file entries do not have at parsing time a session to get
-                            //    the namespace index. this is set now.
+                            // update the namespace of the node if requested.this is required, because:
+                            // - ExpandedNodeId configuration file entries do not have at parsing time a session to get
                             if (item.State == OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested)
                             {
                                 if (item.ConfigType == OpcMonitoredItemConfigurationType.ExpandedNodeId)
@@ -515,19 +512,7 @@ namespace OpcPublisher
                                         item.ConfigExpandedNodeId = new ExpandedNodeId(item.ConfigExpandedNodeId.Identifier, (ushort)namespaceIndex, item.ConfigExpandedNodeId?.NamespaceUri, 0);
                                     }
                                 }
-                                if (item.ConfigType == OpcMonitoredItemConfigurationType.NodeId)
-                                {
-                                    string namespaceUri = GetNamespaceUri(item.ConfigNodeId.NamespaceIndex);
-                                    if (string.IsNullOrEmpty(namespaceUri))
-                                    {
-                                        Trace($"The namespace index of node '{item.ConfigNodeId.ToString()}' is invalid and the node format could not be updated.");
-                                    }
-                                    else
-                                    {
-                                        item.ConfigExpandedNodeId = new ExpandedNodeId(item.ConfigNodeId.Identifier, item.ConfigNodeId.NamespaceIndex, namespaceUri, 0);
-                                        item.ConfigType = OpcMonitoredItemConfigurationType.ExpandedNodeId;
-                                    }
-                                }
+                                // for config type NodeId we do nothing
                                 item.State = OpcMonitoredItemState.Unmonitored;
                             }
 
@@ -885,7 +870,7 @@ namespace OpcPublisher
                     // add a new item to monitor
                     if (expandedNodeId == null)
                     {
-                        opcMonitoredItem = new OpcMonitoredItem(nodeId, EndpointUri, true);
+                        opcMonitoredItem = new OpcMonitoredItem(nodeId, EndpointUri);
                     }
                     else
                     {

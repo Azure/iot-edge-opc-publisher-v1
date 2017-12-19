@@ -467,13 +467,10 @@ namespace OpcPublisher
                 // find the session we need to monitor the node
                 OpcSession opcSession = null;
                 opcSession = OpcSessions.FirstOrDefault(s => s.EndpointUri.AbsoluteUri.Equals(endpointUri.AbsoluteUri, StringComparison.OrdinalIgnoreCase));
-                string namespaceUri = null;
-                ExpandedNodeId expandedNodeId = null;
 
-                // add a new session.
                 if (opcSession == null)
                 {
-                    // create new session info.
+                    // create new session
                     opcSession = new OpcSession(endpointUri, OpcSessionCreationTimeout);
                     OpcSessions.Add(opcSession);
                     Trace($"PublishNode: No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
@@ -481,18 +478,10 @@ namespace OpcPublisher
                 else
                 {
                     Trace($"PublishNode: Session found for endpoint '{endpointUri.OriginalString}'");
-
-                    // check if node is already published
-                    namespaceUri = opcSession.GetNamespaceUri(nodeId.NamespaceIndex);
-                    if (string.IsNullOrEmpty(namespaceUri))
-                    {
-                        return ServiceResult.Create(StatusCodes.BadUnexpectedError, $"The namespace index of the node id is invalid.");
-                    }
-                    expandedNodeId = new ExpandedNodeId(nodeId.Identifier, nodeId.NamespaceIndex, namespaceUri, 0);
                 }
 
                 // add the node info to the subscription with the default publishing interval, execute syncronously
-                opcSession.AddNodeForMonitoring(nodeId, expandedNodeId, OpcPublishingInterval, OpcSamplingInterval, ShutdownTokenSource.Token).Wait();
+                opcSession.AddNodeForMonitoring(nodeId, null, OpcPublishingInterval, OpcSamplingInterval, ShutdownTokenSource.Token).Wait();
                 Trace($"PublishNode: Requested to monitor item with NodeId '{nodeId.ToString()}' (PublishingInterval: {OpcPublishingInterval}, SamplingInterval: {OpcSamplingInterval})");
             }
             catch (Exception e)
