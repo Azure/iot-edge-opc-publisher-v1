@@ -52,6 +52,8 @@ namespace OpcPublisher
         public ExpandedNodeId ConfigExpandedNodeId { get; set; }
         public string OriginalId { get; set; }
         public OpcMonitoredItemConfigurationType ConfigType { get; set; }
+        public IEnumerable<ExpandedNodeId> AdditionalExpandedNodeIds { get; set; }
+        public IEnumerable<NodeId> AdditionalNodeIds { get; set; }
 
         /// <summary>
         /// Ctor using NodeId (ns syntax for namespace).
@@ -64,6 +66,8 @@ namespace OpcPublisher
             ConfigType = OpcMonitoredItemConfigurationType.NodeId;
             Init(sessionEndpointUrl);
             State = OpcMonitoredItemState.Unmonitored;
+            AdditionalExpandedNodeIds = null;
+            AdditionalNodeIds = null;
         }
 
         /// <summary>
@@ -77,6 +81,8 @@ namespace OpcPublisher
             ConfigType = OpcMonitoredItemConfigurationType.ExpandedNodeId;
             Init(sessionEndpointUrl);
             State = OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested;
+            AdditionalExpandedNodeIds = null;
+            AdditionalNodeIds = null;
         }
 
         /// <summary>

@@ -271,7 +271,8 @@ namespace OpcPublisher
                                 OpcMonitoredItem opcMonitoredItem = new OpcMonitoredItem(nodeInfo.ExpandedNodeId, opcSession.EndpointUrl)
                                 {
                                     RequestedSamplingInterval = nodeInfo.OpcSamplingInterval,
-                                    SamplingInterval = nodeInfo.OpcSamplingInterval
+                                    SamplingInterval = nodeInfo.OpcSamplingInterval,
+                                    AdditionalExpandedNodeIds = nodeInfo.AdditionalExpandedNodeIds
                                 };
                                 opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
                                 Interlocked.Increment(ref NodeConfigVersion);
@@ -282,7 +283,8 @@ namespace OpcPublisher
                                 OpcMonitoredItem opcMonitoredItem = new OpcMonitoredItem(nodeInfo.NodeId, opcSession.EndpointUrl)
                                 {
                                     RequestedSamplingInterval = nodeInfo.OpcSamplingInterval,
-                                    SamplingInterval = nodeInfo.OpcSamplingInterval
+                                    SamplingInterval = nodeInfo.OpcSamplingInterval,
+                                    AdditionalNodeIds = nodeInfo.AdditionalNodeIds
                                 };
                                 opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
                                 Interlocked.Increment(ref NodeConfigVersion);
