@@ -177,7 +177,18 @@ namespace OpcPublisher
                                     if (opcNode.ExpandedNodeId != null)
                                     {
                                         ExpandedNodeId expandedNodeId = ExpandedNodeId.Parse(opcNode.ExpandedNodeId);
-                                        _nodePublishingConfiguration.Add(new NodePublishingConfiguration(expandedNodeId, opcNode.ExpandedNodeId, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
+                                        List<ExpandedNodeId> additionalExpandedNodeIds = null;
+
+                                        if(opcNode.AdditionalExpandedNodeIds != null)
+                                        {
+                                            additionalExpandedNodeIds = new List<ExpandedNodeId>();
+                                            foreach(string additionalExpandedNodeId in opcNode.AdditionalExpandedNodeIds)
+                                            {
+                                                additionalExpandedNodeIds.Add(ExpandedNodeId.Parse(additionalExpandedNodeId));
+                                            }
+                                        }
+
+                                        _nodePublishingConfiguration.Add(new NodePublishingConfiguration(expandedNodeId, additionalExpandedNodeIds, opcNode.ExpandedNodeId, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
                                     }
                                     else
                                     {
@@ -186,13 +197,13 @@ namespace OpcPublisher
                                         {
                                             // ExpandedNodeId format
                                             ExpandedNodeId expandedNodeId = ExpandedNodeId.Parse(opcNode.Id);
-                                            _nodePublishingConfiguration.Add(new NodePublishingConfiguration(expandedNodeId, opcNode.Id, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
+                                            _nodePublishingConfiguration.Add(new NodePublishingConfiguration(expandedNodeId, null, opcNode.Id, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
                                         }
                                         else
                                         {
                                             // NodeId format
                                             NodeId nodeId = NodeId.Parse(opcNode.Id);
-                                            _nodePublishingConfiguration.Add(new NodePublishingConfiguration(nodeId, opcNode.Id, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
+                                            _nodePublishingConfiguration.Add(new NodePublishingConfiguration(nodeId, null, opcNode.Id, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
                                         }
                                     }
                                 }
@@ -200,7 +211,7 @@ namespace OpcPublisher
                             else
                             {
                                 // NodeId (ns=) format node configuration syntax using default sampling and publishing interval.
-                                _nodePublishingConfiguration.Add(new NodePublishingConfiguration(publisherConfigFileEntryLegacy.NodeId, publisherConfigFileEntryLegacy.NodeId.ToString(), publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, OpcSamplingInterval, OpcPublishingInterval));
+                                _nodePublishingConfiguration.Add(new NodePublishingConfiguration(publisherConfigFileEntryLegacy.NodeId, null, publisherConfigFileEntryLegacy.NodeId.ToString(), publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, OpcSamplingInterval, OpcPublishingInterval));
                             }
                         }
                     }
@@ -511,6 +522,9 @@ namespace OpcPublisher
         public string ExpandedNodeId;
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> AdditionalExpandedNodeIds;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int? OpcSamplingInterval;
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -551,14 +565,18 @@ namespace OpcPublisher
         public bool UseSecurity;
         public NodeId NodeId;
         public ExpandedNodeId ExpandedNodeId;
+        public List<ExpandedNodeId> AdditionalExpandedNodeIds;
+        public List<NodeId> AdditionalNodeIds;
         public string OriginalId;
         public int OpcSamplingInterval;
         public int OpcPublishingInterval;
 
-        public NodePublishingConfiguration(ExpandedNodeId expandedNodeId, string originalId, Uri endpointUrl, bool? useSecurity, int opcSamplingInterval, int opcPublishingInterval)
+        public NodePublishingConfiguration(ExpandedNodeId expandedNodeId, IEnumerable<ExpandedNodeId> additionalExpandedNodeIds, string originalId, Uri endpointUrl, bool? useSecurity, int opcSamplingInterval, int opcPublishingInterval)
         {
             NodeId = null;
+            AdditionalNodeIds = null;
             ExpandedNodeId = expandedNodeId;
+            AdditionalExpandedNodeIds = additionalExpandedNodeIds?.ToList();
             OriginalId = originalId;
             EndpointUrl = endpointUrl;
             UseSecurity = useSecurity ?? true;
@@ -566,10 +584,12 @@ namespace OpcPublisher
             OpcPublishingInterval = opcPublishingInterval;
         }
 
-        public NodePublishingConfiguration(NodeId nodeId, string originalId, Uri endpointUrl, bool? useSecurity, int opcSamplingInterval, int opcPublishingInterval)
+        public NodePublishingConfiguration(NodeId nodeId, IEnumerable<NodeId> additionalNodeIds, string originalId, Uri endpointUrl, bool? useSecurity, int opcSamplingInterval, int opcPublishingInterval)
         {
             NodeId = nodeId;
+            AdditionalNodeIds = additionalNodeIds?.ToList();
             ExpandedNodeId = null;
+            AdditionalExpandedNodeIds = null;
             OriginalId = originalId;
             EndpointUrl = endpointUrl;
             UseSecurity = useSecurity ?? true;
