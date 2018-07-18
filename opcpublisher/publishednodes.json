@@ -47,6 +47,15 @@
                 "ExpandedNodeId": "nsu=http://opcfoundation.org/UA/;i=2258",
                 // the OPC sampling interval to use for this node.
                 "OpcSamplingInterval": 1000
+            },      
+            // Publisher will request the server at EndpointUrl to sample the node with the given additional expanded node ids.
+            // The subscription will publish the node value with additional node information.      
+            {
+                "ExpandedNodeId": "nsu=http://opcfoundation.org/UA/;i=2258",
+                // The list of additional information to add to the message sent to the IoT Hub
+                "AdditionalExpandedNodeIds":[
+                    "nsu=http://opcfoundation.org/UA/;i=2260"
+                ]
             }
         ]
     },
