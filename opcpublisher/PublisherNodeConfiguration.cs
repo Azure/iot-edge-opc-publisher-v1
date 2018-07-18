@@ -358,6 +358,7 @@ namespace OpcPublisher
                                             opcNodeOnEndpoint.Id = monitoredItem.OriginalId;
                                             opcNodeOnEndpoint.OpcPublishingInterval = subscription.RequestedPublishingInterval == OpcPublishingInterval ? (int?)null : subscription.RequestedPublishingInterval;
                                             opcNodeOnEndpoint.OpcSamplingInterval = monitoredItem.RequestedSamplingInterval == OpcSamplingInterval ? (int?)null : monitoredItem.RequestedSamplingInterval;
+                                            opcNodeOnEndpoint.AdditionalExpandedNodeIds = monitoredItem.AdditionalExpandedNodeIds?.Select(nodeId => nodeId.ToString())?.ToList();
                                             publisherConfigurationFileEntry.OpcNodes.Add(opcNodeOnEndpoint);
                                         }
                                     }

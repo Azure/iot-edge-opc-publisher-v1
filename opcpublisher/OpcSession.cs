@@ -222,6 +222,8 @@ namespace OpcPublisher
                     return;
                 }
 
+                var test = this.AdditionalExpandedNodeIds;
+
                 MonitoredItemNotification notification = args.NotificationValue as MonitoredItemNotification;
                 if (notification == null)
                 {
@@ -1074,7 +1076,14 @@ namespace OpcPublisher
         /// Adds a node to be monitored. If there is no subscription with the requested publishing interval,
         /// one is created.
         /// </summary>
-        public async Task<HttpStatusCode> AddNodeForMonitoringAsync(NodeId nodeId, ExpandedNodeId expandedNodeId, int opcPublishingInterval, int opcSamplingInterval, CancellationToken ct)
+        public async Task<HttpStatusCode> AddNodeForMonitoringAsync(
+            NodeId nodeId, 
+            ExpandedNodeId expandedNodeId, 
+            IEnumerable<NodeId> additionalNodeIds, 
+            IEnumerable<ExpandedNodeId> additionalExpandedNodeIds, 
+            int opcPublishingInterval, 
+            int opcSamplingInterval,
+            CancellationToken ct)
         {
             bool sessionLocked = false;
             try
@@ -1119,11 +1128,17 @@ namespace OpcPublisher
                     // add a new item to monitor
                     if (expandedNodeId == null)
                     {
-                        opcMonitoredItem = new OpcMonitoredItem(nodeId, EndpointUrl);
+                        opcMonitoredItem = new OpcMonitoredItem(nodeId, EndpointUrl)
+                        {
+                            AdditionalExpandedNodeIds = additionalExpandedNodeIds
+                        };
                     }
                     else
                     {
-                        opcMonitoredItem = new OpcMonitoredItem(expandedNodeId, EndpointUrl);
+                        opcMonitoredItem = new OpcMonitoredItem(expandedNodeId, EndpointUrl)
+                        {
+                            AdditionalNodeIds = additionalNodeIds
+                        };
                     }
                     opcMonitoredItem.RequestedSamplingInterval = opcSamplingInterval;
                     opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
