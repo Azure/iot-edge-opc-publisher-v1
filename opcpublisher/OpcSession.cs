@@ -128,7 +128,7 @@ namespace OpcPublisher
                 }
                 if (expandedNodeId != null)
                 {
-                    if (ConfigExpandedNodeId.NamespaceUri != null && 
+                    if (ConfigExpandedNodeId.NamespaceUri != null &&
                         ConfigExpandedNodeId.NamespaceUri.Equals(expandedNodeId.NamespaceUri, StringComparison.OrdinalIgnoreCase) &&
                         ConfigExpandedNodeId.Identifier.ToString().Equals(expandedNodeId.Identifier.ToString(), StringComparison.OrdinalIgnoreCase))
                     {
@@ -236,20 +236,27 @@ namespace OpcPublisher
 
                 Dictionary<string, object> additionalNodeIdsDictionary = null;
 
-                if(AdditionalExpandedNodeIds != null)
+                if (AdditionalExpandedNodeIds != null)
                 {
                     additionalNodeIdsDictionary = new Dictionary<string, object>();
-                    foreach(var additionalExpandedNodeId in AdditionalExpandedNodeIds)
+                    foreach (var additionalExpandedNodeId in AdditionalExpandedNodeIds)
                     {
-                        var namespaceIndex = additionalExpandedNodeId.NamespaceUri == null
-                            ? additionalExpandedNodeId.NamespaceIndex
-                            : (ushort)monitoredItem.Subscription.Session.NamespaceUris.GetIndex(additionalExpandedNodeId.NamespaceUri);
+                        try
+                        {
+                            var namespaceIndex = additionalExpandedNodeId.NamespaceUri == null
+                                ? additionalExpandedNodeId.NamespaceIndex
+                                : (ushort)monitoredItem.Subscription.Session.NamespaceUris.GetIndex(additionalExpandedNodeId.NamespaceUri);
 
-                        var nodeId = new NodeId(additionalExpandedNodeId.Identifier, namespaceIndex);
-                        var nodeValue = monitoredItem.Subscription.Session.ReadValue(nodeId);
-                        var node = monitoredItem.Subscription.Session.ReadNode(nodeId);
-                        
-                        additionalNodeIdsDictionary[node.DisplayName.ToString()] = nodeValue.Value;
+                            var nodeId = new NodeId(additionalExpandedNodeId.Identifier, namespaceIndex);
+                            var nodeValue = monitoredItem.Subscription.Session.ReadValue(nodeId);
+                            var node = monitoredItem.Subscription.Session.ReadNode(nodeId);
+
+                            additionalNodeIdsDictionary[node.DisplayName.ToString()] = nodeValue.Value;
+                        }
+                        catch(ServiceResultException ex)
+                        {
+                            Logger.Error(ex, "Error read additional data");
+                        }
                     }
                 }
 
@@ -828,7 +835,7 @@ namespace OpcPublisher
                             }
                             if (additionalMonitoredItemsCount % 10000 == 0)
                             {
-                                    Logger.Information($"Now monitoring {monitoredItemsCount + additionalMonitoredItemsCount} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'");
+                                Logger.Information($"Now monitoring {monitoredItemsCount + additionalMonitoredItemsCount} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'");
                             }
                             // request a config file update, if everything is successfully monitored
                             requestConfigFileUpdate = true;
@@ -1096,10 +1103,10 @@ namespace OpcPublisher
         /// one is created.
         /// </summary>
         public async Task<HttpStatusCode> AddNodeForMonitoringAsync(
-            NodeId nodeId, 
+            NodeId nodeId,
             ExpandedNodeId expandedNodeId,
-            IEnumerable<ExpandedNodeId> additionalExpandedNodeIds, 
-            int opcPublishingInterval, 
+            IEnumerable<ExpandedNodeId> additionalExpandedNodeIds,
+            int opcPublishingInterval,
             int opcSamplingInterval,
             CancellationToken ct)
         {
@@ -1114,7 +1121,7 @@ namespace OpcPublisher
 
                 // check if there is already a subscription with the same publishing interval, which can be used to monitor the node
                 OpcSubscription opcSubscription = OpcSubscriptions.FirstOrDefault(s => s.RequestedPublishingInterval == opcPublishingInterval);
-                
+
                 // if there was none found, create one
                 if (opcSubscription == null)
                 {
@@ -1340,10 +1347,10 @@ namespace OpcPublisher
             return false;
         }
 
-    /// <summary>
-    /// Shutdown the current session if it is connected.
-    /// </summary>
-    public async Task ShutdownAsync()
+        /// <summary>
+        /// Shutdown the current session if it is connected.
+        /// </summary>
+        public async Task ShutdownAsync()
         {
             bool sessionLocked = false;
             try
