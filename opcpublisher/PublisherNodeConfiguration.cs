@@ -285,7 +285,7 @@ namespace OpcPublisher
                                 {
                                     RequestedSamplingInterval = nodeInfo.OpcSamplingInterval,
                                     SamplingInterval = nodeInfo.OpcSamplingInterval,
-                                    AdditionalNodeIds = nodeInfo.AdditionalNodeIds
+                                    AdditionalExpandedNodeIds = nodeInfo.AdditionalExpandedNodeIds
                                 };
                                 opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
                                 Interlocked.Increment(ref NodeConfigVersion);
@@ -570,7 +570,6 @@ namespace OpcPublisher
         public NodeId NodeId;
         public ExpandedNodeId ExpandedNodeId;
         public List<ExpandedNodeId> AdditionalExpandedNodeIds;
-        public List<NodeId> AdditionalNodeIds;
         public string OriginalId;
         public int OpcSamplingInterval;
         public int OpcPublishingInterval;
@@ -578,7 +577,6 @@ namespace OpcPublisher
         public NodePublishingConfiguration(ExpandedNodeId expandedNodeId, IEnumerable<ExpandedNodeId> additionalExpandedNodeIds, string originalId, Uri endpointUrl, bool? useSecurity, int opcSamplingInterval, int opcPublishingInterval)
         {
             NodeId = null;
-            AdditionalNodeIds = null;
             ExpandedNodeId = expandedNodeId;
             AdditionalExpandedNodeIds = additionalExpandedNodeIds?.ToList();
             OriginalId = originalId;
@@ -588,10 +586,9 @@ namespace OpcPublisher
             OpcPublishingInterval = opcPublishingInterval;
         }
 
-        public NodePublishingConfiguration(NodeId nodeId, IEnumerable<NodeId> additionalNodeIds, string originalId, Uri endpointUrl, bool? useSecurity, int opcSamplingInterval, int opcPublishingInterval)
+        public NodePublishingConfiguration(NodeId nodeId, string originalId, Uri endpointUrl, bool? useSecurity, int opcSamplingInterval, int opcPublishingInterval)
         {
             NodeId = nodeId;
-            AdditionalNodeIds = additionalNodeIds?.ToList();
             ExpandedNodeId = null;
             AdditionalExpandedNodeIds = null;
             OriginalId = originalId;
