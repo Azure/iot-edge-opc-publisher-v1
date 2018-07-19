@@ -246,8 +246,9 @@ namespace OpcPublisher
                     {
                         var namespaceIndex = (ushort)monitoredItem.Subscription.Session.NamespaceUris.GetIndex(additionalExpandedNodeId.NamespaceUri);
                         var nodeId = new NodeId(additionalExpandedNodeId.Identifier, namespaceIndex);
-                        var node = monitoredItem.Subscription.Session.ReadValue(nodeId);
-                        additionalNodeIdsDictionary[nodeId.ToString()] = node.Value;
+                        var nodeValue = monitoredItem.Subscription.Session.ReadValue(nodeId);
+                        var node = monitoredItem.Subscription.Session.ReadNode(nodeId);
+                        additionalNodeIdsDictionary[node.DisplayName.ToString()] = nodeValue.Value;
                     }
                 }
 
