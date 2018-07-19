@@ -54,7 +54,7 @@
                 "ExpandedNodeId": "nsu=http://opcfoundation.org/UA/;i=2258",
                 // The list of additional information to add to the message sent to the IoT Hub
                 "AdditionalExpandedNodeIds":[
-                    "nsu=http://opcfoundation.org/UA/;i=2260"
+                    "nsu=http://opcfoundation.org/UA/;i=2261"
                 ]
             }
         ]
