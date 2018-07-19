@@ -873,11 +873,20 @@ namespace OpcPublisher
                     
                     if(messageData.AdditionalData != null)
                     {
+                        await _jsonWriter.WritePropertyNameAsync("AdditionalValues");
+                        await _jsonWriter.WriteStartArrayAsync();
                         foreach(var additionalData in messageData.AdditionalData)
                         {
-                            await _jsonWriter.WritePropertyNameAsync(additionalData.Key.Replace(" ", string.Empty));
+                            await _jsonWriter.WriteStartObjectAsync();
+                            await _jsonWriter.WritePropertyNameAsync("NodeId");
+                            await _jsonWriter.WriteValueAsync(additionalData.NodeId);
+                            await _jsonWriter.WritePropertyNameAsync("DisplayName");
+                            await _jsonWriter.WriteValueAsync(additionalData.DisplayName);
+                            await _jsonWriter.WritePropertyNameAsync("Value");
                             await _jsonWriter.WriteRawValueAsync(JsonConvert.SerializeObject(additionalData.Value));
+                            await _jsonWriter.WriteEndObjectAsync();
                         }
+                        await _jsonWriter.WriteEndArrayAsync();
                     }
 
                     await _jsonWriter.WriteEndObjectAsync();

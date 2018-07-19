@@ -139,6 +139,13 @@ namespace OpcPublisher
             return false;
         }
 
+        public class AdditionalData
+        {
+            public string NodeId;
+            public string DisplayName;
+            public object Value;
+        }
+
         /// <summary>
         /// Class used to pass data from the MonitoredItem notification to the hub message processing.
         /// </summary>
@@ -153,7 +160,7 @@ namespace OpcPublisher
             public uint? StatusCode;
             public string Status;
             public bool PreserveValueQuotes;
-            public Dictionary<string, object> AdditionalData;
+            public IEnumerable<AdditionalData> AdditionalData;
 
             public MessageData()
             {
@@ -234,11 +241,11 @@ namespace OpcPublisher
                     return;
                 }
 
-                Dictionary<string, object> additionalNodeIdsDictionary = null;
+                List<AdditionalData> additionalDatas = null;
 
                 if (AdditionalExpandedNodeIds != null)
                 {
-                    additionalNodeIdsDictionary = new Dictionary<string, object>();
+                    additionalDatas = new List<AdditionalData>();
                     foreach (var additionalExpandedNodeId in AdditionalExpandedNodeIds)
                     {
                         try
@@ -251,7 +258,12 @@ namespace OpcPublisher
                             var nodeValue = monitoredItem.Subscription.Session.ReadValue(nodeId);
                             var node = monitoredItem.Subscription.Session.ReadNode(nodeId);
 
-                            additionalNodeIdsDictionary[node.DisplayName.ToString()] = nodeValue.Value;
+                            additionalDatas.Add(new AdditionalData
+                            {
+                                NodeId = nodeId.ToString(),
+                                DisplayName = node.DisplayName.ToString(),
+                                Value = nodeValue.Value
+                            });
                         }
                         catch(ServiceResultException ex)
                         {
@@ -261,7 +273,7 @@ namespace OpcPublisher
                 }
 
                 MessageData messageData = new MessageData();
-                messageData.AdditionalData = additionalNodeIdsDictionary;
+                messageData.AdditionalData = additionalDatas;
 
                 if (IotCentralMode)
                 {
