@@ -54,7 +54,6 @@ namespace OpcPublisher
         public string OriginalId { get; set; }
         public OpcMonitoredItemConfigurationType ConfigType { get; set; }
         public IEnumerable<ExpandedNodeId> AdditionalExpandedNodeIds { get; set; }
-        public IEnumerable<NodeId> AdditionalNodeIds { get; set; }
 
         /// <summary>
         /// Ctor using NodeId (ns syntax for namespace).
@@ -68,7 +67,6 @@ namespace OpcPublisher
             Init(sessionEndpointUrl);
             State = OpcMonitoredItemState.Unmonitored;
             AdditionalExpandedNodeIds = null;
-            AdditionalNodeIds = null;
         }
 
         /// <summary>
@@ -83,7 +81,6 @@ namespace OpcPublisher
             Init(sessionEndpointUrl);
             State = OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested;
             AdditionalExpandedNodeIds = null;
-            AdditionalNodeIds = null;
         }
 
         /// <summary>
@@ -1096,8 +1093,7 @@ namespace OpcPublisher
         /// </summary>
         public async Task<HttpStatusCode> AddNodeForMonitoringAsync(
             NodeId nodeId, 
-            ExpandedNodeId expandedNodeId, 
-            IEnumerable<NodeId> additionalNodeIds, 
+            ExpandedNodeId expandedNodeId,
             IEnumerable<ExpandedNodeId> additionalExpandedNodeIds, 
             int opcPublishingInterval, 
             int opcSamplingInterval,
@@ -1146,10 +1142,7 @@ namespace OpcPublisher
                     // add a new item to monitor
                     if (expandedNodeId == null)
                     {
-                        opcMonitoredItem = new OpcMonitoredItem(nodeId, EndpointUrl)
-                        {
-                            AdditionalNodeIds = additionalNodeIds
-                        };
+                        opcMonitoredItem = new OpcMonitoredItem(nodeId, EndpointUrl);
                     }
                     else
                     {

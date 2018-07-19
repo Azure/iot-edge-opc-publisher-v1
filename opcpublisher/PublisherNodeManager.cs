@@ -537,14 +537,14 @@ namespace OpcPublisher
                     //TODO => add additional node ids
                     // add the node info to the subscription with the default publishing interval, execute syncronously
                     Logger.Debug($"PublishNode: Request to monitor item with NodeId '{nodeId.ToString()}' (PublishingInterval: {OpcPublishingInterval}, SamplingInterval: {OpcSamplingInterval})");
-                    statusCode = opcSession.AddNodeForMonitoringAsync(nodeId, null, null, null, OpcPublishingInterval, OpcSamplingInterval, ShutdownTokenSource.Token).Result;
+                    statusCode = opcSession.AddNodeForMonitoringAsync(nodeId, null, null, OpcPublishingInterval, OpcSamplingInterval, ShutdownTokenSource.Token).Result;
                 }
                 else
                 {
                     //TODO => add additional expanded node ids
                     // add the node info to the subscription with the default publishing interval, execute syncronously
                     Logger.Debug($"PublishNode: Request to monitor item with ExpandedNodeId '{expandedNodeId.ToString()}' (PublishingInterval: {OpcPublishingInterval}, SamplingInterval: {OpcSamplingInterval})");
-                    statusCode = opcSession.AddNodeForMonitoringAsync(null, expandedNodeId, null, null, OpcPublishingInterval, OpcSamplingInterval, ShutdownTokenSource.Token).Result;
+                    statusCode = opcSession.AddNodeForMonitoringAsync(null, expandedNodeId, null, OpcPublishingInterval, OpcSamplingInterval, ShutdownTokenSource.Token).Result;
                 }
             }
             catch (Exception e)
