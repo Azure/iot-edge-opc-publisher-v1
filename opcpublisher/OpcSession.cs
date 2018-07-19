@@ -241,10 +241,14 @@ namespace OpcPublisher
                     additionalNodeIdsDictionary = new Dictionary<string, object>();
                     foreach(var additionalExpandedNodeId in AdditionalExpandedNodeIds)
                     {
-                        var namespaceIndex = (ushort)monitoredItem.Subscription.Session.NamespaceUris.GetIndex(additionalExpandedNodeId.NamespaceUri);
+                        var namespaceIndex = additionalExpandedNodeId.NamespaceUri == null
+                            ? additionalExpandedNodeId.NamespaceIndex
+                            : (ushort)monitoredItem.Subscription.Session.NamespaceUris.GetIndex(additionalExpandedNodeId.NamespaceUri);
+
                         var nodeId = new NodeId(additionalExpandedNodeId.Identifier, namespaceIndex);
                         var nodeValue = monitoredItem.Subscription.Session.ReadValue(nodeId);
                         var node = monitoredItem.Subscription.Session.ReadNode(nodeId);
+                        
                         additionalNodeIdsDictionary[node.DisplayName.ToString()] = nodeValue.Value;
                     }
                 }
