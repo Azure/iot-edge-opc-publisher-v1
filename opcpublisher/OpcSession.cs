@@ -6,6 +6,7 @@ using System.Linq;
 
 namespace OpcPublisher
 {
+    using Newtonsoft.Json;
     using Opc.Ua;
     using System.Diagnostics;
     using System.Net;
@@ -155,6 +156,7 @@ namespace OpcPublisher
             public uint? StatusCode;
             public string Status;
             public bool PreserveValueQuotes;
+            public Dictionary<string, object> AdditionalData;
 
             public MessageData()
             {
@@ -167,6 +169,7 @@ namespace OpcPublisher
                 SourceTimestamp = null;
                 Status = null;
                 PreserveValueQuotes = false;
+                AdditionalData = null;
             }
 
             public void ApplyPatterns(EndpointTelemetryConfiguration telemetryConfiguration)
@@ -222,8 +225,6 @@ namespace OpcPublisher
                     return;
                 }
 
-                var test = this.AdditionalExpandedNodeIds;
-
                 MonitoredItemNotification notification = args.NotificationValue as MonitoredItemNotification;
                 if (notification == null)
                 {
@@ -236,7 +237,23 @@ namespace OpcPublisher
                     return;
                 }
 
+                Dictionary<string, object> additionalNodeIdsDictionary = null;
+
+                if(AdditionalExpandedNodeIds != null)
+                {
+                    additionalNodeIdsDictionary = new Dictionary<string, object>();
+                    foreach(var additionalExpandedNodeId in AdditionalExpandedNodeIds)
+                    {
+                        var namespaceIndex = (ushort)monitoredItem.Subscription.Session.NamespaceUris.GetIndex(additionalExpandedNodeId.NamespaceUri);
+                        var nodeId = new NodeId(additionalExpandedNodeId.Identifier, namespaceIndex);
+                        var node = monitoredItem.Subscription.Session.ReadValue(nodeId);
+                        additionalNodeIdsDictionary[nodeId.ToString()] = node.Value;
+                    }
+                }
+
                 MessageData messageData = new MessageData();
+                messageData.AdditionalData = additionalNodeIdsDictionary;
+
                 if (IotCentralMode)
                 {
                     // for IoTCentral we use the DisplayName as the key in the telemetry and the Value as the value.
@@ -1130,14 +1147,14 @@ namespace OpcPublisher
                     {
                         opcMonitoredItem = new OpcMonitoredItem(nodeId, EndpointUrl)
                         {
-                            AdditionalExpandedNodeIds = additionalExpandedNodeIds
+                            AdditionalNodeIds = additionalNodeIds
                         };
                     }
                     else
                     {
                         opcMonitoredItem = new OpcMonitoredItem(expandedNodeId, EndpointUrl)
                         {
-                            AdditionalNodeIds = additionalNodeIds
+                            AdditionalExpandedNodeIds = additionalExpandedNodeIds
                         };
                     }
                     opcMonitoredItem.RequestedSamplingInterval = opcSamplingInterval;
