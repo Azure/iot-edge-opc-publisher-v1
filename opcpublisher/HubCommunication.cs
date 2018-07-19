@@ -876,7 +876,7 @@ namespace OpcPublisher
                         foreach(var additionalData in messageData.AdditionalData)
                         {
                             await _jsonWriter.WritePropertyNameAsync(additionalData.Key.Replace(" ", string.Empty));
-                            await _jsonWriter.WriteValueAsync(additionalData.Value);
+                            await _jsonWriter.WriteRawValueAsync(JsonConvert.SerializeObject(additionalData.Value));
                         }
                     }
 
