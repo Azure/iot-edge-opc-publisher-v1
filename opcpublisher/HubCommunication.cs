@@ -870,6 +870,16 @@ namespace OpcPublisher
                             await _jsonWriter.WriteEndObjectAsync();
                         }
                     }
+                    
+                    if(messageData.AdditionalData != null)
+                    {
+                        foreach(var additionalData in messageData.AdditionalData)
+                        {
+                            await _jsonWriter.WritePropertyNameAsync(additionalData.Key.Replace(" ", string.Empty));
+                            await _jsonWriter.WriteValueAsync(additionalData.Value);
+                        }
+                    }
+
                     await _jsonWriter.WriteEndObjectAsync();
                     await _jsonWriter.FlushAsync();
                 }
