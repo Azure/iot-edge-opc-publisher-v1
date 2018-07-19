@@ -174,19 +174,20 @@ namespace OpcPublisher
                                 // new node configuration syntax.
                                 foreach (var opcNode in publisherConfigFileEntryLegacy.OpcNodes)
                                 {
+                                    List<ExpandedNodeId> additionalExpandedNodeIds = null;
+
+                                    if(opcNode.AdditionalExpandedNodeIds != null)
+                                    {
+                                        additionalExpandedNodeIds = new List<ExpandedNodeId>();
+                                        foreach(string additionalExpandedNodeId in opcNode.AdditionalExpandedNodeIds)
+                                        {
+                                            additionalExpandedNodeIds.Add(ExpandedNodeId.Parse(additionalExpandedNodeId));
+                                        }
+                                    }
+
                                     if (opcNode.ExpandedNodeId != null)
                                     {
                                         ExpandedNodeId expandedNodeId = ExpandedNodeId.Parse(opcNode.ExpandedNodeId);
-                                        List<ExpandedNodeId> additionalExpandedNodeIds = null;
-
-                                        if(opcNode.AdditionalExpandedNodeIds != null)
-                                        {
-                                            additionalExpandedNodeIds = new List<ExpandedNodeId>();
-                                            foreach(string additionalExpandedNodeId in opcNode.AdditionalExpandedNodeIds)
-                                            {
-                                                additionalExpandedNodeIds.Add(ExpandedNodeId.Parse(additionalExpandedNodeId));
-                                            }
-                                        }
 
                                         _nodePublishingConfiguration.Add(new NodePublishingConfiguration(expandedNodeId, additionalExpandedNodeIds, opcNode.ExpandedNodeId, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
                                     }
@@ -197,13 +198,13 @@ namespace OpcPublisher
                                         {
                                             // ExpandedNodeId format
                                             ExpandedNodeId expandedNodeId = ExpandedNodeId.Parse(opcNode.Id);
-                                            _nodePublishingConfiguration.Add(new NodePublishingConfiguration(expandedNodeId, null, opcNode.Id, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
+                                            _nodePublishingConfiguration.Add(new NodePublishingConfiguration(expandedNodeId, additionalExpandedNodeIds, opcNode.Id, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
                                         }
                                         else
                                         {
                                             // NodeId format
                                             NodeId nodeId = NodeId.Parse(opcNode.Id);
-                                            _nodePublishingConfiguration.Add(new NodePublishingConfiguration(nodeId, null, opcNode.Id, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
+                                            _nodePublishingConfiguration.Add(new NodePublishingConfiguration(nodeId, additionalExpandedNodeIds, opcNode.Id, publisherConfigFileEntryLegacy.EndpointUrl, publisherConfigFileEntryLegacy.UseSecurity, opcNode.OpcSamplingInterval ?? OpcSamplingInterval, opcNode.OpcPublishingInterval ?? OpcPublishingInterval));
                                         }
                                     }
                                 }
