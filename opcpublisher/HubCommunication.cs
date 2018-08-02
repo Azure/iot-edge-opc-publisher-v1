@@ -1073,12 +1073,10 @@ namespace OpcPublisher
                                     SentBytes += encodedhubMessage.GetBytes().Length;
                                     if (_iotHubClient != null)
                                     {
-                                        _iotHubClient.ProductInfo = PRODUCT_INFO;
                                         await _iotHubClient.SendEventAsync(encodedhubMessage);
                                     }
                                     else
                                     {
-                                        _edgeHubClient.ProductInfo = PRODUCT_INFO;
                                         await _edgeHubClient.SendEventAsync(encodedhubMessage);
                                     }
                                     SentMessages++;
@@ -1131,7 +1129,6 @@ namespace OpcPublisher
         private static int MAX_RESPONSE_PAYLOAD_LENGTH = (8 * 1024 - 256);
         private static string CONTENT_TYPE_OPCUAJSON = "application/opcua+uajson";
         private static string CONTENT_ENCODING_UTF8 = "UTF-8";
-        private static string PRODUCT_INFO = "OPC_Publisher";
 
         private static string _hubConnectionString = string.Empty;
         private static long _enqueueCount;
