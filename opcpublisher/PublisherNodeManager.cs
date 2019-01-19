@@ -115,8 +115,8 @@ namespace OpcPublisher
                     MethodState getPublishedNodesLegacyMethod = CreateMethod(methodsFolder, "GetPublishedNodes", "GetPublishedNodes");
                     SetGetPublishedNodesLegacyMethodProperties(ref getPublishedNodesLegacyMethod);
 
-                    MethodState getPublishedNodes2Method = CreateMethod(methodsFolder, "GetPublishedNodes2", "GetPublishedNodes2");
-                    SetGetPublishedNodes2MethodProperties(ref getPublishedNodes2Method);
+                    MethodState getPublishedNodes2Method = CreateMethod(methodsFolder, "GetConfiguredNodesOnEndpoint", "GetConfiguredNodesOnEndpoint");
+                    SetGetConfiguredNodesOnEndpointMethodProperties(ref getPublishedNodes2Method);
                 }
                 catch (Exception e)
                 {
@@ -224,7 +224,7 @@ namespace OpcPublisher
         /// <summary>
         /// Sets properies of the GetPublishedNodes method
         /// </summary>
-        private void SetGetPublishedNodes2MethodProperties(ref MethodState method) 
+        private void SetGetConfiguredNodesOnEndpointMethodProperties(ref MethodState method) 
         {
             // define input arguments
             method.InputArguments = new PropertyState<Argument[]>(method)
@@ -240,7 +240,7 @@ namespace OpcPublisher
 
             method.InputArguments.Value = new Argument[]
             {
-                new Argument() { Name = "MethodRequest", Description = "New method request json.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
+                new Argument() { Name = "RequestJson", Description = "Request model as json string.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
             };
 
             // set output arguments
@@ -257,9 +257,9 @@ namespace OpcPublisher
 
             method.OutputArguments.Value = new Argument[]
             {
-                new Argument() { Name = "MethodResponse", Description = "New method response json",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
+                new Argument() { Name = "ResponseJson", Description = "Response model as json string.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
             };
-            method.OnCallMethod = new GenericMethodCalledEventHandler(OnGetPublishedNodes2Call);
+            method.OnCallMethod = new GenericMethodCalledEventHandler(OnGetConfiguredNodesOnEndpointCall);
         }
 
         /// <summary>
@@ -699,9 +699,9 @@ namespace OpcPublisher
         /// <summary>
         /// Handle method call to get list of configured nodes on a specific endpoint.
         /// </summary>
-        private ServiceResult OnGetPublishedNodes2Call(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
+        private ServiceResult OnGetConfiguredNodesOnEndpointCall(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
         {
-            string logPrefix = "OnGetPublishedNodesRestCall:";
+            string logPrefix = "GetConfiguredNodesOnEndpoint:";
             try 
             {
                 var methodResult = HubCommunication.HandleGetConfiguredNodesOnEndpointMethodAsync(new Microsoft.Azure.Devices.Client.MethodRequest("GetConfiguredNodesOnEndpointMethod", Encoding.UTF8.GetBytes(inputArguments[0] as string)), null).Result;
@@ -709,8 +709,8 @@ namespace OpcPublisher
             }
             catch (Exception ex)
             {
-                Logger.Error($"{logPrefix} The endpointUrl is invalid '{inputArguments[0] as string}'!");
-                return ServiceResult.Create(ex, null, StatusCodes.BadInvalidArgument);
+                Logger.Error($"{logPrefix} The request is invalid!");
+                return ServiceResult.Create(ex, null, StatusCodes.Bad);
             }
             return ServiceResult.Good;
         }
