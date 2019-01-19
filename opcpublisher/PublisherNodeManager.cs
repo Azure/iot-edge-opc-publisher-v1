@@ -157,7 +157,7 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Sets properies of the UnpublishNode method.
+        /// Sets properties of the UnpublishNode method.
         /// </summary>
         private void SetUnpublishNodeMethodProperties(ref MethodState method)
         {
@@ -183,7 +183,7 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Sets properies of the GetPublishedNodes method, which is only there for backward compatibility.
+        /// Sets properties of the GetPublishedNodes method, which is only there for backward compatibility.
         /// This method is acutally returning the configured nodes in NodeId syntax.
         /// </summary>
         private void SetGetPublishedNodesLegacyMethodProperties(ref MethodState method)
@@ -225,7 +225,7 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Sets properies of the GetPublishedNodes method
+        /// Sets properties of the GetConfiguredNodesOnEndpoint method
         /// </summary>
         private void SetGetConfiguredNodesOnEndpointMethodProperties(ref MethodState method) 
         {
@@ -267,7 +267,7 @@ namespace OpcPublisher
 
 
         /// <summary>
-        /// Sets properies of the GetConfiguredEndpoints method
+        /// Sets properties of the GetConfiguredEndpoints method
         /// </summary>
         private void SetGetConfiguredEndpointsMethodProperties(ref MethodState method) 
         {
