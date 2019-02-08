@@ -657,7 +657,7 @@ To add OPC Publisher as module to your IoT Edge deployment, you go to the Azure 
         {
           "routes": {
             "processingModuleToIoTHub": "FROM /messages/modules/processingModule/outputs/* INTO $upstream",
-            "opcPublisherToProcessingModule": "FROM /messages/modules/publisher INTO BrokeredEndpoint(\"/modules/processingModule/inputs/input1\")"
+            "opcPublisherToProcessingModule": "FROM /messages/modules/publisher/* INTO BrokeredEndpoint(\"/modules/processingModule/inputs/input1\")"
         }
 
 * Back in the `Set Modules` page, select `Next`, till you reach the last page of the configuration.
