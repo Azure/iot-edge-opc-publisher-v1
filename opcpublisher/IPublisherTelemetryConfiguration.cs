@@ -80,6 +80,10 @@ namespace OpcPublisher
         /// </summary>
         ITelemetrySettings Status { get; set; }
 
+        /// <summary>
+        /// The PublishTime value telemetry configuration.
+        /// </summary>
+        ITelemetrySettings PublishTime { get; set; }
     }
 
     /// <summary>

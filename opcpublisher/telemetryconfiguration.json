@@ -125,6 +125,11 @@
             "Status": {
                 "Publish": false,
                 "Name": "Status"
+            },
+            // 'PublishTime' is the symbolic name of 'PublishTime'
+            "PublishTime": {
+                "Publish": true,
+                "Name": "PublishTime"
             }
         }
     },

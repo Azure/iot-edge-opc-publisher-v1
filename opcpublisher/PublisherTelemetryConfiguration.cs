@@ -252,6 +252,20 @@ namespace OpcPublisher
         }
 
         /// <summary>
+        /// The PublishTime value telemetry configuration.
+        /// </summary>
+        public ITelemetrySettings PublishTime
+        {
+            get => _publishTime;
+            set
+            {
+                _publishTime.Publish = value.Publish;
+                _publishTime.Name = value.Name;
+                _publishTime.Pattern = value.Pattern;
+            }
+        }
+
+        /// <summary>
         /// Ctor of the object.
         /// </summary>
         public ValueTelemetryConfiguration()
@@ -261,6 +275,7 @@ namespace OpcPublisher
             _sourceTimestamp = new TelemetrySettings();
             _statusCode = new TelemetrySettings();
             _status = new TelemetrySettings();
+            _publishTime = new TelemetrySettings();
         }
 
         private bool? _flat;
@@ -268,6 +283,7 @@ namespace OpcPublisher
         private TelemetrySettings _sourceTimestamp;
         private TelemetrySettings _statusCode;
         private TelemetrySettings _status;
+        private TelemetrySettings _publishTime;
     }
 
     /// <summary>
@@ -390,6 +406,7 @@ namespace OpcPublisher
         public const string SourceTimestampNameDefault = "SourceTimestamp";
         public const string StatusNameDefault = "Status";
         public const string StatusCodeNameDefault = "StatusCode";
+        public const string PublishTimeNameDefault = "PublishTime";
 
         public static string PublisherTelemetryConfigurationFilename { get; set; } = null;
 
@@ -494,6 +511,7 @@ namespace OpcPublisher
             _defaultEndpointTelemetryConfiguration.Value.SourceTimestamp.Name = SourceTimestampNameDefault;
             _defaultEndpointTelemetryConfiguration.Value.StatusCode.Name = StatusCodeNameDefault;
             _defaultEndpointTelemetryConfiguration.Value.Status.Name = StatusCodeNameDefault;
+            _defaultEndpointTelemetryConfiguration.Value.PublishTime.Name = StatusCodeNameDefault;
 
             // set defaults for 'Publish' to be compatible with Connected factory
             _defaultEndpointTelemetryConfiguration.EndpointUrl.Publish = false;
@@ -504,6 +522,7 @@ namespace OpcPublisher
             _defaultEndpointTelemetryConfiguration.Value.SourceTimestamp.Publish = true;
             _defaultEndpointTelemetryConfiguration.Value.StatusCode.Publish = false;
             _defaultEndpointTelemetryConfiguration.Value.Status.Publish = false;
+            _defaultEndpointTelemetryConfiguration.Value.PublishTime.Publish = false;
 
             // set defaults for 'Flat' to be compatible with Connected factory
             _defaultEndpointTelemetryConfiguration.MonitoredItem.Flat = true;
@@ -577,6 +596,10 @@ namespace OpcPublisher
             config.Value.Status.Name = config.Value.Status.Name ?? _defaultEndpointTelemetryConfiguration.Value.Status.Name;
             config.Value.Status.Publish = config.Value.Status.Publish ?? _defaultEndpointTelemetryConfiguration.Value.Status.Publish;
             config.Value.Status.Pattern = config.Value.Status.Pattern ?? _defaultEndpointTelemetryConfiguration.Value.Status.Pattern;
+
+            config.Value.PublishTime.Name = config.Value.PublishTime.Name ?? _defaultEndpointTelemetryConfiguration.Value.PublishTime.Name;
+            config.Value.PublishTime.Publish = config.Value.PublishTime.Publish ?? _defaultEndpointTelemetryConfiguration.Value.PublishTime.Publish;
+            config.Value.PublishTime.Pattern = config.Value.PublishTime.Pattern ?? _defaultEndpointTelemetryConfiguration.Value.PublishTime.Pattern;
         }
 
         /// <summary>

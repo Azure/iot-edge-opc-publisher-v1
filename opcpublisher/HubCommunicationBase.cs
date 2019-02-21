@@ -33,7 +33,7 @@ namespace OpcPublisher
         /// <summary>
         /// Number of events in the monitored items queue.
         /// </summary>
-        public static long MonitoredItemsQueueCount => _monitoredItemsDataQueue.Count;
+        public static long MonitoredItemsQueueCount => _monitoredItemsDataQueue == null ? 0 : _monitoredItemsDataQueue.Count;
 
         /// <summary>
         /// Number of events we enqueued.
@@ -201,7 +201,7 @@ namespace OpcPublisher
                 await _hubClient.OpenAsync().ConfigureAwait(false);
 
                 // init twin properties and method callbacks (not supported for HTTP)
-                // todo check if this is 
+                // todo check if this is required at all
                 if (!IsHttp1Transport())
                 {
                     // init twin properties and method callbacks
@@ -1383,9 +1383,9 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Creates a JSON message to be sent to IoTHub, based on the telemetry configuration for the endpoint.
+        /// Creates a IoTHub JSON message for a data change notification, based on the telemetry configuration for the endpoint.
         /// </summary>
-        private async Task<string> CreateJsonMessageAsync(MessageData messageData)
+        private async Task<string> CreateJsonForDataChangeAsync(DataChangeMessageData messageData)
         {
             try
             {
@@ -1510,9 +1510,109 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Creates a JSON message to be sent to IoTCentral.
+        /// Creates a IoTHub JSON message for an event notification, based on the telemetry configuration for the endpoint.
         /// </summary>
-        private async Task<string> CreateIotCentralJsonMessageAsync(MessageData messageData)
+        private async Task<string> CreateJsonForEventAsync(EventMessageData eventData)
+        {
+            try
+            {
+                // get telemetry configration
+                IEndpointTelemetryConfigurationModel telemetryConfiguration = TelemetryConfiguration.GetEndpointTelemetryConfiguration(eventData.EndpointUrl);
+
+                // currently the pattern processing is done in MonitoredItemNotificationHandler of OpcSession.cs. in case of perf issues
+                // it can be also done here, the risk is then to lose messages in the communication queue. if you enable it here, disable it in OpcSession.cs
+                // messageData.ApplyPatterns(telemetryConfiguration);
+
+                // build the JSON message
+                StringBuilder _jsonStringBuilder = new StringBuilder();
+                StringWriter _jsonStringWriter = new StringWriter(_jsonStringBuilder);
+                using (JsonWriter _jsonWriter = new JsonTextWriter(_jsonStringWriter))
+                {
+                    await _jsonWriter.WriteStartObjectAsync().ConfigureAwait(false);
+                    string telemetryValue = string.Empty;
+
+                    // process EndpointUrl
+                    if ((bool)telemetryConfiguration.EndpointUrl.Publish)
+                    {
+                        await _jsonWriter.WritePropertyNameAsync(telemetryConfiguration.EndpointUrl.Name).ConfigureAwait(false);
+                        await _jsonWriter.WriteValueAsync(eventData.EndpointUrl).ConfigureAwait(false);
+                    }
+
+                    // process NodeId
+                    if (!string.IsNullOrEmpty(eventData.NodeId))
+                    {
+                        await _jsonWriter.WritePropertyNameAsync(telemetryConfiguration.NodeId.Name).ConfigureAwait(false);
+                        await _jsonWriter.WriteValueAsync(eventData.NodeId).ConfigureAwait(false);
+                    }
+
+                    // process MonitoredItem object properties
+                    if (!string.IsNullOrEmpty(eventData.ApplicationUri) || !string.IsNullOrEmpty(eventData.DisplayName))
+                    {
+                        if (!(bool)telemetryConfiguration.MonitoredItem.Flat)
+                        {
+                            await _jsonWriter.WritePropertyNameAsync("MonitoredItem").ConfigureAwait(false);
+                            await _jsonWriter.WriteStartObjectAsync().ConfigureAwait(false);
+                        }
+
+                        // process ApplicationUri
+                        if (!string.IsNullOrEmpty(eventData.ApplicationUri))
+                        {
+                            await _jsonWriter.WritePropertyNameAsync(telemetryConfiguration.MonitoredItem.ApplicationUri.Name).ConfigureAwait(false);
+                            await _jsonWriter.WriteValueAsync(eventData.ApplicationUri).ConfigureAwait(false);
+                        }
+
+                        // process DisplayName
+                        if (!string.IsNullOrEmpty(eventData.DisplayName))
+                        {
+                            await _jsonWriter.WritePropertyNameAsync(telemetryConfiguration.MonitoredItem.DisplayName.Name).ConfigureAwait(false);
+                            await _jsonWriter.WriteValueAsync(eventData.DisplayName).ConfigureAwait(false);
+                        }
+
+                        if (!(bool)telemetryConfiguration.MonitoredItem.Flat)
+                        {
+                            await _jsonWriter.WriteEndObjectAsync().ConfigureAwait(false);
+                        }
+                    }
+
+                    // process EventValues object properties
+                    if (eventData.EventValues != null && eventData.EventValues.Count > 0)
+                    {
+                        foreach (var eventValue in eventData.EventValues)
+                        {
+                            await _jsonWriter.WritePropertyNameAsync(eventValue.Name).ConfigureAwait(false);
+                            if (eventValue.PreserveValueQuotes)
+                            {
+                                await _jsonWriter.WriteValueAsync(eventValue.Value).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                await _jsonWriter.WriteRawValueAsync(eventValue.Value).ConfigureAwait(false);
+                            }
+                        }
+                    }
+
+                    // process PublishTime
+                    if (!string.IsNullOrEmpty(eventData.PublishTime))
+                    {
+                        await _jsonWriter.WritePropertyNameAsync(telemetryConfiguration.Value.PublishTime.Name).ConfigureAwait(false);
+                        await _jsonWriter.WriteValueAsync(eventData.PublishTime).ConfigureAwait(false);
+                    }
+                    await _jsonWriter.WriteEndObjectAsync().ConfigureAwait(false);
+                    await _jsonWriter.FlushAsync().ConfigureAwait(false);
+                }
+                return _jsonStringBuilder.ToString();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Generation of JSON message failed.");
+            }
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Creates an IoTCentral JSON message for a data change notification, based on the telemetry configuration for the endpoint.
+        /// </summary>
+        private async Task<string> CreateIoTCentralJsonForDataChangeAsync(DataChangeMessageData messageData)
         {
             try
             {
@@ -1559,7 +1659,6 @@ namespace OpcPublisher
                 try
                 {
                     string jsonMessage = string.Empty;
-                    MessageData messageData = new MessageData();
                     bool needToBufferMessage = false;
                     int jsonMessageSize = 0;
 
@@ -1587,7 +1686,9 @@ namespace OpcPublisher
                             // if we are in shutdown do not wait, else wait infinite if send interval is not set
                             millisecondsTillNextSend = ct.IsCancellationRequested ? 0 : Timeout.Infinite;
                         }
-                        bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, (int)millisecondsTillNextSend, ct);
+                        bool gotItem = _monitoredItemsDataQueue.TryTake(out MessageData messageData, (int)millisecondsTillNextSend, ct);
+                        DataChangeMessageData dataChangeMessageData = messageData?.DataChangeMessageData;
+                        EventMessageData eventMessageData = messageData?.EventMessageData;
 
                         // the two commandline parameter --ms (message size) and --si (send interval) control when data is sent to IoTHub/EdgeHub
                         // pls see detailed comments on performance and memory consumption at https://github.com/Azure/iot-edge-opc-publisher
@@ -1595,15 +1696,22 @@ namespace OpcPublisher
                         // check if we got an item or if we hit the timeout or got canceled
                         if (gotItem)
                         {
-                            if (IotCentralMode)
+                            if (IotCentralMode && dataChangeMessageData != null)
                             {
                                 // for IoTCentral we send simple key/value pairs. key is the DisplayName, value the value.
-                                jsonMessage = await CreateIotCentralJsonMessageAsync(messageData).ConfigureAwait(false);
+                                jsonMessage = await CreateIoTCentralJsonForDataChangeAsync(dataChangeMessageData).ConfigureAwait(false);
                             }
                             else
                             {
-                                // create a JSON message from the messageData object
-                                jsonMessage = await CreateJsonMessageAsync(messageData).ConfigureAwait(false);
+                                // create a JSON message from notification data
+                                if (dataChangeMessageData != null)
+                                {
+                                    jsonMessage = await CreateJsonForDataChangeAsync(dataChangeMessageData).ConfigureAwait(false);
+                                }
+                                if (eventMessageData != null)
+                                {
+                                    jsonMessage = await CreateJsonForEventAsync(eventMessageData).ConfigureAwait(false);
+                                }
                             }
 
                             NumberOfEvents++;
@@ -1796,7 +1904,7 @@ namespace OpcPublisher
 
         private static long _enqueueCount;
         private static long _enqueueFailureCount;
-        private static BlockingCollection<MessageData> _monitoredItemsDataQueue;
+        private static BlockingCollection<MessageData> _monitoredItemsDataQueue = null;
         private static Task _monitoredItemsProcessorTask;
         private static IHubClient _hubClient;
         private CancellationTokenSource _hubCommunicationCts;

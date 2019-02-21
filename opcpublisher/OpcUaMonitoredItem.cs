@@ -114,6 +114,20 @@ namespace OpcPublisher
             }
         }
 
+
+        public MonitoringFilter Filter
+        {
+            get
+            {
+                return _monitoredItem.Filter;
+
+            }
+            set
+            {
+                _monitoredItem.Filter = value;
+            }
+        }
+
         private MonitoredItem _monitoredItem = null;
     }
 }

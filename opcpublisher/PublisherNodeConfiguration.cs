@@ -236,6 +236,7 @@ namespace OpcPublisher
             PublisherNodeConfigurationFileSemaphore = new SemaphoreSlim(1);
             OpcSessions.Clear();
             _nodePublishingConfiguration = new List<NodePublishingConfigurationModel>();
+            _eventConfiguration = new List<EventConfigurationModel>();
             _configurationFileEntries = new List<PublisherConfigurationFileEntryLegacyModel>();
 
             // read the configuration from the configuration file
@@ -354,7 +355,7 @@ namespace OpcPublisher
                         {
                             if (publisherConfigFileEntryLegacy.NodeId == null)
                             {
-                                // new node configuration syntax.
+                                // process node configuration
                                 foreach (var opcNode in publisherConfigFileEntryLegacy.OpcNodes)
                                 {
                                     if (opcNode.ExpandedNodeId != null)
@@ -387,6 +388,13 @@ namespace OpcPublisher
                                                 opcNode.HeartbeatInterval, opcNode.SkipFirst));
                                         }
                                     }
+                                }
+
+                                // process event configuration
+                                foreach (var opcEvent in publisherConfigFileEntryLegacy.OpcEvents)
+                                {
+                                    _eventConfiguration.Add(new EventConfigurationModel(publisherConfigFileEntryLegacy.EndpointUrl.OriginalString, publisherConfigFileEntryLegacy.UseSecurity,
+                                        opcEvent.Id, opcEvent.DisplayName, opcEvent.SelectClauses, opcEvent.WhereClause));
                                 }
                             }
                             else
@@ -435,10 +443,11 @@ namespace OpcPublisher
                 await PublisherNodeConfigurationSemaphore.WaitAsync().ConfigureAwait(false);
                 await OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
 
-                var uniqueEndpointUrls = _nodePublishingConfiguration.Select(n => n.EndpointUrl).Distinct();
-                foreach (var endpointUrl in uniqueEndpointUrls)
+                // create data for data change configuration
+                var uniqueNodesEndpointUrls = _nodePublishingConfiguration.Select(n => n.EndpointUrl).Distinct();
+                foreach (var endpointUrl in uniqueNodesEndpointUrls)
                 {
-                    // create new session info.
+                    // create new session info
                     IOpcSession opcSession = new OpcSession(endpointUrl, _nodePublishingConfiguration.Where(n => n.EndpointUrl == endpointUrl).First().UseSecurity, OpcSessionCreationTimeout);
 
                     // create a subscription for each distinct publishing inverval
@@ -472,7 +481,7 @@ namespace OpcPublisher
                             }
                             else
                             {
-                                Logger.Error($"Node {nodeInfo.OriginalId} has an invalid format. Skipping...");
+                                Logger.Error($"Node {nodeInfo.Id} has an invalid format. Skipping...");
                             }
                         }
 
@@ -480,7 +489,47 @@ namespace OpcPublisher
                         opcSession.OpcSubscriptions.Add(opcSubscription);
                     }
 
-                    // add session.
+                    // add session
+                    OpcSessions.Add(opcSession);
+                }
+
+                // create data for data change configuration
+                var uniqueEventsEndpointUrls = _eventConfiguration.Select(n => n.EndpointUrl).Distinct();
+                foreach (var endpointUrl in uniqueEventsEndpointUrls)
+                {
+                    // create new session info, if needed
+                    IOpcSession opcSession = OpcSessions.Find(s => s.EndpointUrl == endpointUrl);
+                    if (opcSession == null)
+                    {
+                        opcSession = new OpcSession(endpointUrl, _eventConfiguration.Where(n => n.EndpointUrl == endpointUrl).First().UseSecurity, OpcSessionCreationTimeout);
+                    }
+
+                    // create a subscription for each event source
+                    var distinctEventSources = _eventConfiguration.Where(n => n.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)).Select(c => c.Id).Distinct();
+                    foreach (var distinctEventSource in distinctEventSources)
+                    {
+                        // create a subscription for the event source and add it to ´the session
+                        IOpcSubscription opcSubscription = new OpcSubscription(distinctEventSource);
+
+                        // add all event subscriptions for this event source in the subscription.
+                        var eventsWithTheSameSource = _eventConfiguration.Where(n => n.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)).Where(n => n.Id == distinctEventSource);
+                        foreach (var opcEvent in eventsWithTheSameSource)
+                        {
+                            if (opcEvent.SelectClauses == null || opcEvent.SelectClauses.Count == 0)
+                            {
+                                string errorMessage = $"An event configuration needs to have at least one SelectClause. The configuration for EndpointUrl '{opcEvent.EndpointUrl}' and Id '{opcEvent.Id}' has none.";
+                                Logger.Error(errorMessage);
+                                throw new Exception(errorMessage);
+                            }
+                            OpcMonitoredItem opcMonitoredItem = new OpcMonitoredItem(opcEvent, opcSession.EndpointUrl);
+                            opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
+                            Interlocked.Increment(ref NodeConfigVersion);
+                        }
+
+                        // add event subscription to session.
+                        opcSession.OpcEventSubscriptions.Add(opcSubscription);
+                    }
+                    // add session
                     OpcSessions.Add(opcSession);
                 }
             }
@@ -526,10 +575,14 @@ namespace OpcPublisher
 
                                 publisherConfigurationFileEntry.EndpointUrl = new Uri(session.EndpointUrl);
                                 publisherConfigurationFileEntry.UseSecurity = session.UseSecurity;
-                                publisherConfigurationFileEntry.OpcNodes = new List<OpcNodeOnEndpointModel>();
 
                                 foreach (var subscription in session.OpcSubscriptions)
                                 {
+                                    if (publisherConfigurationFileEntry.OpcNodes == null)
+                                    {
+                                        publisherConfigurationFileEntry.OpcNodes = new List<OpcNodeOnEndpointModel>();
+
+                                    }
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
                                     {
                                         // ignore items tagged to stop
@@ -544,6 +597,22 @@ namespace OpcPublisher
                                                 SkipFirst = monitoredItem.SkipFirstFromConfiguration ? (bool?)monitoredItem.SkipFirst : null
                                             };
                                             publisherConfigurationFileEntry.OpcNodes.Add(opcNodeOnEndpoint);
+                                        }
+                                    }
+                                }
+                                foreach (var subscription in session.OpcEventSubscriptions)
+                                {
+                                    if (publisherConfigurationFileEntry.OpcEvents == null)
+                                    {
+                                        publisherConfigurationFileEntry.OpcEvents = new List<OpcEventOnEndpointModel>();
+                                    }
+                                    foreach (var monitoredItem in subscription.OpcMonitoredItems)
+                                    {
+                                        // ignore items tagged to stop
+                                        if (monitoredItem.State != OpcMonitoredItemState.RemovalRequested || getAll == true)
+                                        {
+                                            OpcEventOnEndpointModel opcEventOnEndpointModel = new OpcEventOnEndpointModel(monitoredItem.EventConfiguration);
+                                            publisherConfigurationFileEntry.OpcEvents.Add(opcEventOnEndpointModel);
                                         }
                                     }
                                 }
@@ -692,6 +761,7 @@ namespace OpcPublisher
 
         private List<NodePublishingConfigurationModel> _nodePublishingConfiguration;
         private List<PublisherConfigurationFileEntryLegacyModel> _configurationFileEntries;
+        private List<EventConfigurationModel> _eventConfiguration;
 
         private static readonly object _singletonLock = new object();
         private static IPublisherNodeConfiguration _instance = null;

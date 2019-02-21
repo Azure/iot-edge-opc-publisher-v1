@@ -35,6 +35,11 @@ namespace OpcPublisher
         List<IOpcSubscription> OpcSubscriptions { get; }
 
         /// <summary>
+        /// The subscriptions on this session.
+        /// </summary>
+        List<IOpcSubscription> OpcEventSubscriptions { get; }
+
+        /// <summary>
         /// Counts session connection attempts which were unsuccessful.
         /// </summary>
         uint UnsuccessfulConnectionCount { get; set; }
@@ -110,9 +115,9 @@ namespace OpcPublisher
         Task MonitorNodesAsync(CancellationToken ct);
 
         /// <summary>
-        /// Checks if there are monitored nodes tagged to stop monitoring.
+        /// Checks if there are monitored items (nodes/events) tagged to stop monitoring.
         /// </summary>
-        Task StopMonitoringNodesAsync(CancellationToken ct);
+        Task StopMonitoringItemsAsync(CancellationToken ct);
 
         /// <summary>
         /// Checks if there are subscriptions without any monitored items and remove them.

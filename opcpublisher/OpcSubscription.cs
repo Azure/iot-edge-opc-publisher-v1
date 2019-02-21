@@ -2,6 +2,7 @@
 
 namespace OpcPublisher
 {
+    using Opc.Ua;
     using System;
     using System.Threading;
     using static OpcApplicationConfiguration;
@@ -38,15 +39,31 @@ namespace OpcPublisher
         public bool RequestedPublishingIntervalFromConfiguration { get; set; }
 
         /// <summary>
+        /// Event source node for an event subscription.
+        /// </summary>
+        public NodeId Id { get; set; }
+
+        /// <summary>
         /// Ctor of the object.
         /// </summary>
-        /// <param name="publishingInterval"></param>
         public OpcSubscription(int? publishingInterval)
         {
             OpcMonitoredItems = new List<OpcMonitoredItem>();
             RequestedPublishingInterval = publishingInterval ?? OpcPublishingInterval;
             RequestedPublishingIntervalFromConfiguration = publishingInterval != null ? true : false;
             PublishingInterval = RequestedPublishingInterval;
+        }
+
+        /// <summary>
+        /// Ctor of the object.
+        /// </summary>
+        public OpcSubscription(NodeId id)
+        {
+            OpcMonitoredItems = new List<OpcMonitoredItem>();
+            RequestedPublishingInterval = OpcPublishingInterval;
+            RequestedPublishingIntervalFromConfiguration = false;
+            PublishingInterval = RequestedPublishingInterval;
+            Id = id;
         }
 
         /// <summary>

@@ -92,14 +92,6 @@ namespace OpcPublisher
         /// </summary>
         public static void Main(string[] args)
         {
-            // enable this to catch when running in IoTEdge
-            //bool waitHere = true;
-            //int i = 0;
-            //while (waitHere)
-            //{
-            //    WriteLine($"forever loop (iteration {i++})");
-            //    Thread.Sleep(5000);
-            //}
             MainAsync(args).Wait();
         }
 
@@ -743,7 +735,13 @@ namespace OpcPublisher
                     Logger.Information("Publisher is running. Press CTRL-C to quit.");
 
                     // wait for Ctrl-C
-                    await Task.Delay(Timeout.Infinite, ShutdownTokenSource.Token).ConfigureAwait(false);
+                    try
+                    {
+                        await Task.Delay(Timeout.Infinite, ShutdownTokenSource.Token).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                    }
                 }
 
                 Logger.Information("");

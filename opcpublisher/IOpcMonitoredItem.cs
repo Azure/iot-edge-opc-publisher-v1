@@ -6,62 +6,6 @@ namespace OpcPublisher
     using static OpcMonitoredItem;
 
     /// <summary>
-    /// Interface used to pass data from the MonitoredItem notification to the hub message processing.
-    /// </summary>
-    public interface IMessageData
-    {
-        /// <summary>
-        /// The endpoint URL the monitored item belongs to.
-        /// </summary>
-        string EndpointUrl { get; set; }
-
-        /// <summary>
-        /// The OPC UA NodeId of the monitored item.
-        /// </summary>
-        string NodeId { get; set; }
-
-        /// <summary>
-        /// The Application URI of the OPC UA server the node belongs to.
-        /// </summary>
-        string ApplicationUri { get; set; }
-
-        /// <summary>
-        /// The display name of the node.
-        /// </summary>
-        string DisplayName { get; set; }
-
-        /// <summary>
-        /// The value of the node.
-        /// </summary>
-        string Value { get; set; }
-
-        /// <summary>
-        /// The OPC UA source timestamp the value was seen.
-        /// </summary>
-        string SourceTimestamp { get; set; }
-
-        /// <summary>
-        /// The OPC UA status code of the value.
-        /// </summary>
-        uint? StatusCode { get; set; }
-
-        /// <summary>
-        /// The OPC UA status of the value.
-        /// </summary>
-        string Status { get; set; }
-
-        /// <summary>
-        /// Flag if the encoding of the value should preserve quotes.
-        /// </summary>
-        bool PreserveValueQuotes { get; set; }
-
-        /// <summary>
-        /// Apply the patterns specified in the telemetry configuration on the message data fields.
-        /// </summary>
-        void ApplyPatterns(IEndpointTelemetryConfigurationModel telemetryConfiguration);
-    }
-
-    /// <summary>
     /// Interface to manage the OPC monitored items, which are the nodes we need to publish.
     /// </summary>
     public interface IOpcMonitoredItem
@@ -119,7 +63,7 @@ namespace OpcPublisher
         /// <summary>
         /// The event handler of the node in case the OPC UA stack detected a change.
         /// </summary>
-        MonitoredItemNotificationEventHandler Notification { get; set; }
+        MonitoredItemNotificationEventHandler NotificationEventHandler { get; set; }
 
         /// <summary>
         /// The endpoint URL of the OPC UA server this nodes is residing on.
@@ -155,10 +99,5 @@ namespace OpcPublisher
         /// Checks if the monitored item does monitor the node described by the given objects.
         /// </summary>
         bool IsMonitoringThisNode(NodeId nodeId, ExpandedNodeId expandedNodeId, NamespaceTable namespaceTable);
-
-        /// <summary>
-        /// The notification that the data for a monitored item has changed on an OPC UA server.
-        /// </summary>
-        void MonitoredItemNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e);
     }
 }

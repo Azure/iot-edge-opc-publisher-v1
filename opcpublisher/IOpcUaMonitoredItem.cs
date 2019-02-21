@@ -26,5 +26,7 @@ namespace OpcPublisher
         int SamplingInterval { get; set; }
 
         event MonitoredItemNotificationEventHandler Notification;
+
+        MonitoringFilter Filter { get; set; }
     }
 }

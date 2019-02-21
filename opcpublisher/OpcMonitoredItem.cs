@@ -13,9 +13,9 @@ namespace OpcPublisher
     using static Program;
 
     /// <summary>
-    /// Class used to pass data from the MonitoredItem notification to the hub message processing.
+    /// Base class for DataChange and Event messages.
     /// </summary>
-    public class MessageData : IMessageData
+    public class MessageDataBase
     {
         /// <summary>
         /// The endpoint URL the monitored item belongs to.
@@ -38,44 +38,14 @@ namespace OpcPublisher
         public string DisplayName { get; set; }
 
         /// <summary>
-        /// The value of the node.
-        /// </summary>
-        public string Value { get; set; }
-
-        /// <summary>
-        /// The OPC UA source timestamp the value was seen.
-        /// </summary>
-        public string SourceTimestamp { get; set; }
-
-        /// <summary>
-        /// The OPC UA status code of the value.
-        /// </summary>
-        public uint? StatusCode { get; set; }
-
-        /// <summary>
-        /// The OPC UA status of the value.
-        /// </summary>
-        public string Status { get; set; }
-
-        /// <summary>
-        /// Flag if the encoding of the value should preserve quotes.
-        /// </summary>
-        public bool PreserveValueQuotes { get; set; }
-
-        /// <summary>
         /// Ctor of the object.
         /// </summary>
-        public MessageData()
+        public MessageDataBase()
         {
             EndpointUrl = null;
             NodeId = null;
             ApplicationUri = null;
             DisplayName = null;
-            Value = null;
-            StatusCode = null;
-            SourceTimestamp = null;
-            Status = null;
-            PreserveValueQuotes = false;
         }
 
         /// <summary>
@@ -99,6 +69,97 @@ namespace OpcPublisher
             {
                 DisplayName = telemetryConfiguration.MonitoredItem.DisplayName.PatternMatch(DisplayName);
             }
+        }
+    }
+
+
+    /// <summary>
+    /// Class used to pass data from the Event MonitoredItem event notification to the hub message processing.
+    /// </summary>
+    public class EventMessageData : MessageDataBase
+    {
+        /// <summary>
+        /// The value of the node.
+        /// </summary>
+        public List<EventValue> EventValues { get; set; }
+
+        /// <summary>
+        /// The publish time of the event.
+        /// </summary>
+        public string PublishTime { get; set; }
+
+        /// <summary>
+        /// Ctor of the object.
+        /// </summary>
+        public EventMessageData()
+        {
+            EventValues = new List<EventValue>();
+            PublishTime = null;
+        }
+
+        /// <summary>
+        /// Apply the patterns specified in the telemetry configuration on the message data fields.
+        /// </summary>
+        public void ApplyPatterns(IEndpointTelemetryConfigurationModel telemetryConfiguration)
+        {
+            base.ApplyPatterns(telemetryConfiguration);
+
+            if (telemetryConfiguration.Value.PublishTime.Publish == true)
+            {
+                PublishTime = telemetryConfiguration.Value.PublishTime.PatternMatch(PublishTime);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Class used to pass data from the DataChange MonitoredItem notification to the hub message processing.
+    /// </summary>
+    public class DataChangeMessageData : MessageDataBase
+    {
+        /// <summary>
+        /// The value of the node.
+        /// </summary>
+        public string Value { get; set; }
+
+        /// <summary>
+        /// Flag if the encoding of the value should preserve quotes.
+        /// </summary>
+        public bool PreserveValueQuotes { get; set; }
+
+        /// <summary>
+        /// The OPC UA source timestamp the value was seen.
+        /// </summary>
+        public string SourceTimestamp { get; set; }
+
+        /// <summary>
+        /// The OPC UA status code of the value.
+        /// </summary>
+        public uint? StatusCode { get; set; }
+
+        /// <summary>
+        /// The OPC UA status of the value.
+        /// </summary>
+        public string Status { get; set; }
+
+        /// <summary>
+        /// Ctor of the object.
+        /// </summary>
+        public DataChangeMessageData()
+        {
+            Value = null;
+            PreserveValueQuotes = false;
+            SourceTimestamp = null;
+            StatusCode = null;
+            Status = null;
+        }
+
+        /// <summary>
+        /// Apply the patterns specified in the telemetry configuration on the message data fields.
+        /// </summary>
+        public void ApplyPatterns(IEndpointTelemetryConfigurationModel telemetryConfiguration)
+        {
+            base.ApplyPatterns(telemetryConfiguration);
+
             if (telemetryConfiguration.Value.Value.Publish == true)
             {
                 Value = telemetryConfiguration.Value.Value.PatternMatch(Value);
@@ -119,6 +180,62 @@ namespace OpcPublisher
                 Status = telemetryConfiguration.Value.Status.PatternMatch(Status);
             }
         }
+    }
+
+    /// <summary>
+    /// Class used to pass data from the MonitoredItem notifications to the hub message processing.
+    /// </summary>
+    public class MessageData
+    {
+        /// <summary>
+        /// Data from a data notification.
+        /// </summary>
+        public DataChangeMessageData DataChangeMessageData;
+
+        /// <summary>
+        /// Data from an event notification.
+        /// </summary>
+        public EventMessageData EventMessageData;
+
+        /// <summary>
+        /// Ctor of the object.
+        /// </summary>
+        public MessageData()
+        {
+            DataChangeMessageData = null;
+            EventMessageData = null;
+        }
+    }
+
+    /// <summary>
+    /// Class used to pass key/value pairs of event field data from the MonitoredItem event notification to the hub message processing.
+    /// </summary>
+    public class EventValue
+    {
+        /// <summary>
+        /// Ctor of the class
+        /// </summary>
+        public EventValue()
+        {
+            Name = string.Empty;
+            Value = string.Empty;
+            PreserveValueQuotes = false;
+        }
+
+        /// <summary>
+        /// The name of the field.
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// The value of the field
+        /// </summary>
+        public string Value { get; set; }
+
+        /// <summary>
+        /// Flag to control quote handling in the value.
+        /// </summary>
+        public bool PreserveValueQuotes { get; set; }
     }
 
     /// <summary>
@@ -199,7 +316,7 @@ namespace OpcPublisher
         /// <summary>
         /// The event handler of the node in case the OPC UA stack detected a change.
         /// </summary>
-        public MonitoredItemNotificationEventHandler Notification { get; set; }
+        public MonitoredItemNotificationEventHandler NotificationEventHandler { get; set; }
 
         /// <summary>
         /// The endpoint URL of the OPC UA server this nodes is residing on.
@@ -227,6 +344,32 @@ namespace OpcPublisher
         public string OriginalId { get; set; }
 
         /// <summary>
+        /// The OPC UA identifier of the node as it was configured.
+        /// </summary>
+        public string Id { get; set; }
+
+        // todo use the same model for nodes as we use now for events to store the original setting
+        /// <summary>
+        /// The OPC UA identifier of the node as ExpandedNodeId ("nsu=").
+        /// </summary>
+        public ExpandedNodeId IdAsExpandedNodeId { get; set; }
+
+        /// <summary>
+        /// The OPC UA identifier of the node as NodeId ("ns=").
+        /// </summary>
+        public NodeId IdAsNodeId { get; set; }
+
+        /// <summary>
+        /// The OPC UA event filter as configured, if the monitored item is for an event.
+        /// </summary>
+        public EventConfigurationModel EventConfiguration { get; set; }
+
+        ///// <summary>
+        ///// The OPC UA data filter if the monitored items is for node values.
+        ///// </summary>
+        //public EventFilter OpcUaDataFilter { get; set; }
+
+        /// <summary>
         /// Identifies the configuration type of the node.
         /// </summary>
         public OpcMonitoredItemConfigurationType ConfigType { get; set; }
@@ -243,7 +386,7 @@ namespace OpcPublisher
 
         public bool HeartbeatIntervalFromConfiguration { get; set; } = false;
 
-        public MessageData HeartbeatMessage { get; set; } = null;
+        public DataChangeMessageData HeartbeatMessage { get; set; } = null;
 
         public Timer HeartbeatSendTimer { get; set; } = null;
 
@@ -285,6 +428,40 @@ namespace OpcPublisher
             ConfigType = OpcMonitoredItemConfigurationType.ExpandedNodeId;
             Init(sessionEndpointUrl, samplingInterval, displayName, heartbeatInterval, skipFirst);
             State = OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested;
+        }
+
+        /// <summary>
+        /// Ctor for event
+        /// </summary>
+        public OpcMonitoredItem(EventConfigurationModel opcEvent, string sessionEndpointUrl)
+        {
+            Id = opcEvent.Id;
+            if (Id.StartsWith("nsu=", StringComparison.InvariantCulture))
+            {
+                ConfigType = OpcMonitoredItemConfigurationType.ExpandedNodeId;
+            }
+            else
+            {
+                ConfigType = OpcMonitoredItemConfigurationType.NodeId;
+            }
+            DisplayName = opcEvent.DisplayName;
+            DisplayNameFromConfiguration = string.IsNullOrEmpty(opcEvent.DisplayName) ? false : true;
+            EventConfiguration = opcEvent;
+            State = OpcMonitoredItemState.Unmonitored;
+            AttributeId = Attributes.EventNotifier;
+            MonitoringMode = MonitoringMode.Reporting;
+            // todo need to check if we use Uint32.Max
+            QueueSize = 0;
+            DiscardOldest = true;
+            NotificationEventHandler = new MonitoredItemNotificationEventHandler(MonitoredItemEventNotificationEventHandler);
+            EndpointUrl = sessionEndpointUrl;
+            RequestedSamplingInterval = OpcSamplingInterval;
+            RequestedSamplingIntervalFromConfiguration = false;
+            SamplingInterval = RequestedSamplingInterval;
+            HeartbeatInterval = 0;
+            HeartbeatIntervalFromConfiguration = false;
+            SkipFirst = false;
+            SkipFirstFromConfiguration = false;
         }
 
         /// <summary>
@@ -346,7 +523,7 @@ namespace OpcPublisher
         /// <summary>
         /// The notification that the data for a monitored item has changed on an OPC UA server.
         /// </summary>
-        public void MonitoredItemNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
+        public void MonitoredItemDataChangeNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
         {
             try
             {
@@ -375,50 +552,24 @@ namespace OpcPublisher
                 // stop the heartbeat timer
                 HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
-                MessageData messageData = new MessageData();
+                DataChangeMessageData dataChangeMessageData = new DataChangeMessageData();
                 if (IotCentralMode)
                 {
                     // for IoTCentral we use the DisplayName as the key in the telemetry and the Value as the value.
                     if (monitoredItem.DisplayName != null)
                     {
                         // use the DisplayName as reported in the MonitoredItem
-                        messageData.DisplayName = monitoredItem.DisplayName;
+                        dataChangeMessageData.DisplayName = monitoredItem.DisplayName;
                     }
                     if (value.Value != null)
                     {
-                        // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
-                        JsonEncoder encoder = new JsonEncoder(monitoredItem.Subscription.Session.MessageContext, false);
-                        value.ServerTimestamp = DateTime.MinValue;
-                        value.SourceTimestamp = DateTime.MinValue;
-                        value.StatusCode = StatusCodes.Good;
-                        encoder.WriteDataValue("Value", value);
-                        string valueString = encoder.CloseAndReturnText();
-                        // we only want the value string, search for everything till the real value starts
-                        // and get it
-                        string marker = "{\"Value\":{\"Value\":";
-                        int markerStart = valueString.IndexOf(marker, StringComparison.InvariantCulture);
-                        messageData.PreserveValueQuotes = true;
-                        if (markerStart >= 0)
-                        {
-                            // we either have a value in quotes or just a value
-                            int valueLength;
-                            int valueStart = marker.Length;
-                            if (valueString.IndexOf("\"", valueStart, StringComparison.InvariantCulture) >= 0)
-                            {
-                                // value is in quotes and two closing curly brackets at the end
-                                valueStart++;
-                                valueLength = valueString.Length - valueStart - 3;
-                            }
-                            else
-                            {
-                                // value is without quotes with two curly brackets at the end
-                                valueLength = valueString.Length - marker.Length - 2;
-                                messageData.PreserveValueQuotes = false;
-                            }
-                            messageData.Value = valueString.Substring(valueStart, valueLength);
-                        }
-                        Logger.Debug($"   IoTCentral key: {messageData.DisplayName}");
-                        Logger.Debug($"   IoTCentral values: {messageData.Value}");
+                        string encodedValue = string.Empty;
+                        EncodeValue(value, monitoredItem.Subscription.Session.MessageContext, out encodedValue, out bool preserveValueQuotes);
+                        dataChangeMessageData.Value = encodedValue;
+                        dataChangeMessageData.PreserveValueQuotes = preserveValueQuotes;
+
+                        Logger.Debug($"   IoTCentral key: {dataChangeMessageData.DisplayName}");
+                        Logger.Debug($"   IoTCentral values: {dataChangeMessageData.Value}");
                     }
                 }
                 else
@@ -427,80 +578,53 @@ namespace OpcPublisher
                     IEndpointTelemetryConfigurationModel telemetryConfiguration = TelemetryConfiguration.GetEndpointTelemetryConfiguration(EndpointUrl);
 
                     // the endpoint URL is required to allow HubCommunication lookup the telemetry configuration
-                    messageData.EndpointUrl = EndpointUrl;
+                    dataChangeMessageData.EndpointUrl = EndpointUrl;
                     if (telemetryConfiguration.NodeId.Publish == true)
                     {
-                        messageData.NodeId = OriginalId;
+                        dataChangeMessageData.NodeId = OriginalId;
                     }
                     if (telemetryConfiguration.MonitoredItem.ApplicationUri.Publish == true)
                     {
-                        messageData.ApplicationUri = (monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(OpcSession.PublisherSite) ? "" : $":{OpcSession.PublisherSite}"));
+                        dataChangeMessageData.ApplicationUri = (monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(OpcSession.PublisherSite) ? "" : $":{OpcSession.PublisherSite}"));
                     }
                     if (telemetryConfiguration.MonitoredItem.DisplayName.Publish == true && monitoredItem.DisplayName != null)
                     {
                         // use the DisplayName as reported in the MonitoredItem
-                        messageData.DisplayName = monitoredItem.DisplayName;
+                        dataChangeMessageData.DisplayName = monitoredItem.DisplayName;
                     }
                     if (telemetryConfiguration.Value.SourceTimestamp.Publish == true && value.SourceTimestamp != null)
                     {
                         // use the SourceTimestamp as reported in the notification event argument in ISO8601 format
-                        messageData.SourceTimestamp = value.SourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
+                        dataChangeMessageData.SourceTimestamp = value.SourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
                     }
                     if (telemetryConfiguration.Value.StatusCode.Publish == true && value.StatusCode != null)
                     {
                         // use the StatusCode as reported in the notification event argument
-                        messageData.StatusCode = value.StatusCode.Code;
+                        dataChangeMessageData.StatusCode = value.StatusCode.Code;
                     }
                     if (telemetryConfiguration.Value.Status.Publish == true && value.StatusCode != null)
                     {
                         // use the StatusCode as reported in the notification event argument to lookup the symbolic name
-                        messageData.Status = StatusCode.LookupSymbolicId(value.StatusCode.Code);
+                        dataChangeMessageData.Status = StatusCode.LookupSymbolicId(value.StatusCode.Code);
                     }
                     if (telemetryConfiguration.Value.Value.Publish == true && value.Value != null)
                     {
-                        // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
-                        JsonEncoder encoder = new JsonEncoder(monitoredItem.Subscription.Session.MessageContext, false);
-                        value.ServerTimestamp = DateTime.MinValue;
-                        value.SourceTimestamp = DateTime.MinValue;
-                        value.StatusCode = StatusCodes.Good;
-                        encoder.WriteDataValue("Value", value);
-                        string valueString = encoder.CloseAndReturnText();
-                        // we only want the value string, search for everything till the real value starts
-                        // and get it
-                        string marker = "{\"Value\":{\"Value\":";
-                        int markerStart = valueString.IndexOf(marker, StringComparison.InvariantCulture);
-                        messageData.PreserveValueQuotes = true;
-                        if (markerStart >= 0)
-                        {
-                            // we either have a value in quotes or just a value
-                            int valueLength;
-                            int valueStart = marker.Length;
-                            if (valueString.IndexOf("\"", valueStart, StringComparison.InvariantCulture) >= 0)
-                            {
-                                // value is in quotes and two closing curly brackets at the end
-                                valueStart++;
-                                valueLength = valueString.Length - valueStart - 3;
-                            }
-                            else
-                            {
-                                // value is without quotes with two curly brackets at the end
-                                valueLength = valueString.Length - marker.Length - 2;
-                                messageData.PreserveValueQuotes = false;
-                            }
-                            messageData.Value = valueString.Substring(valueStart, valueLength);
-                        }
+                        string encodedValue = string.Empty;
+                        EncodeValue(value, monitoredItem.Subscription.Session.MessageContext, out encodedValue, out bool preserveValueQuotes);
+                        dataChangeMessageData.Value = encodedValue;
+                        dataChangeMessageData.PreserveValueQuotes = preserveValueQuotes;
                     }
 
                     // currently the pattern processing is done here, which adds runtime to the notification processing.
-                    // In case of perf issues it can be also done in CreateJsonMessageAsync of IoTHubMessaging.cs.
+                    // In case of perf issues it can be also done in CreateJsonForDataChangeAsync of IoTHubMessaging.cs.
 
                     // apply patterns
-                    messageData.ApplyPatterns(telemetryConfiguration);
+                    dataChangeMessageData.ApplyPatterns(telemetryConfiguration);
 
-                    Logger.Debug($"   ApplicationUri: {messageData.ApplicationUri}");
-                    Logger.Debug($"   EndpointUrl: {messageData.EndpointUrl}");
-                    Logger.Debug($"   DisplayName: {messageData.DisplayName}");
-                    Logger.Debug($"   Value: {messageData.Value}");
+                    Logger.Debug($"   ApplicationUri: {dataChangeMessageData.ApplicationUri}");
+                    Logger.Debug($"   EndpointUrl: {dataChangeMessageData.EndpointUrl}");
+                    Logger.Debug($"   DisplayName: {dataChangeMessageData.DisplayName}");
+                    Logger.Debug($"   Value: {dataChangeMessageData.Value}");
                 }
 
                 // add message to fifo send queue
@@ -522,25 +646,23 @@ namespace OpcPublisher
                         // ensure that the timestamp of the message is larger than the current heartbeat message
                         lock (HeartbeatMessage)
                         {
-                            DateTime sourceTimestamp;
-                            DateTime heartbeatSourceTimestamp;
-                            if (DateTime.TryParse(messageData.SourceTimestamp, out sourceTimestamp) && DateTime.TryParse(HeartbeatMessage.SourceTimestamp, out heartbeatSourceTimestamp))
+                            if (DateTime.TryParse(dataChangeMessageData.SourceTimestamp, out DateTime sourceTimestamp) && DateTime.TryParse(HeartbeatMessage.SourceTimestamp, out DateTime heartbeatSourceTimestamp))
                             {
                                 if (heartbeatSourceTimestamp >= sourceTimestamp)
                                 {
                                     Logger.Warning($"HeartbeatMessage has larger or equal timestamp than message. Adjusting...");
                                     sourceTimestamp.AddMilliseconds(1);
                                 }
-                                messageData.SourceTimestamp = sourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
+                                dataChangeMessageData.SourceTimestamp = sourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
                             }
 
                             // store the message for the heartbeat
-                            HeartbeatMessage = messageData;
+                            HeartbeatMessage = dataChangeMessageData;
                         }
                     }
                     else
                     {
-                        HeartbeatMessage = messageData;
+                        HeartbeatMessage = dataChangeMessageData;
                     }
 
                     // recharge the heartbeat timer
@@ -557,12 +679,135 @@ namespace OpcPublisher
                 else
                 {
                     // enqueue the telemetry event
+                    MessageData messageData = new MessageData();
+                    messageData.DataChangeMessageData = dataChangeMessageData;
                     Hub.Enqueue(messageData);
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error processing monitored item notification");
+            }
+        }
+
+
+        /// <summary>
+        /// The notification that a monitored item event has occured on an OPC UA server.
+        /// </summary>
+        public void MonitoredItemEventNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
+        {
+            try
+            {
+                if (e == null || e.NotificationValue == null || monitoredItem == null || monitoredItem.Subscription == null || monitoredItem.Subscription.Session == null)
+                {
+                    return;
+                }
+
+                if (!(e.NotificationValue is EventFieldList notificationValue))
+                {
+                    return;
+                }
+
+                if (!(notificationValue.Message is NotificationMessage message))
+                {
+                    return;
+                }
+
+                if (!(message.NotificationData is ExtensionObjectCollection notificationData) || notificationData.Count == 0)
+                {
+                    return;
+                }
+
+                EventMessageData eventMessageData = new EventMessageData();
+                eventMessageData.EndpointUrl = EndpointUrl;
+                eventMessageData.PublishTime = message.PublishTime.ToString("o", CultureInfo.InvariantCulture);
+                eventMessageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(OpcSession.PublisherSite) ? "" : $":{OpcSession.PublisherSite}");
+                eventMessageData.DisplayName = monitoredItem.DisplayName;
+                eventMessageData.NodeId = monitoredItem.StartNodeId.ToString();
+                foreach (var eventList in notificationData)
+                {
+                    EventNotificationList eventNotificationList = eventList.Body as EventNotificationList;
+                    foreach (var eventFieldList in eventNotificationList.Events)
+                    {
+                        int i = 0;
+                        foreach (var eventField in eventFieldList.EventFields)
+                        {
+                            // prepare event field values
+                            EventValue eventValue = new EventValue();
+                            eventValue.Name = monitoredItem.GetFieldName(i++);
+
+                            // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
+                            DataValue value = new DataValue(eventField);
+                            string encodedValue = string.Empty;
+                            EncodeValue(value, monitoredItem.Subscription.Session.MessageContext, out encodedValue, out bool preserveValueQuotes);
+                            eventValue.Value = encodedValue;
+                            eventValue.PreserveValueQuotes = preserveValueQuotes;
+                            eventMessageData.EventValues.Add(eventValue);
+                        }
+                    }
+                }
+
+                // add message to fifo send queue
+                if (monitoredItem.Subscription == null)
+                {
+                    Logger.Debug($"Subscription already removed. No more details available.");
+                }
+                else
+                {
+                    Logger.Debug($"Enqueue a new message from subscription {(monitoredItem.Subscription == null ? "removed" : monitoredItem.Subscription.Id.ToString(CultureInfo.InvariantCulture))}");
+                    Logger.Debug($" with publishing interval: {monitoredItem?.Subscription?.PublishingInterval} and sampling interval: {monitoredItem?.SamplingInterval}):");
+                }
+
+                // enqueue the telemetry event
+                MessageData messageData = new MessageData();
+                messageData.EventMessageData = eventMessageData;
+                Hub.Enqueue(messageData);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error processing monitored item notification");
+            }
+        }
+
+        /// <summary>
+        /// Encode a value and returns is as string. If the value is a string with quotes, we need to preserve the quotes.
+        /// </summary>
+        private void EncodeValue(DataValue value, ServiceMessageContext messageContext, out string encodedValue, out bool preserveValueQuotes)
+        {
+            // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
+            JsonEncoder encoder = new JsonEncoder(messageContext, false);
+            value.ServerTimestamp = DateTime.MinValue;
+            value.SourceTimestamp = DateTime.MinValue;
+            value.StatusCode = StatusCodes.Good;
+            encoder.WriteDataValue("Value", value);
+            string valueString = encoder.CloseAndReturnText();
+            // we only want the value string, search for everything till the real value starts
+            // and get it
+            string marker = "{\"Value\":{\"Value\":";
+            int markerStart = valueString.IndexOf(marker, StringComparison.InvariantCulture);
+            preserveValueQuotes = true;
+            if (markerStart >= 0)
+            {
+                // we either have a value in quotes or just a value
+                int valueLength;
+                int valueStart = marker.Length;
+                if (valueString.IndexOf("\"", valueStart, StringComparison.InvariantCulture) >= 0)
+                {
+                    // value is in quotes and two closing curly brackets at the end
+                    valueStart++;
+                    valueLength = valueString.Length - valueStart - 3;
+                }
+                else
+                {
+                    // value is without quotes with two curly brackets at the end
+                    valueLength = valueString.Length - marker.Length - 2;
+                    preserveValueQuotes = false;
+                }
+                encodedValue = valueString.Substring(valueStart, valueLength);
+            }
+            else
+            {
+                encodedValue = string.Empty;
             }
         }
 
@@ -576,7 +821,7 @@ namespace OpcPublisher
             MonitoringMode = MonitoringMode.Reporting;
             QueueSize = 0;
             DiscardOldest = true;
-            Notification = new MonitoredItemNotificationEventHandler(MonitoredItemNotificationEventHandler);
+            NotificationEventHandler = new MonitoredItemNotificationEventHandler(MonitoredItemDataChangeNotificationEventHandler);
             EndpointUrl = sessionEndpointUrl;
             DisplayName = displayName;
             DisplayNameFromConfiguration = string.IsNullOrEmpty(displayName) ? false : true;
@@ -585,7 +830,7 @@ namespace OpcPublisher
             SamplingInterval = RequestedSamplingInterval;
             HeartbeatInterval = (int)(heartbeatInterval == null ? HeartbeatIntervalDefault : heartbeatInterval);
             HeartbeatIntervalFromConfiguration = heartbeatInterval != null ? true : false;
-            SkipFirst = skipFirst == null ? SkipFirstDefault : (bool)skipFirst;
+            SkipFirst = skipFirst ?? SkipFirstDefault;
             SkipFirstFromConfiguration = skipFirst != null ? true : false;
         }
 
@@ -600,15 +845,16 @@ namespace OpcPublisher
                 if (HeartbeatMessage != null)
                 {
                     // advance the SourceTimestamp
-                    DateTime sourceTimestamp;
-                    if (DateTime.TryParse(HeartbeatMessage.SourceTimestamp, out sourceTimestamp))
+                    if (DateTime.TryParse(HeartbeatMessage.SourceTimestamp, out DateTime sourceTimestamp))
                     {
                         sourceTimestamp = sourceTimestamp.AddSeconds(HeartbeatInterval);
                         HeartbeatMessage.SourceTimestamp = sourceTimestamp.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture);
                     }
 
                     // enqueue the message
-                    Hub.Enqueue(HeartbeatMessage);
+                    MessageData messageData = new MessageData();
+                    messageData.DataChangeMessageData = HeartbeatMessage;
+                    Hub.Enqueue(messageData);
                     Logger.Debug($"Message enqueued for heartbeat with sourceTimestamp '{HeartbeatMessage.SourceTimestamp}'.");
                 }
                 else
