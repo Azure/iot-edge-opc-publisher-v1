@@ -26,15 +26,17 @@
         "EndpointUrl": "opc.tcp://<your_opcua_server>:<your_opcua_server_port>/<your_opcua_server_path>",
         "OpcEvents": [
             {
-                // identifies a node, which has an attribute EventNotifier with SubscribeToEvents bit set.
+                // identifies a node, which has an attribute EventNotifier with SubscribeToEvents bit set
                 "Id": "i=2253",
+                // gives the event a readable name
                 "DisplayName": "SimpleEventServerEvents",
                 // SelectClauses are defined in part 4 (in EventFilter) of the OPC UA specification and allow selection of the fields which should be part of the published telemetry
                 // each array element describes a SimpleAttributeOperand to specify the field
                 "SelectClauses": [
                     {
-
+                        // identifies a type definition
                         "TypeId": "i=2041",
+                        // the BrowsePaths list consists of QualifiedName's and specifies the relative path to the field to be part of the event notification
                         "BrowsePaths": [
                             "EventId"
                         ]
@@ -52,7 +54,7 @@
                         ]
                     },
                     {
-                        "TypeId": "nsu=http://opcfoundation.org/Quickstarts/SimpleEvents;i=235",
+                        "TypeId": "ns=2;i=235",
                         "BrowsePaths": [
                             "/2:CurrentStep"
                         ]
@@ -62,7 +64,9 @@
                 // each array element describes a ContentFilterElement, which all together allow to compose an expression
                 "WhereClause": [
                     {
+                        // specifies the operator of the clause
                         "Operator": "OfType",
+                        // the OfType operator has 1 operand, which is an id of a type
                         "Operands": [
                             {
                                 "Literal": "ns=2;i=235"

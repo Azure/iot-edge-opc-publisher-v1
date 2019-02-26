@@ -76,23 +76,40 @@ namespace OpcPublisher
         int GetNumberOfOpcSubscriptions();
 
         /// <summary>
-        /// Number of configured monitored items on this session.
+        /// Number of configured data change monitored items on this session.
         /// </summary>
         /// <returns></returns>
-        int GetNumberOfOpcMonitoredItemsConfigured();
-
-
-        /// <summary>
-        /// Number of actually monitored items on this sessions.
-        /// </summary>
-        /// <returns></returns>
-        int GetNumberOfOpcMonitoredItemsMonitored();
+        int GetNumberOfOpcDataChangeMonitoredItemsConfigured();
 
         /// <summary>
-        /// Number of monitored items to be removed from this session.
+        /// Number of actually data change monitored items on this session.
         /// </summary>
         /// <returns></returns>
-        int GetNumberOfOpcMonitoredItemsToRemove();
+        int GetNumberOfOpcDataChangeMonitoredItemsMonitored();
+
+        /// <summary>
+        /// Number of data change monitored items to be removed from this session.
+        /// </summary>
+        /// <returns></returns>
+        int GetNumberOfOpcDataChangeMonitoredItemsToRemove();
+
+        /// <summary>
+        /// Number of configured event monitored items on this session.
+        /// </summary>
+        /// <returns></returns>
+        int GetNumberOfOpcEventMonitoredItemsConfigured();
+
+        /// <summary>
+        /// Number of actually event monitored items on this session.
+        /// </summary>
+        /// <returns></returns>
+        int GetNumberOfOpcEventMonitoredItemsMonitored();
+
+        /// <summary>
+        /// Number of event monitored items to be removed from this session.
+        /// </summary>
+        /// <returns></returns>
+        int GetNumberOfOpcEventMonitoredItemsToRemove();
 
         /// <summary>
         /// This task is started when a session is configured and is running till session shutdown and ensures:

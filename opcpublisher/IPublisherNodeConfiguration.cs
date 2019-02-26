@@ -28,19 +28,34 @@ namespace OpcPublisher
         int NumberOfOpcSubscriptionsConnected { get; }
 
         /// <summary>
-        /// Number of OPC UA nodes configured to monitor.
+        /// Number of data change monitored items configured.
         /// </summary>
-        int NumberOfOpcMonitoredItemsConfigured { get; }
+        int NumberOfOpcDataChangeMonitoredItemsConfigured { get; }
 
         /// <summary>
-        /// Number of monitored OPC UA nodes.
+        /// Number of data change monitored items monitored.
         /// </summary>
-        int NumberOfOpcMonitoredItemsMonitored { get; }
+        int NumberOfOpcDataChangeMonitoredItemsMonitored { get; }
 
         /// <summary>
-        /// Number of OPC UA nodes requested to stop monitoring.
+        /// Number of data change monitored items to be removed.
         /// </summary>
-        int NumberOfOpcMonitoredItemsToRemove { get; }
+        int NumberOfOpcDataChangeMonitoredItemsToRemove { get; }
+
+        /// <summary>
+        /// Number of event monitored items configured.
+        /// </summary>
+        int NumberOfOpcEventMonitoredItemsConfigured { get; }
+
+        /// <summary>
+        /// Number of event monitored items monitored.
+        /// </summary>
+        int NumberOfOpcEventMonitoredItemsMonitored { get; }
+
+        /// <summary>
+        /// Number of event monitored items to be removed.
+        /// </summary>
+        int NumberOfOpcEventMonitoredItemsToRemove { get; }
 
         /// <summary>
         /// Semaphore to protect the node configuration data structures.

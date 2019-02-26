@@ -114,9 +114,9 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Number of OPC UA nodes configured to monitor.
+        /// Number of data change monitored items configured.
         /// </summary>
-        public int NumberOfOpcMonitoredItemsConfigured
+        public int NumberOfOpcDataChangeMonitoredItemsConfigured
         {
             get
             {
@@ -126,7 +126,7 @@ namespace OpcPublisher
                     OpcSessionsListSemaphore.Wait();
                     foreach (var opcSession in OpcSessions)
                     {
-                        result += opcSession.GetNumberOfOpcMonitoredItemsConfigured();
+                        result += opcSession.GetNumberOfOpcDataChangeMonitoredItemsConfigured();
                     }
                 }
                 finally
@@ -138,9 +138,9 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Number of monitored OPC UA nodes.
+        /// Number of data change monitored items monitored.
         /// </summary>
-        public int NumberOfOpcMonitoredItemsMonitored
+        public int NumberOfOpcDataChangeMonitoredItemsMonitored
         {
             get
             {
@@ -151,7 +151,7 @@ namespace OpcPublisher
                     var opcSessions = OpcSessions.Where(s => s.State == OpcSession.SessionState.Connected);
                     foreach (var opcSession in opcSessions)
                     {
-                        result += opcSession.GetNumberOfOpcMonitoredItemsMonitored();
+                        result += opcSession.GetNumberOfOpcDataChangeMonitoredItemsMonitored();
                     }
                 }
                 finally
@@ -163,9 +163,9 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Number of OPC UA nodes requested to stop monitoring.
+        /// Number of data change monitored items to be removed.
         /// </summary>
-        public int NumberOfOpcMonitoredItemsToRemove
+        public int NumberOfOpcDataChangeMonitoredItemsToRemove
         {
             get
             {
@@ -175,7 +175,80 @@ namespace OpcPublisher
                     OpcSessionsListSemaphore.Wait();
                     foreach (var opcSession in OpcSessions)
                     {
-                        result += opcSession.GetNumberOfOpcMonitoredItemsToRemove();
+                        result += opcSession.GetNumberOfOpcDataChangeMonitoredItemsToRemove();
+                    }
+                }
+                finally
+                {
+                    OpcSessionsListSemaphore.Release();
+                }
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Number of event monitored items configured.
+        /// </summary>
+        public int NumberOfOpcEventMonitoredItemsConfigured
+        {
+            get
+            {
+                int result = 0;
+                try
+                {
+                    OpcSessionsListSemaphore.Wait();
+                    foreach (var opcSession in OpcSessions)
+                    {
+                        result += opcSession.GetNumberOfOpcEventMonitoredItemsConfigured();
+                    }
+                }
+                finally
+                {
+                    OpcSessionsListSemaphore.Release();
+                }
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Number of event monitored items monitored.
+        /// </summary>
+        public int NumberOfOpcEventMonitoredItemsMonitored
+        {
+            get
+            {
+                int result = 0;
+                try
+                {
+                    OpcSessionsListSemaphore.Wait();
+                    var opcSessions = OpcSessions.Where(s => s.State == OpcSession.SessionState.Connected);
+                    foreach (var opcSession in opcSessions)
+                    {
+                        result += opcSession.GetNumberOfOpcEventMonitoredItemsMonitored();
+                    }
+                }
+                finally
+                {
+                    OpcSessionsListSemaphore.Release();
+                }
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Number of event monitored items to be removed.
+        /// </summary>
+        public int NumberOfOpcEventMonitoredItemsToRemove
+        {
+            get
+            {
+                int result = 0;
+                try
+                {
+                    OpcSessionsListSemaphore.Wait();
+                    foreach (var opcSession in OpcSessions)
+                    {
+                        result += opcSession.GetNumberOfOpcEventMonitoredItemsToRemove();
                     }
                 }
                 finally
@@ -423,6 +496,7 @@ namespace OpcPublisher
                 PublisherNodeConfigurationSemaphore.Release();
             }
             Logger.Information($"There are {_nodePublishingConfiguration.Count.ToString(CultureInfo.InvariantCulture)} nodes to publish.");
+            Logger.Information($"There are {_eventConfiguration.Count.ToString(CultureInfo.InvariantCulture)} events to publish.");
             return true;
         }
 
@@ -493,15 +567,18 @@ namespace OpcPublisher
                     OpcSessions.Add(opcSession);
                 }
 
-                // create data for data change configuration
+                // create data for event configuration
                 var uniqueEventsEndpointUrls = _eventConfiguration.Select(n => n.EndpointUrl).Distinct();
                 foreach (var endpointUrl in uniqueEventsEndpointUrls)
                 {
+                    bool addSession = false;
+
                     // create new session info, if needed
                     IOpcSession opcSession = OpcSessions.Find(s => s.EndpointUrl == endpointUrl);
                     if (opcSession == null)
                     {
                         opcSession = new OpcSession(endpointUrl, _eventConfiguration.Where(n => n.EndpointUrl == endpointUrl).First().UseSecurity, OpcSessionCreationTimeout);
+                        addSession = true;
                     }
 
                     // create a subscription for each event source
@@ -529,8 +606,12 @@ namespace OpcPublisher
                         // add event subscription to session.
                         opcSession.OpcEventSubscriptions.Add(opcSubscription);
                     }
+
                     // add session
-                    OpcSessions.Add(opcSession);
+                    if (addSession)
+                    {
+                        OpcSessions.Add(opcSession);
+                    }
                 }
             }
             catch (Exception e)
@@ -542,6 +623,69 @@ namespace OpcPublisher
             {
                 OpcSessionsListSemaphore.Release();
                 PublisherNodeConfigurationSemaphore.Release();
+            }
+            // dump node configuration
+            if (LogLevel == "debug")
+            {
+                foreach (var opcSession in OpcSessions)
+                {
+                    Logger.Debug($"Session to endpoint URL '{opcSession.EndpointUrl}', use security: {opcSession.UseSecurity}");
+                    foreach (var opcSubscription in opcSession.OpcSubscriptions)
+                    {
+                        Logger.Debug($"  Susbscription for DataChange with requested PublishingInterval '{opcSubscription.RequestedPublishingInterval}'");
+                        foreach (var opcMonitoredItem in opcSubscription.OpcMonitoredItems)
+                        {
+                            Logger.Debug($"    Node to monitor '{opcMonitoredItem.ConfigNodeId ?? opcMonitoredItem.ConfigExpandedNodeId ?? opcMonitoredItem.Id}' with requested SamplingInterval {opcMonitoredItem.RequestedSamplingInterval}");
+                        }
+                    }
+                    foreach (var opcSubscription in opcSession.OpcEventSubscriptions)
+                    {
+                        Logger.Debug($"  Susbscription for Events");
+                        foreach (var opcMonitoredItem in opcSubscription.OpcMonitoredItems)
+                        {
+                            Logger.Debug($"    Event notifier to monitor '{opcMonitoredItem.Id}'");
+                            int i = 0;
+                            foreach (var selectClause in opcMonitoredItem.EventConfiguration.SelectClauses)
+                            {
+                                Logger.Debug($"      SelectClause {i++}:");
+                                Logger.Debug($"        From TypeId: '{selectClause.TypeId}' select field with browse path '{string.Join(", ", selectClause.BrowsePaths.ToArray())}'");
+                            }
+                            i = 0;
+                            foreach (var whereClauseElement in opcMonitoredItem.EventConfiguration.WhereClause)
+                            {
+                                Logger.Debug($"      WhereClauseElement {i++}: '{whereClauseElement.Operator}'");
+                                Logger.Debug($"        Operator: '{whereClauseElement.Operator}'");
+                                int j = 0;
+                                foreach (var operand in whereClauseElement.Operands)
+                                {
+                                    if (operand.Element != null)
+                                    {
+                                        Logger.Debug($"        Operand {j++}(Element): '{operand.Element}'");
+                                    }
+                                    if (operand.Literal != null)
+                                    {
+                                        Logger.Debug($"        Operand {j++}(Literal): '{operand.Literal}'");
+                                    }
+                                    if (operand.SimpleAttribute != null)
+                                    {
+                                        Logger.Debug($"        Operand {j++}(SimpleAttribute): TypeId: '{operand.SimpleAttribute.TypeId}'");
+                                        Logger.Debug($"                                        BrowsePath: '{string.Join(", ", operand.SimpleAttribute.BrowsePaths.ToArray())}'");
+                                        Logger.Debug($"                                        AttributeId: '{operand.SimpleAttribute.AttributeId}'");
+                                        Logger.Debug($"                                        IndexRange: '{operand.SimpleAttribute.IndexRange}'");
+                                    }
+                                    if (operand.Attribute != null)
+                                    {
+                                        Logger.Debug($"        Operand {j++}(Attribute): TypeId: '{operand.Attribute.NodeId}'");
+                                        Logger.Debug($"                                  Alias: '{operand.Attribute.Alias}'");
+                                        Logger.Debug($"                                  BrowsePath: '{operand.Attribute.BrowsePath}'");
+                                        Logger.Debug($"                                  AttributeId: '{operand.Attribute.AttributeId}'");
+                                        Logger.Debug($"                                  IndexRange: '{operand.Attribute.IndexRange}'");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             return true;
         }

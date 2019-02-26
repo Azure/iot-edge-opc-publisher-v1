@@ -136,10 +136,10 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Number of configured monitored items on this session.
+        /// Number of configured data change monitored items on this session.
         /// </summary>
         /// <returns></returns>
-        public int GetNumberOfOpcMonitoredItemsConfigured()
+        public int GetNumberOfOpcDataChangeMonitoredItemsConfigured()
         {
             int result = 0;
             bool sessionLocked = false;
@@ -148,7 +148,7 @@ namespace OpcPublisher
                 sessionLocked = LockSessionAsync().Result;
                 if (sessionLocked)
                 {
-                    foreach (var subscription in OpcSubscriptions.Union(OpcEventSubscriptions))
+                    foreach (var subscription in OpcSubscriptions)
                     {
                         result += subscription.OpcMonitoredItems.Count();
                     }
@@ -165,10 +165,10 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Number of actually monitored items on this sessions.
+        /// Number of actually data change monitored items on this session.
         /// </summary>
         /// <returns></returns>
-        public int GetNumberOfOpcMonitoredItemsMonitored()
+        public int GetNumberOfOpcDataChangeMonitoredItemsMonitored()
         {
             int result = 0;
             bool sessionLocked = false;
@@ -177,7 +177,7 @@ namespace OpcPublisher
                 sessionLocked = LockSessionAsync().Result;
                 if (sessionLocked)
                 {
-                    foreach (var subscription in OpcSubscriptions.Union(OpcEventSubscriptions))
+                    foreach (var subscription in OpcSubscriptions)
                     {
                         result += subscription.OpcMonitoredItems.Count(i => i.State == OpcMonitoredItemState.Monitored);
                     }
@@ -194,10 +194,10 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Number of monitored items to be removed from this session.
+        /// Number of data change monitored items to be removed from this session.
         /// </summary>
         /// <returns></returns>
-        public int GetNumberOfOpcMonitoredItemsToRemove()
+        public int GetNumberOfOpcDataChangeMonitoredItemsToRemove()
         {
             int result = 0;
             bool sessionLocked = false;
@@ -206,7 +206,94 @@ namespace OpcPublisher
                 sessionLocked = LockSessionAsync().Result;
                 if (sessionLocked)
                 {
-                    foreach (var subscription in OpcSubscriptions.Union(OpcEventSubscriptions))
+                    foreach (var subscription in OpcSubscriptions)
+                    {
+                        result += subscription.OpcMonitoredItems.Count(i => i.State == OpcMonitoredItemState.RemovalRequested);
+                    }
+                }
+            }
+            finally
+            {
+                if (sessionLocked)
+                {
+                    ReleaseSession();
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Number of configured event monitored items on this session.
+        /// </summary>
+        /// <returns></returns>
+        public int GetNumberOfOpcEventMonitoredItemsConfigured()
+        {
+            int result = 0;
+            bool sessionLocked = false;
+            try
+            {
+                sessionLocked = LockSessionAsync().Result;
+                if (sessionLocked)
+                {
+                    foreach (var subscription in OpcEventSubscriptions)
+                    {
+                        result += subscription.OpcMonitoredItems.Count();
+                    }
+                }
+            }
+            finally
+            {
+                if (sessionLocked)
+                {
+                    ReleaseSession();
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Number of actually event monitored items on this session.
+        /// </summary>
+        /// <returns></returns>
+        public int GetNumberOfOpcEventMonitoredItemsMonitored()
+        {
+            int result = 0;
+            bool sessionLocked = false;
+            try
+            {
+                sessionLocked = LockSessionAsync().Result;
+                if (sessionLocked)
+                {
+                    foreach (var subscription in OpcEventSubscriptions)
+                    {
+                        result += subscription.OpcMonitoredItems.Count(i => i.State == OpcMonitoredItemState.Monitored);
+                    }
+                }
+            }
+            finally
+            {
+                if (sessionLocked)
+                {
+                    ReleaseSession();
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Number of event monitored items to be removed from this session.
+        /// </summary>
+        /// <returns></returns>
+        public int GetNumberOfOpcEventMonitoredItemsToRemove()
+        {
+            int result = 0;
+            bool sessionLocked = false;
+            try
+            {
+                sessionLocked = LockSessionAsync().Result;
+                if (sessionLocked)
+                {
+                    foreach (var subscription in OpcEventSubscriptions)
                     {
                         result += subscription.OpcMonitoredItems.Count(i => i.State == OpcMonitoredItemState.RemovalRequested);
                     }
@@ -505,7 +592,7 @@ namespace OpcPublisher
                     {
                         opcSubscription.OpcUaClientSubscription = CreateSubscription(opcSubscription.RequestedPublishingInterval, out int revisedPublishingInterval);
                         opcSubscription.PublishingInterval = revisedPublishingInterval;
-                        Logger.Information($"Create subscription on endpoint '{EndpointUrl}' requested OPC publishing interval is {opcSubscription.RequestedPublishingInterval} ms. (revised: {revisedPublishingInterval} ms)");
+                        Logger.Information($"Create DataChange subscription on endpoint '{EndpointUrl}' requested OPC publishing interval is {opcSubscription.RequestedPublishingInterval} ms. (revised: {revisedPublishingInterval} ms)");
                     }
 
                     // process all unmonitored items.
@@ -621,13 +708,7 @@ namespace OpcPublisher
                                 DiscardOldest = item.DiscardOldest
                             };
                             monitoredItem.Notification += item.NotificationEventHandler;
-
                             opcSubscription.OpcUaClientSubscription.AddItem(monitoredItem);
-                            if (additionalMonitoredItemsCount++ % 10000 == 0)
-                            {
-                                opcSubscription.OpcUaClientSubscription.SetPublishingMode(true);
-                                opcSubscription.OpcUaClientSubscription.ApplyChanges();
-                            }
                             item.OpcUaClientMonitoredItem = monitoredItem;
                             item.State = OpcMonitoredItemState.Monitored;
                             item.EndpointUrl = EndpointUrl;
@@ -727,7 +808,7 @@ namespace OpcPublisher
                     {
                         opcSubscription.OpcUaClientSubscription = CreateSubscription(opcSubscription.RequestedPublishingInterval, out int revisedPublishingInterval);
                         opcSubscription.PublishingInterval = revisedPublishingInterval;
-                        Logger.Information($"Create subscription on endpoint '{EndpointUrl}' requested OPC publishing interval is {opcSubscription.RequestedPublishingInterval} ms. (revised: {revisedPublishingInterval} ms)");
+                        Logger.Information($"Create Event subscription on endpoint '{EndpointUrl}' requested OPC publishing interval is {opcSubscription.RequestedPublishingInterval} ms. (revised: {revisedPublishingInterval} ms)");
                     }
 
                     // process all unmonitored events.
@@ -902,25 +983,16 @@ namespace OpcPublisher
                             {
                                 StartNodeId = currentNodeId,
                                 AttributeId = Attributes.EventNotifier,
-                                //AttributeId = unmonitoredEvent.AttributeId,
                                 DisplayName = unmonitoredEvent.DisplayName,
                                 MonitoringMode = unmonitoredEvent.MonitoringMode,
-                                //SamplingInterval = unmonitoredEvent.RequestedSamplingInterval,
                                 SamplingInterval = 0,
-                                QueueSize = 1000,
-                                //QueueSize = unmonitoredEvent.QueueSize,
+                                QueueSize = unmonitoredEvent.QueueSize,
                                 DiscardOldest = unmonitoredEvent.DiscardOldest,
                                 Filter = eventFilter
                             };
 
                             monitoredItem.Notification += unmonitoredEvent.NotificationEventHandler;
-
                             opcSubscription.OpcUaClientSubscription.AddItem(monitoredItem);
-                            if (additionalMonitoredEventsCount++ % 10000 == 0)
-                            {
-                                opcSubscription.OpcUaClientSubscription.SetPublishingMode(true);
-                                opcSubscription.OpcUaClientSubscription.ApplyChanges();
-                            }
                             unmonitoredEvent.OpcUaClientMonitoredItem = monitoredItem;
                             unmonitoredEvent.State = OpcMonitoredItemState.Monitored;
                             unmonitoredEvent.EndpointUrl = EndpointUrl;

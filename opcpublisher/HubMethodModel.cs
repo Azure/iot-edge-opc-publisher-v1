@@ -65,13 +65,22 @@ namespace OpcPublisher
         public int NumberOfOpcSubscriptionsConnected { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Include)]
-        public int NumberOfOpcMonitoredItemsConfigured { get; set; }
+        public int NumberOfOpcDataChangeMonitoredItemsConfigured { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Include)]
-        public int NumberOfOpcMonitoredItemsMonitored { get; set; }
+        public int NumberOfOpcDataChangeMonitoredItemsMonitored { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Include)]
-        public int NumberOfOpcMonitoredItemsToRemove { get; set; }
+        public int NumberOfOpcDataChangeMonitoredItemsToRemove { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Include)]
+        public int NumberOfOpcEventMonitoredItemsConfigured { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Include)]
+        public int NumberOfOpcEventMonitoredItemsMonitored { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Include)]
+        public int NumberOfOpcEventMonitoredItemsToRemove { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Include)]
         public int MonitoredItemsQueueCapacity { get; set; }
@@ -84,6 +93,9 @@ namespace OpcPublisher
 
         [JsonProperty(NullValueHandling = NullValueHandling.Include)]
         public long EnqueueFailureCount { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Include)]
+        public long NumberOfDataChangeEvents { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Include)]
         public long NumberOfEvents { get; set; }

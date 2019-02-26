@@ -19,8 +19,8 @@ namespace OpcPublisher
         {
             // wait till monitoring starts
             int iter = 0;
-            int startNum = NodeConfiguration.NumberOfOpcMonitoredItemsMonitored;
-            while (NodeConfiguration.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
+            int startNum = NodeConfiguration.NumberOfOpcDataChangeMonitoredItemsMonitored;
+            while (NodeConfiguration.NumberOfOpcDataChangeMonitoredItemsMonitored == 0 && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
@@ -32,7 +32,7 @@ namespace OpcPublisher
             // wait till monitoring starts
             int iter = 0;
             long numberOfEventsStart = HubCommunicationBase.NumberOfEvents;
-            while ((NodeConfiguration.NumberOfOpcMonitoredItemsMonitored == 0 || (HubCommunicationBase.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
+            while ((NodeConfiguration.NumberOfOpcDataChangeMonitoredItemsMonitored == 0 || (HubCommunicationBase.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;

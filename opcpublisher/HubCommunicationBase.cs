@@ -61,7 +61,12 @@ namespace OpcPublisher
         public static int DefaultSendIntervalSeconds { get; set; } = 10;
 
         /// <summary>
-        /// Number of events sent to the cloud.
+        /// Number of DataChange notification events sent to the cloud.
+        /// </summary>
+        public static long NumberOfDataChangeEvents { get; set; }
+
+        /// <summary>
+        /// Number of Events notification sent to the cloud.
         /// </summary>
         public static long NumberOfEvents { get; set; }
 
@@ -1706,15 +1711,16 @@ namespace OpcPublisher
                                 // create a JSON message from notification data
                                 if (dataChangeMessageData != null)
                                 {
+                                    NumberOfDataChangeEvents++;
                                     jsonMessage = await CreateJsonForDataChangeAsync(dataChangeMessageData).ConfigureAwait(false);
                                 }
                                 if (eventMessageData != null)
                                 {
+                                    NumberOfEvents++;
                                     jsonMessage = await CreateJsonForEventAsync(eventMessageData).ConfigureAwait(false);
                                 }
                             }
 
-                            NumberOfEvents++;
                             jsonMessageSize = Encoding.UTF8.GetByteCount(jsonMessage.ToString(CultureInfo.InvariantCulture));
 
                             // sanity check that the user has set a large enough messages size

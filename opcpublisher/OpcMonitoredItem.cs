@@ -743,6 +743,7 @@ namespace OpcPublisher
                             eventValue.Value = encodedValue;
                             eventValue.PreserveValueQuotes = preserveValueQuotes;
                             eventMessageData.EventValues.Add(eventValue);
+                            Logger.Debug($"Event notification field name: '{eventValue.Name}', value: '{eventValue.Value}'");
                         }
                     }
                 }
