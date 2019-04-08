@@ -493,6 +493,8 @@ The complete usage of the application can be shown using the `--help` command li
               --aa, --autoaccept     the publisher trusts all servers it is
                                        establishing a connection to.
                                        Default: False
+              --qs, --queuesize      the queuesize of the monitored node
+                                       Default: 0
               --tm, --trustmyself=VALUE
                                      same as trustowncert.
                                        Default: False
