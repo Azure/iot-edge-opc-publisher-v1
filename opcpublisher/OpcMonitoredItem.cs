@@ -574,7 +574,7 @@ namespace OpcPublisher
             State = OpcMonitoredItemState.Unmonitored;
             AttributeId = Attributes.Value;
             MonitoringMode = MonitoringMode.Reporting;
-            QueueSize = 0;
+            QueueSize = MonitoredQueueSize;
             DiscardOldest = true;
             Notification = new MonitoredItemNotificationEventHandler(MonitoredItemNotificationEventHandler);
             EndpointUrl = sessionEndpointUrl;

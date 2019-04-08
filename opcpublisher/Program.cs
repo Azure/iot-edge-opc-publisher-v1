@@ -125,8 +125,6 @@ namespace OpcPublisher
 
                 // command line options
                 Mono.Options.OptionSet options = new Mono.Options.OptionSet {
-
-
                         // Publisher configuration options
                         { "pf|publishfile=", $"the filename to configure the nodes to publish.\nDefault: '{PublisherNodeConfigurationFilename}'", (string p) => PublisherNodeConfigurationFilename = p },
                         { "tc|telemetryconfigfile=", $"the filename to configure the ingested telemetry\nDefault: '{PublisherTelemetryConfigurationFilename}'", (string p) => PublisherTelemetryConfigurationFilename = p },
@@ -198,7 +196,6 @@ namespace OpcPublisher
                             }
                         },
 
-
                         // IoTHub specific options
                         { "ih|iothubprotocol=", $"the protocol to use for communication with IoTHub (allowed values: {$"{string.Join(", ", Enum.GetNames(HubProtocol.GetType()))}"}) or IoT EdgeHub (allowed values: Mqtt_Tcp_Only, Amqp_Tcp_Only).\nDefault for IoTHub: {IotHubProtocolDefault}\nDefault for IoT EdgeHub: {IotEdgeHubProtocolDefault}",
                             (Microsoft.Azure.Devices.Client.TransportType p) => {
@@ -260,7 +257,6 @@ namespace OpcPublisher
                             "a skip first event setting.\n" +
                             $"Default: {SkipFirstDefault}", (bool b) => { SkipFirstDefault = b; }
                         },
-
 
                         // opc configuration options
                         { "pn|portnum=", $"the server port of the publisher OPC server endpoint.\nDefault: {ServerPort}", (ushort p) => ServerPort = p },
@@ -360,6 +356,8 @@ namespace OpcPublisher
 
                         { "aa|autoaccept", $"the publisher trusts all servers it is establishing a connection to.\nDefault: {AutoAcceptCerts}", b => AutoAcceptCerts = b != null },
 
+                        { "qs|queuesize=", $"the queuesize of the monitored node.\nDefault: {MonitoredQueueSize}", (uint q) => MonitoredQueueSize = q },
+
                         { "tm|trustmyself=", $"same as trustowncert.\nDefault: {TrustMyself}", (bool b) => TrustMyself = b  },
                         { "to|trustowncert", $"the publisher certificate is put into the trusted certificate store automatically.\nDefault: {TrustMyself}", t => TrustMyself = t != null  },
 
@@ -368,7 +366,6 @@ namespace OpcPublisher
 
                         { "ss|suppressedopcstatuscodes=", $"specifies the OPC UA status codes for which no events should be generated.\n" +
                             $"Default: {SuppressedOpcStatusCodesDefault}", (string s) => opcStatusCodesToSuppress = s },
-
 
                         // cert store options
                         { "at|appcertstoretype=", $"the own application cert store type. \n(allowed values: Directory, X509Store)\nDefault: '{OpcOwnCertStoreType}'", (string s) => {
@@ -526,9 +523,7 @@ namespace OpcPublisher
                         { "tt|trustedcertstoretype=", $"ignored, only supported for backward compatibility. the trusted cert store will always reside in a directory.", s => { }},
                         { "rt|rejectedcertstoretype=", $"ignored, only supported for backward compatibility. the rejected cert store will always reside in a directory.", s => { }},
                         { "it|issuercertstoretype=", $"ignored, only supported for backward compatibility. the trusted issuer cert store will always reside in a directory.", s => { }},
-
                     };
-
 
                 List<string> extraArgs = new List<string>();
                 try
@@ -854,7 +849,6 @@ namespace OpcPublisher
         /// </summary>
         private static void Usage(Mono.Options.OptionSet options)
         {
-
             // show usage
             Logger.Information("");
             Logger.Information($"OPC Publisher V{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}");
@@ -931,23 +925,28 @@ namespace OpcPublisher
                     loggerConfiguration.MinimumLevel.Fatal();
                     OpcTraceToLoggerFatal = 0;
                     break;
+
                 case "error":
                     loggerConfiguration.MinimumLevel.Error();
                     OpcStackTraceMask = OpcTraceToLoggerError = Utils.TraceMasks.Error;
                     break;
+
                 case "warn":
                     loggerConfiguration.MinimumLevel.Warning();
                     OpcTraceToLoggerWarning = 0;
                     break;
+
                 case "info":
                     loggerConfiguration.MinimumLevel.Information();
                     OpcStackTraceMask = OpcTraceToLoggerInformation = 0;
                     break;
+
                 case "debug":
                     loggerConfiguration.MinimumLevel.Debug();
                     OpcStackTraceMask = OpcTraceToLoggerDebug = Utils.TraceMasks.StackTrace | Utils.TraceMasks.Operation |
                         Utils.TraceMasks.StartStop | Utils.TraceMasks.ExternalSystem | Utils.TraceMasks.Security;
                     break;
+
                 case "verbose":
                     loggerConfiguration.MinimumLevel.Verbose();
                     OpcStackTraceMask = OpcTraceToLoggerVerbose = Utils.TraceMasks.All;
@@ -1056,7 +1055,6 @@ namespace OpcPublisher
                     {
                         throw new OptionException($"The file '{fileName}' does not exist.", option);
                     }
-
                 }
             }
             else

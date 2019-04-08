@@ -16,6 +16,7 @@ namespace OpcPublisher
         /// Configuration info for the OPC application.
         /// </summary>
         public static ApplicationConfiguration ApplicationConfiguration { get; private set; }
+
         public static string Hostname
         {
             get => _hostname;
@@ -55,6 +56,7 @@ namespace OpcPublisher
         /// Mapping of the application logging levels to OPC stack logging levels.
         /// </summary>
         public static int OpcTraceToLoggerVerbose { get; set; } = 0;
+
         public static int OpcTraceToLoggerDebug { get; set; } = 0;
         public static int OpcTraceToLoggerInformation { get; set; } = 0;
         public static int OpcTraceToLoggerWarning { get; set; } = 0;
@@ -71,7 +73,6 @@ namespace OpcPublisher
         /// </summary>
         public static int OpcOperationTimeout { get; set; } = 120000;
 
-
         public static uint OpcSessionCreationTimeout { get; set; } = 10;
 
         public static uint OpcSessionCreationBackoffMax { get; set; } = 5;
@@ -79,7 +80,6 @@ namespace OpcPublisher
         public static uint OpcKeepAliveDisconnectThreshold { get; set; } = 5;
 
         public static int OpcKeepAliveIntervalInSec { get; set; } = 2;
-
 
         public const int OpcSamplingIntervalDefault = 1000;
 
@@ -91,7 +91,7 @@ namespace OpcPublisher
 
         public static string PublisherServerSecurityPolicy { get; set; } = SecurityPolicies.Basic128Rsa15;
 
-
+        public static uint MonitoredQueueSize { get; set; } = 0;
 
         /// <summary>
         /// Ctor of the OPC application configuration.
