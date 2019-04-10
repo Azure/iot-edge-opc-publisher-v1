@@ -41,9 +41,17 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.0.0" />
   </ItemGroup>
+<<<<<<< HEAD:opcpublisher/Microsoft.Azure.IIoT.Modules.OpcUa.Publisher.csproj
   <!--
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="gitversion $(SolutionDir)  /updateassemblyinfo /ensureassemblyinfo &gt;nul 2&gt;nul&#xD;&#xA;set ERRORLEVEL=0" />
   </Target>
   -->
+=======
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="gitversion $(SolutionDir)  /updateassemblyinfo /ensureassemblyinfo &gt;nul 2&gt;nul&#xD;&#xA;set ERRORLEVEL=0" />
+  </Target>
+
+>>>>>>> parent of 42c1cba... Develop:opcpublisher/opcpublisher.csproj
 </Project>
