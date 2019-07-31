@@ -336,8 +336,6 @@ namespace OpcPublisher
         /// </summary>
         public virtual async Task ConnectAndMonitorAsync()
         {
-            uint lastNodeConfigVersion = 0;
-
             WaitHandle[] connectAndMonitorEvents = new WaitHandle[]
             {
                 _sessionCancelationToken.WaitHandle,
@@ -350,7 +348,7 @@ namespace OpcPublisher
                 try
                 {
                     // wait till:
-                    // - cancelation is requested
+                    // - cancellation is requested
                     // - got signaled because we need to check for pending session activity
                     // - timeout to try to reestablish any disconnected sessions
                     try
@@ -376,17 +374,10 @@ namespace OpcPublisher
 
                     await RemoveUnusedSessionsAsync(_sessionCancelationToken).ConfigureAwait(false);
                     _sessionCancelationToken.ThrowIfCancellationRequested();
-
-                    // update the config file if required
-                    if (NodeConfigVersion != lastNodeConfigVersion)
-                    {
-                        lastNodeConfigVersion = (uint)NodeConfigVersion;
-                        await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
-                    }
                 }
                 catch (Exception e)
                 {
-                    if (_sessionCancelationToken != null && !_sessionCancelationToken.IsCancellationRequested)
+                    if (!_sessionCancelationToken.IsCancellationRequested)
                     {
                         Logger.Error(e, "Exception");
                     }
@@ -394,6 +385,11 @@ namespace OpcPublisher
                     {
                         break;
                     }
+                }
+                finally
+                {
+                    // update the config file if required
+                    await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 }
             }
         }
