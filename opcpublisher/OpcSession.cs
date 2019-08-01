@@ -773,7 +773,7 @@ namespace OpcPublisher
                 foreach (var opcSubscription in OpcSubscriptions)
                 {
                     // remove items tagged to stop in the stack
-                    var itemsToRemove = opcSubscription.OpcMonitoredItems.Where(i => i.State == OpcMonitoredItemState.RemovalRequested);
+                    var itemsToRemove = opcSubscription.OpcMonitoredItems.Where(i => i.State == OpcMonitoredItemState.RemovalRequested).ToArray();
                     if (itemsToRemove.Any())
                     {
                         try
@@ -789,7 +789,7 @@ namespace OpcPublisher
                         // stop heartbeat timer for all items to remove
                         foreach (var itemToRemove in itemsToRemove)
                         {
-                            itemToRemove?.HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                            itemToRemove.HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
                         }
                         // remove them in our data structure
                         opcSubscription.OpcMonitoredItems.RemoveAll(i => i.State == OpcMonitoredItemState.RemovalRequested);
