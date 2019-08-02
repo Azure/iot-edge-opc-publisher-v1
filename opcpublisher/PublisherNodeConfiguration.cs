@@ -698,7 +698,7 @@ namespace OpcPublisher
             try
             {
                 // iterate through all sessions, subscriptions and monitored items and create config file entries
-                List<PublisherConfigurationFileEntryModel> publisherNodeConfiguration = GetPublisherConfigurationFileEntries(null, true, out uint nodeConfigVersion);
+                List<PublisherConfigurationFileEntryModel> publisherNodeConfiguration = GetPublisherConfigurationFileEntries(null, true, out _lastNodeConfigVersion);
 
                 Logger.Debug($"Update node configuration file, version: {_lastNodeConfigVersion:X8}");
 
