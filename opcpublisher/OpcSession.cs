@@ -336,8 +336,6 @@ namespace OpcPublisher
         /// </summary>
         public virtual async Task ConnectAndMonitorAsync()
         {
-            uint lastNodeConfigVersion = 0;
-
             WaitHandle[] connectAndMonitorEvents = new WaitHandle[]
             {
                 _sessionCancelationToken.WaitHandle,
@@ -350,7 +348,7 @@ namespace OpcPublisher
                 try
                 {
                     // wait till:
-                    // - cancelation is requested
+                    // - cancellation is requested
                     // - got signaled because we need to check for pending session activity
                     // - timeout to try to reestablish any disconnected sessions
                     try
@@ -376,17 +374,10 @@ namespace OpcPublisher
 
                     await RemoveUnusedSessionsAsync(_sessionCancelationToken).ConfigureAwait(false);
                     _sessionCancelationToken.ThrowIfCancellationRequested();
-
-                    // update the config file if required
-                    if (NodeConfigVersion != lastNodeConfigVersion)
-                    {
-                        lastNodeConfigVersion = (uint)NodeConfigVersion;
-                        await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
-                    }
                 }
                 catch (Exception e)
                 {
-                    if (_sessionCancelationToken != null && !_sessionCancelationToken.IsCancellationRequested)
+                    if (!_sessionCancelationToken.IsCancellationRequested)
                     {
                         Logger.Error(e, "Exception");
                     }
@@ -394,6 +385,11 @@ namespace OpcPublisher
                     {
                         break;
                     }
+                }
+                finally
+                {
+                    // update the config file if required
+                    await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -777,7 +773,7 @@ namespace OpcPublisher
                 foreach (var opcSubscription in OpcSubscriptions)
                 {
                     // remove items tagged to stop in the stack
-                    var itemsToRemove = opcSubscription.OpcMonitoredItems.Where(i => i.State == OpcMonitoredItemState.RemovalRequested);
+                    var itemsToRemove = opcSubscription.OpcMonitoredItems.Where(i => i.State == OpcMonitoredItemState.RemovalRequested).ToArray();
                     if (itemsToRemove.Any())
                     {
                         try
@@ -793,7 +789,7 @@ namespace OpcPublisher
                         // stop heartbeat timer for all items to remove
                         foreach (var itemToRemove in itemsToRemove)
                         {
-                            itemToRemove?.HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                            itemToRemove.HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
                         }
                         // remove them in our data structure
                         opcSubscription.OpcMonitoredItems.RemoveAll(i => i.State == OpcMonitoredItemState.RemovalRequested);
