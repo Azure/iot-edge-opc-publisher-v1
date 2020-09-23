@@ -104,14 +104,14 @@ namespace OpcPublisher
         /// <summary>
         /// Max allowed payload of an IoTHub direct method call response.
         /// </summary>
-        public static int MaxResponsePayloadLength { get; } = 128 * 1024 - 256;
+        public static int MaxResponsePayloadLength { get; } = (128 * 1024) - 256;
 
         /// <summary>
         /// The protocol to use for hub communication.
         /// </summary>
-        public const TransportType IotHubProtocolDefault = TransportType.Mqtt_WebSocket_Only;
-        public const TransportType IotEdgeHubProtocolDefault = TransportType.Amqp_Tcp_Only;
-        public static TransportType HubProtocol { get; set; } = IotHubProtocolDefault;
+        public const Microsoft.Azure.Devices.Client.TransportType IotHubProtocolDefault = Microsoft.Azure.Devices.Client.TransportType.Mqtt_WebSocket_Only;
+        public const Microsoft.Azure.Devices.Client.TransportType IotEdgeHubProtocolDefault = Microsoft.Azure.Devices.Client.TransportType.Amqp_Tcp_Only;
+        public static Microsoft.Azure.Devices.Client.TransportType HubProtocol { get; set; } = IotHubProtocolDefault;
 
         /// <summary>
         /// Dictionary of available IoTHub direct methods.
@@ -121,7 +121,7 @@ namespace OpcPublisher
         /// <summary>
         /// Check if transport type to use is HTTP.
         /// </summary>
-        bool IsHttp1Transport() => HubProtocol == TransportType.Http1;
+        bool IsHttp1Transport() => HubProtocol == Microsoft.Azure.Devices.Client.TransportType.Http1;
 
         /// <summary>
         /// Ctor for the class.
@@ -202,7 +202,7 @@ namespace OpcPublisher
                 await _hubClient.OpenAsync().ConfigureAwait(false);
 
                 // init twin properties and method callbacks (not supported for HTTP)
-                // todo check if this is 
+                // todo check if this is
                 if (!IsHttp1Transport())
                 {
                     // init twin properties and method callbacks
@@ -320,13 +320,13 @@ namespace OpcPublisher
                             {
                                 desiredAuthenticationMode = OpcAuthenticationMode.Anonymous;
                             }
-                            
+
                             // create new session info.
                             opcSession = new OpcSession(endpointUri.OriginalString, useSecurity, OpcSessionCreationTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
                             NodeConfiguration.OpcSessions.Add(opcSession);
                             Logger.Information($"{logPrefix} No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                         }
-                        else 
+                        else
                         {
                             // a session already exists, so we check, if we need to change authentication settings. This is only true, if the payload contains an OpcAuthenticationMode-Property
                             if (desiredAuthenticationMode.HasValue)
@@ -952,7 +952,7 @@ namespace OpcPublisher
                 getConfiguredEndpointsMethodResponse.ContinuationToken = null;
                 if (actualEndpointsCount < availableEndpointCount)
                 {
-                    getConfiguredEndpointsMethodResponse.ContinuationToken = ((ulong)nodeConfigVersion << 32) | actualEndpointsCount + startIndex;
+                    getConfiguredEndpointsMethodResponse.ContinuationToken = ((ulong)nodeConfigVersion << 32) | (actualEndpointsCount + startIndex);
                 }
                 getConfiguredEndpointsMethodResponse.Endpoints.AddRange(endpointUrls.GetRange((int)startIndex, (int)actualEndpointsCount).Select(e => new ConfiguredEndpointModel(e)).ToList());
                 resultString = JsonConvert.SerializeObject(getConfiguredEndpointsMethodResponse);
@@ -1087,7 +1087,7 @@ namespace OpcPublisher
                 getConfiguredNodesOnEndpointMethodResponse.ContinuationToken = null;
                 if (actualNodeCount < availableNodeCount)
                 {
-                    getConfiguredNodesOnEndpointMethodResponse.ContinuationToken = (ulong)nodeConfigVersion << 32 | actualNodeCount + startIndex;
+                    getConfiguredNodesOnEndpointMethodResponse.ContinuationToken = ((ulong)nodeConfigVersion << 32) | (actualNodeCount + startIndex);
                 }
                 getConfiguredNodesOnEndpointMethodResponse.OpcNodes.AddRange(opcNodes.GetRange((int)startIndex, (int)actualNodeCount).Select(n => new OpcNodeOnEndpointModel(n.Id)
                 {
@@ -1287,7 +1287,7 @@ namespace OpcPublisher
                     int secondsTillExit = exitApplicationMethodRequest != null ? exitApplicationMethodRequest.SecondsTillExit : 5;
                     secondsTillExit = secondsTillExit < 5 ? 5 : secondsTillExit;
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                    Task.Run(async () => await ExitApplicationAsync(secondsTillExit).ConfigureAwait(false));
+                    Task.Run(() => ExitApplicationAsync(secondsTillExit).ConfigureAwait(false));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                     statusMessage = $"Module will exit now...";
                     Logger.Information($"{logPrefix} {statusMessage}");
@@ -1402,7 +1402,7 @@ namespace OpcPublisher
                 _monitoredItemsProcessorTask = null;
 
                 Logger.Information("Creating task process and batch monitored item data updates...");
-                _monitoredItemsProcessorTask = Task.Run(async () => await MonitoredItemsProcessorAsync(_shutdownToken).ConfigureAwait(false), _shutdownToken);
+                _monitoredItemsProcessorTask = Task.Run(() => MonitoredItemsProcessorAsync(_shutdownToken).ConfigureAwait(false), _shutdownToken);
                 return Task.FromResult(true);
             }
             catch (Exception e)
@@ -1603,8 +1603,7 @@ namespace OpcPublisher
             uint hubMessageBufferSize = (HubMessageSize > 0 ? HubMessageSize : HubMessageSizeMax) - (uint)systemPropertyLength - jsonSquareBracketLength - (uint)applicationPropertyLength;
             byte[] hubMessageBuffer = new byte[hubMessageBufferSize];
             MemoryStream hubMessage = new MemoryStream(hubMessageBuffer);
-            DateTime nextSendTime = DateTime.UtcNow + TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
-            double millisecondsTillNextSend = nextSendTime.Subtract(DateTime.UtcNow).TotalMilliseconds;
+            var nextSendTime = DateTime.UtcNow + TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
             bool singleMessageSend = DefaultSendIntervalSeconds == 0 && HubMessageSize == 0;
 
             using (hubMessage)
@@ -1624,26 +1623,38 @@ namespace OpcPublisher
                     }
                     while (true)
                     {
+                        TimeSpan timeTillNextSend;
+                        int millisToWait;
                         // sanity check the send interval, compute the timeout and get the next monitored item message
                         if (DefaultSendIntervalSeconds > 0)
                         {
-                            millisecondsTillNextSend = nextSendTime.Subtract(DateTime.UtcNow).TotalMilliseconds;
-                            if (millisecondsTillNextSend < 0)
+                            timeTillNextSend = nextSendTime.Subtract(DateTime.UtcNow);
+                            if (timeTillNextSend < TimeSpan.Zero)
                             {
                                 MissedSendIntervalCount++;
                                 // do not wait if we missed the send interval
-                                millisecondsTillNextSend = 0;
+                                timeTillNextSend = TimeSpan.Zero;
+                            }
+
+                            long millisLong = (long)timeTillNextSend.TotalMilliseconds;
+                            if (millisLong < 0 || millisLong > int.MaxValue)
+                            {
+                                millisToWait = 0;
+                            }
+                            else
+                            {
+                                millisToWait = (int)millisLong;
                             }
                         }
                         else
                         {
                             // if we are in shutdown do not wait, else wait infinite if send interval is not set
-                            millisecondsTillNextSend = ct.IsCancellationRequested ? 0 : Timeout.Infinite;
+                            millisToWait = ct.IsCancellationRequested ? 0 : -1;
                         }
-                        bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, (int)millisecondsTillNextSend, ct);
+                        bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, millisToWait, ct);
 
                         // the two commandline parameter --ms (message size) and --si (send interval) control when data is sent to IoTHub/EdgeHub
-                        // pls see detailed comments on performance and memory consumption at https://github.com/Azure/iot-edge-opc-publisher
+                        // pls see detailed comments on performance and memory consumption at https://github.com/Azure/Industrial-IoT /docs/modules
 
                         // check if we got an item or if we hit the timeout or got canceled
                         if (gotItem)
@@ -1660,7 +1671,7 @@ namespace OpcPublisher
                             }
 
                             NumberOfEvents++;
-                            jsonMessageSize = Encoding.UTF8.GetByteCount(jsonMessage.ToString(CultureInfo.InvariantCulture));
+                            jsonMessageSize = Encoding.UTF8.GetByteCount(jsonMessage);
 
                             // sanity check that the user has set a large enough messages size
                             if ((HubMessageSize > 0 && jsonMessageSize > HubMessageSize) || (HubMessageSize == 0 && jsonMessageSize > hubMessageBufferSize))
@@ -1679,9 +1690,9 @@ namespace OpcPublisher
                                 if (hubMessage.Position + jsonMessageSize + 1 <= hubMessage.Capacity)
                                 {
                                     // add the message and a comma to the buffer
-                                    hubMessage.Write(Encoding.UTF8.GetBytes(jsonMessage.ToString(CultureInfo.InvariantCulture)), 0, jsonMessageSize);
+                                    hubMessage.Write(Encoding.UTF8.GetBytes(jsonMessage), 0, jsonMessageSize);
                                     hubMessage.Write(Encoding.UTF8.GetBytes(","), 0, 1);
-                                    Logger.Debug($"Added new message with size {jsonMessageSize} to hub message (size is now {(hubMessage.Position - 1)}).");
+                                    Logger.Debug($"Added new message with size {jsonMessageSize} to hub message (size is now {hubMessage.Position - 1}).");
                                     continue;
                                 }
                                 else
@@ -1710,6 +1721,7 @@ namespace OpcPublisher
                             // if we reached the send interval, but have nothing to send (only the opening square bracket is there), we continue
                             if (!gotItem && hubMessage.Position == 1)
                             {
+                                Logger.Verbose("Adding {seconds} seconds to current nextSendTime {nextSendTime}...", DefaultSendIntervalSeconds, nextSendTime);
                                 nextSendTime += TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
                                 hubMessage.Position = 0;
                                 hubMessage.SetLength(0);
@@ -1724,7 +1736,7 @@ namespace OpcPublisher
                             if (singleMessageSend)
                             {
                                 // create the message without brackets
-                                encodedhubMessage = new Message(Encoding.UTF8.GetBytes(jsonMessage.ToString(CultureInfo.InvariantCulture)));
+                                encodedhubMessage = new Message(Encoding.UTF8.GetBytes(jsonMessage));
                             }
                             else
                             {
@@ -1738,7 +1750,12 @@ namespace OpcPublisher
                                 encodedhubMessage.ContentType = CONTENT_TYPE_OPCUAJSON;
                                 encodedhubMessage.ContentEncoding = CONTENT_ENCODING_UTF8;
 
-                                nextSendTime += TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
+                                if (nextSendTime < DateTime.UtcNow)
+                                {
+                                    Logger.Verbose("Adding {seconds} seconds to current nextSendTime {nextSendTime}...", DefaultSendIntervalSeconds, nextSendTime);
+                                    nextSendTime += TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
+                                }
+
                                 try
                                 {
                                     SentBytes += encodedhubMessage.GetBytes().Length;
@@ -1764,7 +1781,7 @@ namespace OpcPublisher
                                 if (needToBufferMessage)
                                 {
                                     // add the message and a comma to the buffer
-                                    hubMessage.Write(Encoding.UTF8.GetBytes(jsonMessage.ToString(CultureInfo.InvariantCulture)), 0, jsonMessageSize);
+                                    hubMessage.Write(Encoding.UTF8.GetBytes(jsonMessage), 0, jsonMessageSize);
                                     hubMessage.Write(Encoding.UTF8.GetBytes(","), 0, 1);
                                 }
                             }
@@ -1853,6 +1870,6 @@ namespace OpcPublisher
         private static Task _monitoredItemsProcessorTask;
         private static IHubClient _hubClient;
         private CancellationTokenSource _hubCommunicationCts;
-        private CancellationToken _shutdownToken;
+        private readonly CancellationToken _shutdownToken;
     }
 }

@@ -258,6 +258,9 @@ namespace OpcPublisher
                         { "dc|deviceconnectionstring=", $"{(IotEdgeIndicator.RunsAsIotEdgeModule ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
                             (string dc) => DeviceConnectionString = (IotEdgeIndicator.RunsAsIotEdgeModule ? null : dc)
                         },
+                        { "ec|edgehubconnectionstring=", $"{(IotEdgeIndicator.RunsAsIotEdgeModule ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
+                            (string dc) => EdgeHubConnectionString = (IotEdgeIndicator.RunsAsIotEdgeModule ? null : dc)
+                        },
                         { "c|connectionstring=", $"the IoTHub owner connectionstring.\nDefault: none",
                             (string cs) => IotHubOwnerConnectionString = cs
                         },
@@ -665,7 +668,6 @@ namespace OpcPublisher
 
                 // show version
                 Logger.Information($"OPC Publisher V{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion} starting up...");
-                Logger.Debug($"Informational version: V{(Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof(AssemblyInformationalVersionAttribute)) as AssemblyInformationalVersionAttribute).InformationalVersion}");
 
                 // allow canceling the application
                 var quitEvent = new ManualResetEvent(false);
@@ -678,7 +680,9 @@ namespace OpcPublisher
                         ShutdownTokenSource.Cancel();
                     };
                 }
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
                 catch
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
                 {
                 }
 
@@ -722,8 +726,12 @@ namespace OpcPublisher
                 // initialize the telemetry configuration
                 TelemetryConfiguration = PublisherTelemetryConfiguration.Instance;
 
+                // initialize the node configuration
+                NodeConfiguration = PublisherNodeConfiguration.Instance;
+
                 // initialize hub communication
-                if (IotEdgeIndicator.RunsAsIotEdgeModule)
+                if (IotEdgeIndicator.RunsAsIotEdgeModule ||
+                    !string.IsNullOrEmpty(EdgeHubConnectionString))
                 {
                     // initialize and start EdgeHub communication
                     Hub = IotEdgeHubCommunication.Instance;
@@ -733,9 +741,6 @@ namespace OpcPublisher
                     // initialize and start IoTHub communication
                     Hub = IotHubCommunication.Instance;
                 }
-
-                // initialize the node configuration
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
 
                 // kick off OPC session creation and node monitoring
                 await SessionStartAsync().ConfigureAwait(false);
@@ -1093,9 +1098,9 @@ namespace OpcPublisher
         }
 
         private static PublisherServer _publisherServer;
-        private static bool _noShutdown = false;
-        private static bool _installOnly = false;
+        private static bool _noShutdown;
+        private static bool _installOnly;
         private static TimeSpan _logFileFlushTimeSpanSec = TimeSpan.FromSeconds(30);
-        private static string _hubProtocols = string.Join(", ", Enum.GetNames(IotHubProtocolDefault.GetType()));
+        private static readonly string _hubProtocols = string.Join(", ", Enum.GetNames(IotHubProtocolDefault.GetType()));
     }
 }

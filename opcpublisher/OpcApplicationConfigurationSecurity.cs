@@ -196,8 +196,8 @@ namespace OpcPublisher
             // create a self signed certificate if there is none
             if (certificate == null)
             {
-                Logger.Information($"No existing Application certificate found. Create a self-signed Application certificate valid from yesterday for {CertificateFactory.defaultLifeTime} months,");
-                Logger.Information($"with a {CertificateFactory.defaultKeySize} bit key and {CertificateFactory.defaultHashSize} bit hash.");
+                Logger.Information($"No existing Application certificate found. Create a self-signed Application certificate valid from yesterday for {CertificateFactory.DefaultLifeTime} months,");
+                Logger.Information($"with a {CertificateFactory.DefaultKeySize} bit key and {CertificateFactory.DefaultHashSize} bit hash.");
                 certificate = CertificateFactory.CreateCertificate(
                     ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.StoreType,
                     ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.StorePath,
@@ -206,10 +206,10 @@ namespace OpcPublisher
                     ApplicationConfiguration.ApplicationName,
                     ApplicationConfiguration.ApplicationName,
                     null,
-                    CertificateFactory.defaultKeySize,
+                    CertificateFactory.DefaultKeySize,
                     DateTime.UtcNow - TimeSpan.FromDays(1),
-                    CertificateFactory.defaultLifeTime,
-                    CertificateFactory.defaultHashSize,
+                    CertificateFactory.DefaultLifeTime,
+                    CertificateFactory.DefaultHashSize,
                     false,
                     null,
                     null
