@@ -680,10 +680,9 @@ namespace OpcPublisher
                         ShutdownTokenSource.Cancel();
                     };
                 }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-                catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+                catch (Exception ex)
                 {
+                    Logger.Error(ex, "waiting for cancel key pressed causing error");
                 }
 
                 // show suppressed status codes

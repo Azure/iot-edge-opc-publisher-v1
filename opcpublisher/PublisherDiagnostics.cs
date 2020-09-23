@@ -121,11 +121,10 @@ namespace OpcPublisher
                 diagnosticInfo.HubMessageSize = HubMessageSize;
                 diagnosticInfo.HubProtocol = HubProtocol;
             }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-            catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+            catch (Exception ex)
             {
                 // startup might be not completed yet
+                Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
             }
             return diagnosticInfo;
         }
@@ -252,10 +251,9 @@ namespace OpcPublisher
                     Logger.Information($"--ih setting: {diagnosticInfo.HubProtocol}");
                     Logger.Information("==========================================================================");
                 }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-                catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+                catch (Exception ex)
                 {
+                    Logger.Error(ex, "writing diagnostics output causing error");
                 }
             }
         }
@@ -271,10 +269,9 @@ namespace OpcPublisher
             {
                 message = _logQueue.Dequeue();
             }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-            catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+            catch (Exception ex)
             {
+                Logger.Error(ex, "Dequeue log message causing error");
             }
             return message;
         }
