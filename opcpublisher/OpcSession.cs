@@ -249,8 +249,8 @@ namespace OpcPublisher
             _namespaceTable = new NamespaceTable();
             _telemetryConfiguration = TelemetryConfiguration.GetEndpointTelemetryConfiguration(endpointUrl);
             _connectAndMonitorAsync = Task.Run(ConnectAndMonitorAsync, _sessionCancelationToken);
-            this.OpcAuthenticationMode= opcAuthenticationMode;
-            this.EncryptedAuthCredential = encryptedAuthCredential;
+            OpcAuthenticationMode= opcAuthenticationMode;
+            EncryptedAuthCredential = encryptedAuthCredential;
         }
 
         public async Task Reconnect()
@@ -297,23 +297,19 @@ namespace OpcPublisher
                 _sessionCancelationTokenSource?.Cancel();
                 DisconnectAsync().Wait();
                 
-
                 foreach (var opcSubscription in OpcSubscriptions)
                 {
                     opcSubscription.Dispose();
                 }
-
-                
 
                 OpcSubscriptions?.Clear();
                 try
                 {
                     _connectAndMonitorAsync.Wait();
                 }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-                catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+                catch (Exception ex)
                 {
+                    Logger.Error(ex, "Error while wait OPC session to finished");
                 }
                 _sessionCancelationTokenSource?.Dispose();
                 _sessionCancelationTokenSource = null;
@@ -700,9 +696,8 @@ namespace OpcPublisher
                                 Logger.Information($"Now monitoring {monitoredItemsCount + index} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'");
                             }
                         }
-                        catch (Exception e) when (e.GetType() == typeof(ServiceResultException))
+                        catch (ServiceResultException sre)
                         {
-                            ServiceResultException sre = (ServiceResultException)e;
                             switch ((uint)sre.Result.StatusCode)
                             {
                                 case StatusCodes.BadSessionIdInvalid:
@@ -795,11 +790,10 @@ namespace OpcPublisher
                             opcSubscription.OpcUaClientSubscription.RemoveItems(itemsToRemove.Select(i => i.OpcUaClientMonitoredItem));
                             Logger.Information($"There are now {opcSubscription.OpcUaClientSubscription.MonitoredItemCount} monitored items in this subscription.");
                         }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-                        catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+                        catch (Exception ex)
                         {
                             // nodes may be tagged for stop before they are monitored, just continue
+                            Logger.Debug(ex, "Removing opc ua nodes from subscription caused exception");
                         }
                         // stop heartbeat timer for all items to remove
                         foreach (var itemToRemove in itemsToRemove)
@@ -848,11 +842,10 @@ namespace OpcPublisher
                         OpcUaClientSession.RemoveSubscriptions(subscriptionsToRemove.Select(s => s.OpcUaClientSubscription));
                         Logger.Information($"There are now {OpcUaClientSession.SubscriptionCount} subscriptions in this session.");
                     }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-                    catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+                    catch(Exception ex)
                     {
-                        // subsriptions may be no longer required before they are created, just continue
+                        // subscriptions may be no longer required before they are created, just continue
+                        Logger.Debug(ex, "Removing subscription caused exception");
                     }
                 }
                 // remove them in our data structures
@@ -973,11 +966,10 @@ namespace OpcPublisher
                 {
                     OpcUaClientSession?.Close();
                 }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-                catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+                catch (Exception ex)
                 {
                     // the session might be already invalidated. ignore.
+                    Logger.Debug(ex, "Closing OPC UA client session {SessionId} caused exception", OpcUaClientSession?.SessionId);
                 }
                 OpcUaClientSession = null;
             }

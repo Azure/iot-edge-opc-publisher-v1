@@ -1649,12 +1649,12 @@ namespace OpcPublisher
                         else
                         {
                             // if we are in shutdown do not wait, else wait infinite if send interval is not set
-                            millisToWait = ct.IsCancellationRequested ? 0 : -1;
+                            millisToWait = ct.IsCancellationRequested ? 0 : Timeout.Infinite;
                         }
                         bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, millisToWait, ct);
 
                         // the two commandline parameter --ms (message size) and --si (send interval) control when data is sent to IoTHub/EdgeHub
-                        // pls see detailed comments on performance and memory consumption at https://github.com/Azure/Industrial-IoT /docs/modules
+                        // pls see detailed comments on performance and memory consumption at https://github.com/Azure/iot-edge-opc-publisher
 
                         // check if we got an item or if we hit the timeout or got canceled
                         if (gotItem)

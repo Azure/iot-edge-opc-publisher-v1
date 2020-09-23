@@ -71,7 +71,6 @@
         /// </summary>
         private IotHubCommunication()
         {
-            IotHubOwnerConnectionString = "HostName=iothub-90020.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=UOC5kO3VEJfNxQ55IoowdwQdONCqFopew8qEBviybew=";
             // check if we got an IoTHub owner connection string
             if (string.IsNullOrEmpty(IotHubOwnerConnectionString))
             {
