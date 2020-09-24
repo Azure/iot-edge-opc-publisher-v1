@@ -47,7 +47,7 @@ namespace OpcPublisher
         /// The version of the node configuration. Each change in the configuration
         /// increments the version to protect get calls using continuation tokens.
         /// </summary>
-        public static int NodeConfigVersion = 0;
+        public static int NodeConfigVersion;
 #pragma warning restore CA2211 // Non-constant fields should not be visible
 
         /// <summary>
@@ -249,8 +249,8 @@ namespace OpcPublisher
             _namespaceTable = new NamespaceTable();
             _telemetryConfiguration = TelemetryConfiguration.GetEndpointTelemetryConfiguration(endpointUrl);
             _connectAndMonitorAsync = Task.Run(ConnectAndMonitorAsync, _sessionCancelationToken);
-            this.OpcAuthenticationMode= opcAuthenticationMode;
-            this.EncryptedAuthCredential = encryptedAuthCredential;
+            OpcAuthenticationMode= opcAuthenticationMode;
+            EncryptedAuthCredential = encryptedAuthCredential;
         }
 
         public async Task Reconnect()
@@ -296,17 +296,20 @@ namespace OpcPublisher
                 // dispose managed resources
                 _sessionCancelationTokenSource?.Cancel();
                 DisconnectAsync().Wait();
+                
                 foreach (var opcSubscription in OpcSubscriptions)
                 {
                     opcSubscription.Dispose();
                 }
+
                 OpcSubscriptions?.Clear();
                 try
                 {
                     _connectAndMonitorAsync.Wait();
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Error(ex, "Error while wait OPC session to finished");
                 }
                 _sessionCancelationTokenSource?.Dispose();
                 _sessionCancelationTokenSource = null;
@@ -558,11 +561,10 @@ namespace OpcPublisher
                     }
 
                     // process all unmonitored items.
-                    var unmonitoredItems = opcSubscription.OpcMonitoredItems.Where(i => (i.State == OpcMonitoredItemState.Unmonitored || i.State == OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested));
-                    int additionalMonitoredItemsCount = 0;
+                    var unmonitoredItems = opcSubscription.OpcMonitoredItems.Where(i => (i.State == OpcMonitoredItemState.Unmonitored || i.State == OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested)).ToArray();
                     int monitoredItemsCount = 0;
                     bool haveUnmonitoredItems = false;
-                    if (unmonitoredItems.Count() != 0)
+                    if (unmonitoredItems.Any())
                     {
                         haveUnmonitoredItems = true;
                         monitoredItemsCount = opcSubscription.OpcMonitoredItems.Count(i => (i.State == OpcMonitoredItemState.Monitored));
@@ -572,8 +574,9 @@ namespace OpcPublisher
                     // init perf data
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
-                    foreach (var item in unmonitoredItems)
-                    {
+                    for(int index = 0; index < unmonitoredItems.Length; index++) {
+                        var item = unmonitoredItems[index];
+
                         // if the session is not connected or a shutdown is in progress, we stop trying and wait for the next cycle
                         if (ct.IsCancellationRequested || State != SessionState.Connected)
                         {
@@ -661,7 +664,7 @@ namespace OpcPublisher
                             }
 
                             // add the new monitored item.
-                            IOpcUaMonitoredItem monitoredItem = new OpcUaMonitoredItem()
+                            IOpcUaMonitoredItem monitoredItem = new OpcUaMonitoredItem
                             {
                                 StartNodeId = currentNodeId,
                                 AttributeId = item.AttributeId,
@@ -674,7 +677,7 @@ namespace OpcPublisher
                             monitoredItem.Notification += item.Notification;
 
                             opcSubscription.OpcUaClientSubscription.AddItem(monitoredItem);
-                            if (additionalMonitoredItemsCount++ % 10000 == 0)
+                            if (index % 10000 == 0 || index == (unmonitoredItems.Length - 1))
                             {
                                 opcSubscription.OpcUaClientSubscription.SetPublishingMode(true);
                                 opcSubscription.OpcUaClientSubscription.ApplyChanges();
@@ -688,14 +691,13 @@ namespace OpcPublisher
                                 Logger.Information($"Sampling interval: requested: {item.RequestedSamplingInterval}; revised: {monitoredItem.SamplingInterval}");
                                 item.SamplingInterval = monitoredItem.SamplingInterval;
                             }
-                            if (additionalMonitoredItemsCount % 10000 == 0)
+                            if (index % 10000 == 0)
                             {
-                                Logger.Information($"Now monitoring {monitoredItemsCount + additionalMonitoredItemsCount} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'");
+                                Logger.Information($"Now monitoring {monitoredItemsCount + index} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'");
                             }
                         }
-                        catch (Exception e) when (e.GetType() == typeof(ServiceResultException))
+                        catch (ServiceResultException sre)
                         {
-                            ServiceResultException sre = (ServiceResultException)e;
                             switch ((uint)sre.Result.StatusCode)
                             {
                                 case StatusCodes.BadSessionIdInvalid:
@@ -705,6 +707,13 @@ namespace OpcPublisher
                                         InternalDisconnect();
                                         break;
                                     }
+                                case StatusCodes.BadSubscriptionIdInvalid:
+                                {
+                                    Logger.Information($"Subscription with Id {opcSubscription.OpcUaClientSubscription.Id} is no longer available on endpoint '{EndpointUrl}'. Cleaning up.");
+                                    // clean up the session/subscription
+                                    InternalDisconnect();
+                                    break;
+                                }
                                 case StatusCodes.BadNodeIdInvalid:
                                 case StatusCodes.BadNodeIdUnknown:
                                     {
@@ -724,8 +733,7 @@ namespace OpcPublisher
                             Logger.Error(e, $"Failed to monitor node '{currentNodeId}' on endpoint '{EndpointUrl}'");
                         }
                     }
-                    opcSubscription.OpcUaClientSubscription.SetPublishingMode(true);
-                    opcSubscription.OpcUaClientSubscription.ApplyChanges();
+
                     stopWatch.Stop();
                     if (haveUnmonitoredItems == true)
                     {
@@ -782,9 +790,10 @@ namespace OpcPublisher
                             opcSubscription.OpcUaClientSubscription.RemoveItems(itemsToRemove.Select(i => i.OpcUaClientMonitoredItem));
                             Logger.Information($"There are now {opcSubscription.OpcUaClientSubscription.MonitoredItemCount} monitored items in this subscription.");
                         }
-                        catch
+                        catch (Exception ex)
                         {
                             // nodes may be tagged for stop before they are monitored, just continue
+                            Logger.Debug(ex, "Removing opc ua nodes from subscription caused exception");
                         }
                         // stop heartbeat timer for all items to remove
                         foreach (var itemToRemove in itemsToRemove)
@@ -824,7 +833,7 @@ namespace OpcPublisher
                 }
 
                 // remove the subscriptions in the stack
-                var subscriptionsToRemove = OpcSubscriptions.Where(i => i.OpcMonitoredItems.Count == 0);
+                var subscriptionsToRemove = OpcSubscriptions.Where(i => i.OpcMonitoredItems.Count == 0).ToArray();
                 if (subscriptionsToRemove.Any())
                 {
                     try
@@ -833,9 +842,10 @@ namespace OpcPublisher
                         OpcUaClientSession.RemoveSubscriptions(subscriptionsToRemove.Select(s => s.OpcUaClientSubscription));
                         Logger.Information($"There are now {OpcUaClientSession.SubscriptionCount} subscriptions in this session.");
                     }
-                    catch
+                    catch(Exception ex)
                     {
-                        // subsriptions may be no longer required before they are created, just continue
+                        // subscriptions may be no longer required before they are created, just continue
+                        Logger.Debug(ex, "Removing subscription caused exception");
                     }
                 }
                 // remove them in our data structures
@@ -934,7 +944,9 @@ namespace OpcPublisher
                             OpcUaClientSession.RemoveSubscription(opcSubscription.OpcUaClientSubscription);
                         }
                     }
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
                     catch
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
                     {
                         // the session might be already invalidated. ignore.
                     }
@@ -954,9 +966,10 @@ namespace OpcPublisher
                 {
                     OpcUaClientSession?.Close();
                 }
-                catch
+                catch (Exception ex)
                 {
                     // the session might be already invalidated. ignore.
+                    Logger.Debug(ex, "Closing OPC UA client session {SessionId} caused exception", OpcUaClientSession?.SessionId);
                 }
                 OpcUaClientSession = null;
             }
@@ -1283,7 +1296,7 @@ namespace OpcPublisher
         /// </summary>
         private IOpcUaSubscription CreateSubscription(int requestedPublishingInterval, out int revisedPublishingInterval)
         {
-            IOpcUaSubscription subscription = new OpcUaSubscription()
+            IOpcUaSubscription subscription = new OpcUaSubscription(OpcUaClientSession.DefaultSubscription)
             {
                 PublishingInterval = requestedPublishingInterval,
             };
@@ -1320,6 +1333,7 @@ namespace OpcPublisher
                         Logger.Information($"Outstanding requests: {session.OutstandingRequestCount}, Defunct requests: {session.DefunctRequestCount}");
                         Logger.Information($"Good publish requests: {session.GoodPublishRequestCount}, KeepAlive interval: {session.KeepAliveInterval}");
                         Logger.Information($"SessionId: {session.SessionId}");
+                        Logger.Information($"Session State: {State}");
 
                         if (State == SessionState.Connected)
                         {
@@ -1329,7 +1343,7 @@ namespace OpcPublisher
                             {
                                 Logger.Warning($"Hit configured missed keep alive threshold of {OpcKeepAliveDisconnectThreshold}. Disconnecting the session to endpoint {session.ConfiguredEndpoint.EndpointUrl}.");
                                 session.KeepAlive -= StandardClient_KeepAlive;
-                                Task t = Task.Run(async () => await DisconnectAsync().ConfigureAwait(false));
+                                Task t = Task.Run(() => DisconnectAsync().ConfigureAwait(false));
                             }
                         }
                     }
@@ -1367,7 +1381,7 @@ namespace OpcPublisher
             {
                 return false;
             }
-            if (_sessionCancelationToken == null || _sessionCancelationToken.IsCancellationRequested)
+            if (_sessionCancelationToken.IsCancellationRequested)
             {
                 return false;
             }
@@ -1384,9 +1398,9 @@ namespace OpcPublisher
 
         private SemaphoreSlim _opcSessionSemaphore;
         private CancellationTokenSource _sessionCancelationTokenSource;
-        private CancellationToken _sessionCancelationToken;
-        private NamespaceTable _namespaceTable;
-        private EndpointTelemetryConfigurationModel _telemetryConfiguration;
-        private Task _connectAndMonitorAsync;
+        private readonly CancellationToken _sessionCancelationToken;
+        private readonly NamespaceTable _namespaceTable;
+        private readonly EndpointTelemetryConfigurationModel _telemetryConfiguration;
+        private readonly Task _connectAndMonitorAsync;
     }
 }

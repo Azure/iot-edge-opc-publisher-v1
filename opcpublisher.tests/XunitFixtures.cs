@@ -22,7 +22,7 @@ namespace OpcPublisher
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    dockerUri = new Uri("tcp://localhost:2375");
+                    dockerUri = new Uri("tcp://127.0.0.1:2375");
                 }
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
@@ -139,7 +139,7 @@ namespace OpcPublisher
         private async Task CleanupContainerAsync()
         {
             IList<ContainerListResponse> containers = await _dockerClient.Containers.ListContainersAsync(
-                new ContainersListParameters()
+                new ContainersListParameters
                 {
                     Limit = 10,
                 });
@@ -170,10 +170,10 @@ namespace OpcPublisher
 
         // when testing locally, spin up your own registry and put the image in here
         //string _plcImage = "localhost:5000/opc-plc";
-        string _plcImage = "mcr.microsoft.com/iotedge/opc-plc";
-        string _plcPort = "50000";
-        DockerClient _dockerClient = null;
-        string _plcContainerId = string.Empty;
+        readonly string _plcImage = "mcr.microsoft.com/iotedge/opc-plc";
+        readonly string _plcPort = "50000";
+        readonly DockerClient _dockerClient;
+        readonly string _plcContainerId = string.Empty;
     }
 
     public sealed class PlcOpcUaServerFixture : IDisposable
@@ -184,7 +184,11 @@ namespace OpcPublisher
         {
             try
             {
-                Plc = new PlcOpcUaServer();
+                // Disable in CI
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BUILD_SOURCEBRANCH")))
+                {
+                    Plc = new PlcOpcUaServer();
+                }
             }
             catch
             {

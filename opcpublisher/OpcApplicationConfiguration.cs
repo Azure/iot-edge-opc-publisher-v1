@@ -26,7 +26,7 @@ namespace OpcPublisher
 
         public static string ApplicationName { get; set; } = "publisher";
         public static string ApplicationUri => $"urn:{Hostname}:{ApplicationName}:microsoft:";
-        public static string ProductUri => $"https://github.com/azure-samples/iot-edge-opc-publisher";
+        public static string ProductUri => $"https://github.com/azure/iot-edge-opc-publisher";
         public static ushort ServerPort { get; set; } = 62222;
         public static string ServerPath { get; set; } = "/UA/Publisher";
 
@@ -50,7 +50,6 @@ namespace OpcPublisher
         /// </summary>
         public static int OpcMaxStringLength { get; set; } = HubCommunicationBase.MaxResponsePayloadLength;
 
-        /// <summary>
         /// <summary>
         /// Mapping of the application logging levels to OPC stack logging levels.
         /// </summary>
@@ -145,7 +144,7 @@ namespace OpcPublisher
             }
 
             // by default use high secure transport
-            ServerSecurityPolicy newPolicy = new ServerSecurityPolicy()
+            ServerSecurityPolicy newPolicy = new ServerSecurityPolicy
             {
                 SecurityMode = MessageSecurityMode.SignAndEncrypt,
                 SecurityPolicyUri = SecurityPolicies.Basic256Sha256
@@ -156,7 +155,7 @@ namespace OpcPublisher
             // add none secure transport on request
             if (EnableUnsecureTransport)
             {
-                newPolicy = new ServerSecurityPolicy()
+                newPolicy = new ServerSecurityPolicy
                 {
                     SecurityMode = MessageSecurityMode.None,
                     SecurityPolicyUri = SecurityPolicies.None

@@ -54,7 +54,7 @@ namespace OpcPublisher
             // kick off the task to show diagnostic info
             if (DiagnosticsInterval > 0)
             {
-                _showDiagnosticsInfoTask = Task.Run(async () => await ShowDiagnosticsInfoAsync(_shutdownTokenSource.Token).ConfigureAwait(false));
+                _showDiagnosticsInfoTask = Task.Run(() => ShowDiagnosticsInfoAsync(_shutdownTokenSource.Token).ConfigureAwait(false));
             }
         }
 
@@ -121,9 +121,10 @@ namespace OpcPublisher
                 diagnosticInfo.HubMessageSize = HubMessageSize;
                 diagnosticInfo.HubProtocol = HubProtocol;
             }
-            catch
+            catch (Exception ex)
             {
                 // startup might be not completed yet
+                Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
             }
             return diagnosticInfo;
         }
@@ -250,8 +251,9 @@ namespace OpcPublisher
                     Logger.Information($"--ih setting: {diagnosticInfo.HubProtocol}");
                     Logger.Information("==========================================================================");
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Error(ex, "writing diagnostics output causing error");
                 }
             }
         }
@@ -267,8 +269,9 @@ namespace OpcPublisher
             {
                 message = _logQueue.Dequeue();
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Error(ex, "Dequeue log message causing error");
             }
             return message;
         }
@@ -300,16 +303,16 @@ namespace OpcPublisher
             }
         }
 
-        private static SemaphoreSlim _logQueueSemaphore = new SemaphoreSlim(1);
-        private static int _logMessageCount = 100;
+        private static readonly SemaphoreSlim _logQueueSemaphore = new SemaphoreSlim(1);
+        private static readonly int _logMessageCount = 100;
         private static int _missedMessageCount;
-        private static Queue<string> _logQueue = new Queue<string>();
+        private static readonly Queue<string> _logQueue = new Queue<string>();
         private static CancellationTokenSource _shutdownTokenSource;
         private static Task _showDiagnosticsInfoTask;
-        private static List<string> _startupLog = new List<string>();
+        private static readonly List<string> _startupLog = new List<string>();
 
         private static readonly object _singletonLock = new object();
-        private static IPublisherDiagnostics _instance = null;
+        private static IPublisherDiagnostics _instance;
     }
 
     /// <summary>
