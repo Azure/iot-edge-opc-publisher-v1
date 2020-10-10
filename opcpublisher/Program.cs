@@ -8,17 +8,16 @@ using System.Threading.Tasks;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
     using Opc.Ua;
     using Opc.Ua.Server;
     using Serilog;
+    using System.ComponentModel;
     using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Text;
     using System.Text.RegularExpressions;
     using static HubCommunicationBase;
-    using static IotEdgeHubCommunication;
     using static IotHubCommunication;
     using static Opc.Ua.CertificateStoreType;
     using static OpcApplicationConfiguration;
@@ -28,8 +27,6 @@ namespace OpcPublisher
     using static PublisherNodeConfiguration;
     using static PublisherTelemetryConfiguration;
     using static System.Console;
-    using System.ComponentModel;
-    using OpcPublisher.Crypto;
 
     public sealed class Program
     {
@@ -52,11 +49,6 @@ namespace OpcPublisher
         /// Diagnostics object.
         /// </summary>
         public static IPublisherDiagnostics Diag { get; set; }
-
-        /// <summary>
-        /// Provider to encrypt/decrypt data.
-        /// </summary>
-        public static ICryptoProvider CryptoProvider { get; set; }
 
         /// <summary>
         /// Shutdown token source.
@@ -134,16 +126,10 @@ namespace OpcPublisher
                 {
                     WriteLine("IoTEdge detected.");
 
-                    CryptoProvider = new IotEdgeCryptoProvider();
-
                     // set IoT Edge specific defaults
                     HubProtocol = IotEdgeHubProtocolDefault;
                 }
-                else
-                {
-                    CryptoProvider = new StandaloneCryptoProvider();
-                }
-
+                
                 // command line options
                 Mono.Options.OptionSet options = new Mono.Options.OptionSet {
                         // Publisher configuration options

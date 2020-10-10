@@ -1,48 +1,51 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+
 
 namespace OpcPublisher.Crypto
 {
     /// <summary>
-    /// Class to provide in-memory access to encrypted credentials. It uses the static CryptoProvider from the
-    /// Programm-class to encrypt/decrypt credentials.
+    /// Provides in-memory access to encrypted credentials. It uses the OPC UA app cert to encrypt/decrypt credentials.
     /// </summary>
     public class EncryptedNetworkCredential : NetworkCredential
     {
-        public async static Task<EncryptedNetworkCredential> FromPlainCredential(string username, string password)
-        {
-            return await EncryptedNetworkCredential.FromNetworkCredential(new NetworkCredential(username, password));
-        }
+        public async static Task<EncryptedNetworkCredential> FromPlainCredential(string username, string password) => await Encrypt(new NetworkCredential(username, password));
 
-        public async static Task<EncryptedNetworkCredential> FromNetworkCredential(NetworkCredential networkCredential)
+        public async static Task<EncryptedNetworkCredential> Encrypt(NetworkCredential networkCredential)
         {
-            EncryptedNetworkCredential encryptedNetworkCredential = new EncryptedNetworkCredential();
+            EncryptedNetworkCredential result = new EncryptedNetworkCredential();
+
+            X509Certificate2 cert = await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
 
             if (networkCredential.UserName != null)
             {
-                encryptedNetworkCredential.UserName = await Program.CryptoProvider.EncryptAsync(networkCredential.UserName);
+                result.UserName = Convert.ToBase64String(cert.GetRSAPublicKey().EncryptValue(Convert.FromBase64String(networkCredential.UserName)));
             }
-
+            
             if (networkCredential.Password != null)
             {
-                encryptedNetworkCredential.Password = await Program.CryptoProvider.EncryptAsync(networkCredential.Password);
+                result.Password = Convert.ToBase64String(cert.GetRSAPublicKey().EncryptValue(Convert.FromBase64String(networkCredential.Password)));
             }
 
-            return encryptedNetworkCredential;
+            return result;
         }
 
         public async Task<NetworkCredential> Decrypt()
         {
-            var result = new NetworkCredential();
+            NetworkCredential result = new NetworkCredential();
 
-            if (this.UserName != null)
+            X509Certificate2 cert = await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
+
+            if (UserName != null)
             {
-                result.UserName = await Program.CryptoProvider.DecryptAsync(this.UserName);
+                result.UserName = Convert.ToBase64String(cert.GetRSAPrivateKey().DecryptValue(Convert.FromBase64String(UserName)));
             }
 
-            if (this.Password != null)
+            if (Password != null)
             {
-                result.Password = await Program.CryptoProvider.DecryptAsync(this.Password);
+                result.Password = Convert.ToBase64String(cert.GetRSAPrivateKey().DecryptValue(Convert.FromBase64String(Password)));
             }
 
             return result;
@@ -50,11 +53,9 @@ namespace OpcPublisher.Crypto
 
         public override bool Equals(object obj)
         {
-            var other = obj as EncryptedNetworkCredential;
-
-            if (other != null)
+            if (obj is EncryptedNetworkCredential other)
             {
-                return this.UserName.Equals(other.UserName) && this.Password.Equals(other.Password);
+                return UserName.Equals(other.UserName) && Password.Equals(other.Password);
             }
             else
             {
@@ -62,9 +63,6 @@ namespace OpcPublisher.Crypto
             }
         }
 
-        public override int GetHashCode()
-        {
-            return (this.UserName + this.Password).GetHashCode();
-        }
+        public override int GetHashCode() => (UserName + Password).GetHashCode();
     }
 }
