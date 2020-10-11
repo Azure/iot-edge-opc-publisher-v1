@@ -13,7 +13,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class to control the telemetry publish, name and pattern properties.
     /// </summary>
-    public class TelemetrySettings : ITelemetrySettings
+    public class TelemetrySettings
     {
         /// <summary>
         /// Flag to control if the value should be published.
@@ -135,7 +135,7 @@ namespace OpcPublisher
         /// <summary>
         /// The ApplicationUri value telemetry configuration.
         /// </summary>
-        public ITelemetrySettings ApplicationUri
+        public TelemetrySettings ApplicationUri
         {
             get => _applicationUri;
             set
@@ -149,7 +149,7 @@ namespace OpcPublisher
         /// <summary>
         /// The DisplayName value telemetry configuration.
         /// </summary>
-        public ITelemetrySettings DisplayName
+        public TelemetrySettings DisplayName
         {
             get => _displayName;
             set
@@ -171,8 +171,8 @@ namespace OpcPublisher
         }
 
         private bool? _flat;
-        private ITelemetrySettings _applicationUri;
-        private ITelemetrySettings _displayName;
+        private TelemetrySettings _applicationUri;
+        private TelemetrySettings _displayName;
     }
 
     /// <summary>
@@ -198,7 +198,7 @@ namespace OpcPublisher
         /// <summary>
         /// The Value value telemetry configuration.
         /// </summary>
-        public ITelemetrySettings Value
+        public TelemetrySettings Value
         {
             get => _value;
             set
@@ -212,7 +212,7 @@ namespace OpcPublisher
         /// <summary>
         /// The SourceTimestamp value telemetry configuration.
         /// </summary>
-        public ITelemetrySettings SourceTimestamp
+        public TelemetrySettings SourceTimestamp
         {
             get => _sourceTimestamp;
             set
@@ -226,7 +226,7 @@ namespace OpcPublisher
         /// <summary>
         /// The StatusCode value telemetry configuration.
         /// </summary>
-        public ITelemetrySettings StatusCode
+        public TelemetrySettings StatusCode
         {
             get => _statusCode;
             set
@@ -240,7 +240,7 @@ namespace OpcPublisher
         /// <summary>
         /// The Status value telemetry configuration.
         /// </summary>
-        public ITelemetrySettings Status
+        public TelemetrySettings Status
         {
             get => _status;
             set
@@ -283,7 +283,7 @@ namespace OpcPublisher
         /// <summary>
         /// Specifies the configuration for the value EndpointUrl.
         /// </summary>
-        public ITelemetrySettings EndpointUrl
+        public TelemetrySettings EndpointUrl
         {
             get => _endpointUrl;
             set
@@ -297,7 +297,7 @@ namespace OpcPublisher
         /// <summary>
         /// Specifies the configuration for the value NodeId.
         /// </summary>
-        public ITelemetrySettings NodeId
+        public TelemetrySettings NodeId
         {
             get => _nodeId;
             set
@@ -308,7 +308,7 @@ namespace OpcPublisher
             }
         }
 
-        public ITelemetrySettings ExpandedNodeId
+        public TelemetrySettings ExpandedNodeId
         {
             get => _expandedNodeId;
             set
@@ -393,7 +393,7 @@ namespace OpcPublisher
         }
     }
 
-    public class PublisherTelemetryConfiguration : IPublisherTelemetryConfiguration
+    public class PublisherTelemetryConfiguration
     {
         public const string EndpointUrlNameDefault = "EndpointUrl";
         public const string NodeIdNameDefault = "NodeId";
@@ -410,7 +410,7 @@ namespace OpcPublisher
         /// <summary>
         /// Get the singleton.
         /// </summary>
-        public static IPublisherTelemetryConfiguration Instance
+        public static PublisherTelemetryConfiguration Instance
         {
             get
             {
@@ -654,6 +654,6 @@ namespace OpcPublisher
         private Dictionary<string, EndpointTelemetryConfigurationModel> _endpointTelemetryConfigurationCache;
 
         private static readonly object _singletonLock = new object();
-        private static IPublisherTelemetryConfiguration _instance = null;
+        private static PublisherTelemetryConfiguration _instance = null;
     }
 }

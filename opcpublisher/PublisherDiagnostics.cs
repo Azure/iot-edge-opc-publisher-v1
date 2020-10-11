@@ -17,7 +17,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class to enable output to the console.
     /// </summary>
-    public class PublisherDiagnostics : IPublisherDiagnostics, IDisposable
+    public class PublisherDiagnostics : IDisposable
     {
         /// <summary>
         /// Command line argument in which interval in seconds to show the diagnostic info.
@@ -27,7 +27,7 @@ namespace OpcPublisher
         /// <summary>
         /// Get the singleton.
         /// </summary>
-        public static IPublisherDiagnostics Instance
+        public static PublisherDiagnostics Instance
         {
             get
             {
@@ -309,7 +309,7 @@ namespace OpcPublisher
         private static List<string> _startupLog = new List<string>();
 
         private static readonly object _singletonLock = new object();
-        private static IPublisherDiagnostics _instance = null;
+        private static PublisherDiagnostics _instance = null;
     }
 
     /// <summary>

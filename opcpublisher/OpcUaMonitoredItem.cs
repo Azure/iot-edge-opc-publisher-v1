@@ -7,7 +7,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class to encapsulate OPC UA monitored item API.
     /// </summary>
-    public class OpcUaMonitoredItem : IOpcUaMonitoredItem
+    public class OpcUaMonitoredItem
     {
         public MonitoredItem MonitoredItem => _monitoredItem;
 

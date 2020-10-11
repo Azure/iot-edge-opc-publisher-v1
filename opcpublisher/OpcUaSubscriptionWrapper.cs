@@ -9,7 +9,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class to encapsulate OPC UA subscription API.
     /// </summary>
-    public class OpcUaSubscription : IOpcUaSubscription
+    public class OpcUaSubscriptionWrapper
     {
         public uint Id => _subscription.Id;
 
@@ -32,7 +32,7 @@ namespace OpcPublisher
 
         public Subscription Subscription => _subscription;
 
-        public OpcUaSubscription()
+        public OpcUaSubscriptionWrapper()
         {
             _subscription = new Subscription();
         }
@@ -59,7 +59,7 @@ namespace OpcPublisher
             GC.SuppressFinalize(this);
         }
 
-        public void AddItem(IOpcUaMonitoredItem monitoredItem) => _subscription.AddItem(monitoredItem.MonitoredItem);
+        public void AddItem(OpcUaMonitoredItem monitoredItem) => _subscription.AddItem(monitoredItem.MonitoredItem);
 
         public void AddItem(MonitoredItem monitoredItem) => _subscription.AddItem(monitoredItem);
 
@@ -69,7 +69,7 @@ namespace OpcPublisher
 
         public void Delete(bool silent) => _subscription.Delete(silent);
 
-        public void RemoveItems(IEnumerable<IOpcUaMonitoredItem> monitoredItems) => _subscription.RemoveItems(monitoredItems.Select(m => m.MonitoredItem));
+        public void RemoveItems(IEnumerable<OpcUaMonitoredItem> monitoredItems) => _subscription.RemoveItems(monitoredItems.Select(m => m.MonitoredItem));
 
         public void RemoveItems(IEnumerable<MonitoredItem> monitoredItems) => _subscription.RemoveItems(monitoredItems);
 

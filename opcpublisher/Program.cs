@@ -22,7 +22,7 @@ namespace OpcPublisher
     using static Opc.Ua.CertificateStoreType;
     using static OpcApplicationConfiguration;
     using static OpcMonitoredItem;
-    using static OpcSession;
+    using static OpcUaSessionManager;
     using static PublisherDiagnostics;
     using static PublisherNodeConfiguration;
     using static PublisherTelemetryConfiguration;
@@ -38,7 +38,7 @@ namespace OpcPublisher
         /// <summary>
         /// Telemetry configuration object.
         /// </summary>
-        public static IPublisherTelemetryConfiguration TelemetryConfiguration { get; set; }
+        public static PublisherTelemetryConfiguration TelemetryConfiguration { get; set; }
 
         /// <summary>
         /// Node configuration object.
@@ -48,7 +48,7 @@ namespace OpcPublisher
         /// <summary>
         /// Diagnostics object.
         /// </summary>
-        public static IPublisherDiagnostics Diag { get; set; }
+        public static PublisherDiagnostics Diag { get; set; }
 
         /// <summary>
         /// Shutdown token source.
@@ -816,7 +816,7 @@ namespace OpcPublisher
             {
                 while (NodeConfiguration.OpcSessions.Count > 0)
                 {
-                    IOpcSession opcSession = null;
+                    OpcUaSessionManager opcSession = null;
                     try
                     {
                         await NodeConfiguration.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);

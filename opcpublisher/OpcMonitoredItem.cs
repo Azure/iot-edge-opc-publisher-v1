@@ -15,7 +15,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class used to pass data from the MonitoredItem notification to the hub message processing.
     /// </summary>
-    public class MessageData : IMessageData
+    public class MessageData
     {
         /// <summary>
         /// The endpoint URL the monitored item belongs to.
@@ -130,7 +130,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class to manage the OPC monitored items, which are the nodes we need to publish.
     /// </summary>
-    public class OpcMonitoredItem : IOpcMonitoredItem
+    public class OpcMonitoredItem
     {
         /// <summary>
         /// The state of the monitored item.
@@ -215,7 +215,7 @@ namespace OpcPublisher
         /// <summary>
         /// The OPC UA stacks monitored item object.
         /// </summary>
-        public IOpcUaMonitoredItem OpcUaClientMonitoredItem { get; set; }
+        public OpcUaMonitoredItem OpcUaClientMonitoredItem { get; set; }
 
         /// <summary>
         /// The OPC UA identifier of the node in NodeId ("ns=") syntax.
@@ -445,7 +445,7 @@ namespace OpcPublisher
                     }
                     if (telemetryConfiguration.MonitoredItem.ApplicationUri.Publish == true)
                     {
-                        messageData.ApplicationUri = (monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(OpcSession.PublisherSite) ? "" : $":{OpcSession.PublisherSite}"));
+                        messageData.ApplicationUri = (monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(OpcUaSessionManager.PublisherSite) ? "" : $":{OpcUaSessionManager.PublisherSite}"));
                     }
                     if (telemetryConfiguration.MonitoredItem.DisplayName.Publish == true && monitoredItem.DisplayName != null)
                     {

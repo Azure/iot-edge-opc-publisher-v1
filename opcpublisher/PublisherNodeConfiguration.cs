@@ -14,7 +14,7 @@ namespace OpcPublisher
     using System.Threading;
     using static OpcApplicationConfiguration;
     using static OpcMonitoredItem;
-    using static OpcSession;
+    using static OpcUaSessionManager;
     using static Program;
 
     public class PublisherNodeConfiguration : IPublisherNodeConfiguration, IDisposable
@@ -61,7 +61,7 @@ namespace OpcPublisher
                 try
                 {
                     OpcSessionsListSemaphore.Wait();
-                    result = OpcSessions.Count(s => s.State == OpcSession.SessionState.Connected);
+                    result = OpcSessions.Count(s => s.State == OpcUaSessionManager.SessionState.Connected);
                 }
                 finally
                 {
@@ -106,7 +106,7 @@ namespace OpcPublisher
                 try
                 {
                     OpcSessionsListSemaphore.Wait();
-                    var opcSessions = OpcSessions.Where(s => s.State == OpcSession.SessionState.Connected);
+                    var opcSessions = OpcSessions.Where(s => s.State == OpcUaSessionManager.SessionState.Connected);
                     foreach (var opcSession in opcSessions)
                     {
                         result += opcSession.GetNumberOfOpcSubscriptions();
@@ -155,7 +155,7 @@ namespace OpcPublisher
                 try
                 {
                     OpcSessionsListSemaphore.Wait();
-                    var opcSessions = OpcSessions.Where(s => s.State == OpcSession.SessionState.Connected);
+                    var opcSessions = OpcSessions.Where(s => s.State == OpcUaSessionManager.SessionState.Connected);
                     foreach (var opcSession in opcSessions)
                     {
                         result += opcSession.GetNumberOfOpcMonitoredItemsMonitored();
@@ -212,7 +212,7 @@ namespace OpcPublisher
         /// <summary>
         /// List of configured OPC UA sessions.
         /// </summary>
-        public virtual List<IOpcSession> OpcSessions { get; set; } = new List<IOpcSession>();
+        public virtual List<OpcUaSessionManager> OpcSessions { get; set; } = new List<OpcUaSessionManager>();
 #pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
@@ -426,9 +426,9 @@ namespace OpcPublisher
             return true;
         }
 
-        public virtual IOpcSession CreateOpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
+        public virtual OpcUaSessionManager CreateOpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
-            return new OpcSession(endpointUrl, _nodePublishingConfiguration.Where(n => n.EndpointUrl == endpointUrl).First().UseSecurity, OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
+            return new OpcUaSessionManager(endpointUrl, _nodePublishingConfiguration.Where(n => n.EndpointUrl == endpointUrl).First().UseSecurity, OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
         }
 
         /// <summary>
@@ -461,14 +461,14 @@ namespace OpcPublisher
                     }
 
                     // create new session info.
-                    IOpcSession opcSession = new OpcSession(endpointUrl, currentNodePublishingConfiguration.UseSecurity, OpcSessionCreationTimeout, currentNodePublishingConfiguration.OpcAuthenticationMode, encryptedAuthCredential);
+                    OpcUaSessionManager opcSession = new OpcUaSessionManager(endpointUrl, currentNodePublishingConfiguration.UseSecurity, OpcSessionCreationTimeout, currentNodePublishingConfiguration.OpcAuthenticationMode, encryptedAuthCredential);
 
                     // create a subscription for each distinct publishing inverval
                     var nodesDistinctPublishingInterval = _nodePublishingConfiguration.Where(n => n.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)).Select(c => c.OpcPublishingInterval).Distinct();
                     foreach (var nodeDistinctPublishingInterval in nodesDistinctPublishingInterval)
                     {
                         // create a subscription for the publishing interval and add it to the session.
-                        IOpcSubscription opcSubscription = new OpcSubscription(nodeDistinctPublishingInterval);
+                        OpcSubscription opcSubscription = new OpcSubscription(nodeDistinctPublishingInterval);
 
                         // add all nodes with this OPC publishing interval to this subscription.
                         var nodesWithSamePublishingInterval = _nodePublishingConfiguration.Where(n => n.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)).Where(n => n.OpcPublishingInterval == nodeDistinctPublishingInterval);

@@ -61,7 +61,7 @@ namespace OpcPublisher
         /// <summary>
         /// List of configured OPC UA sessions.
         /// </summary>
-        List<IOpcSession> OpcSessions { get; set; }
+        List<OpcUaSessionManager> OpcSessions { get; set; }
 #pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>

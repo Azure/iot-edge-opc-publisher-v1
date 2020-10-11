@@ -9,7 +9,6 @@ namespace OpcPublisher
     using OpcPublisher.Crypto;
     using System.Diagnostics;
     using System.Net;
-    using System.Security;
     using System.Threading;
     using System.Threading.Tasks;
     using static OpcApplicationConfiguration;
@@ -19,7 +18,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class to manage OPC sessions.
     /// </summary>
-    public class OpcSession : IOpcSession
+    public class OpcUaSessionManager
     {
         /// <summary>
         /// The state of the session object.
@@ -64,7 +63,7 @@ namespace OpcPublisher
         /// <summary>
         /// The OPC UA stack session object of the session.
         /// </summary>
-        public IOpcUaSession OpcUaClientSession { get; set; }
+        public OpcUaSessionWrapper OpcUaClientSession { get; set; }
 
         /// <summary>
         /// The state of the session.
@@ -74,7 +73,7 @@ namespace OpcPublisher
         /// <summary>
         /// The subscriptions on this session.
         /// </summary>
-        public List<IOpcSubscription> OpcSubscriptions { get; }
+        public List<OpcSubscription> OpcSubscriptions { get; }
 
         /// <summary>
         /// Counts session connection attempts which were unsuccessful.
@@ -232,12 +231,12 @@ namespace OpcPublisher
         /// <summary>
         /// Ctor for the session.
         /// </summary>
-        public OpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
+        public OpcUaSessionManager(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
             State = SessionState.Disconnected;
             EndpointUrl = endpointUrl;
             SessionTimeout = sessionTimeout * 1000;
-            OpcSubscriptions = new List<IOpcSubscription>();
+            OpcSubscriptions = new List<OpcSubscription>();
             UnsuccessfulConnectionCount = 0;
             MissedKeepAlives = 0;
             PublishingInterval = OpcPublishingInterval;
@@ -282,7 +281,7 @@ namespace OpcPublisher
         /// <summary>
         /// Ctor for the session.
         /// </summary>
-        public OpcSession()
+        public OpcUaSessionManager()
         {
         }
 
@@ -455,7 +454,7 @@ namespace OpcPublisher
                             throw new NotImplementedException($"The authentication mode '{OpcAuthenticationMode}' has not yet been implemented.");
                     }
 
-                    OpcUaClientSession = new OpcUaSession(
+                    OpcUaClientSession = new OpcUaSessionWrapper(
                             OpcApplicationConfiguration.ApplicationConfiguration,
                             configuredEndpoint,
                             true,
@@ -661,7 +660,7 @@ namespace OpcPublisher
                             }
 
                             // add the new monitored item.
-                            IOpcUaMonitoredItem monitoredItem = new OpcUaMonitoredItem()
+                            OpcUaMonitoredItem monitoredItem = new OpcUaMonitoredItem()
                             {
                                 StartNodeId = currentNodeId,
                                 AttributeId = item.AttributeId,
@@ -988,7 +987,7 @@ namespace OpcPublisher
 
                 // check if there is already a subscription with the same publishing interval, which can be used to monitor the node
                 int opcPublishingIntervalForNode = opcPublishingInterval ?? OpcPublishingIntervalDefault;
-                IOpcSubscription opcSubscription = OpcSubscriptions.FirstOrDefault(s => s.RequestedPublishingInterval == opcPublishingIntervalForNode);
+                OpcSubscription opcSubscription = OpcSubscriptions.FirstOrDefault(s => s.RequestedPublishingInterval == opcPublishingIntervalForNode);
 
                 // if there was none found, create one
                 if (opcSubscription == null)
@@ -1247,9 +1246,9 @@ namespace OpcPublisher
                         Logger.Information($"Removing {OpcUaClientSession.SubscriptionCount} subscriptions from session.");
                         while (OpcSubscriptions.Count > 0)
                         {
-                            IOpcSubscription opcSubscription = OpcSubscriptions.ElementAt(0);
+                            OpcSubscription opcSubscription = OpcSubscriptions.ElementAt(0);
                             OpcSubscriptions.RemoveAt(0);
-                            IOpcUaSubscription opcUaClientSubscription = opcSubscription.OpcUaClientSubscription;
+                            OpcUaSubscriptionWrapper opcUaClientSubscription = opcSubscription.OpcUaClientSubscription;
                             opcUaClientSubscription.Delete(true);
                         }
                         Logger.Information($"Closing session to endpoint URI '{EndpointUrl}' closed successfully.");
@@ -1281,9 +1280,9 @@ namespace OpcPublisher
         /// <summary>
         /// Create a subscription in the session.
         /// </summary>
-        private IOpcUaSubscription CreateSubscription(int requestedPublishingInterval, out int revisedPublishingInterval)
+        private OpcUaSubscriptionWrapper CreateSubscription(int requestedPublishingInterval, out int revisedPublishingInterval)
         {
-            IOpcUaSubscription subscription = new OpcUaSubscription()
+            OpcUaSubscriptionWrapper subscription = new OpcUaSubscriptionWrapper()
             {
                 PublishingInterval = requestedPublishingInterval,
             };

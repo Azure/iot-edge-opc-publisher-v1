@@ -16,7 +16,7 @@ namespace OpcPublisher
     public class PublisherNodeManager : CustomNodeManager2
     {
         public PublisherNodeManager(Opc.Ua.Server.IServerInternal server, ApplicationConfiguration configuration)
-        : base(server, configuration, Namespaces.PublisherApplications)
+        : base(server, configuration, "http://microsoft.com/Opc/Publisher/")
         {
             SystemContext.NodeIdFactory = this;
         }
@@ -500,14 +500,13 @@ namespace OpcPublisher
                 }
 
                 // find the session we need to monitor the node
-                IOpcSession opcSession = null;
-                opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                OpcUaSessionManager opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
 
                 // add a new session.
                 if (opcSession == null)
                 {
                     // create new session info.
-                    opcSession = new OpcSession(endpointUri.OriginalString, true, OpcSessionCreationTimeout, OpcAuthenticationMode.Anonymous, null);
+                    opcSession = new OpcUaSessionManager(endpointUri.OriginalString, true, OpcSessionCreationTimeout, OpcAuthenticationMode.Anonymous, null);
                     NodeConfiguration.OpcSessions.Add(opcSession);
                     Logger.Information($"OnPublishNodeCall: No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                 }
@@ -595,7 +594,7 @@ namespace OpcPublisher
                 }
 
                 // find the session we need to monitor the node
-                IOpcSession opcSession = null;
+                OpcUaSessionManager opcSession = null;
                 try
                 {
                     opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));

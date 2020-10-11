@@ -10,7 +10,7 @@ namespace OpcPublisher
     /// Class to manage OPC subscriptions. We create a subscription for each different publishing interval
     /// on an endpoint.
     /// </summary>
-    public class OpcSubscription : IOpcSubscription
+    public class OpcSubscription
     {
         /// <summary>
         /// List of monitored items on this subscription.
@@ -20,7 +20,7 @@ namespace OpcPublisher
         /// <summary>
         /// The OPC UA stack subscription object.
         /// </summary>
-        public IOpcUaSubscription OpcUaClientSubscription { get; set; }
+        public OpcUaSubscriptionWrapper OpcUaClientSubscription { get; set; }
 
         /// <summary>
         /// The publishing interval requested to be used for the subscription.

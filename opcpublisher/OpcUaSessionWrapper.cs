@@ -10,9 +10,9 @@ namespace OpcPublisher
     /// <summary>
     /// Class to encapsulate OPC UA session API.
     /// </summary>
-    public class OpcUaSession : IOpcUaSession
+    public class OpcUaSessionWrapper
     {
-        public OpcUaSession(ApplicationConfiguration configuration, ConfiguredEndpoint endpoint, bool updateBeforeConnect, bool checkDomain, string sessionName, uint sessionTimeout, IUserIdentity identity, IList<string> preferredLocales) =>
+        public OpcUaSessionWrapper(ApplicationConfiguration configuration, ConfiguredEndpoint endpoint, bool updateBeforeConnect, bool checkDomain, string sessionName, uint sessionTimeout, IUserIdentity identity, IList<string> preferredLocales) =>
              _session = Session.Create(configuration, endpoint, updateBeforeConnect, checkDomain, sessionName, sessionTimeout, identity, preferredLocales).Result;
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace OpcPublisher
         }
 
 
-        public bool AddSubscription(IOpcUaSubscription subscription) => _session.AddSubscription(subscription.Subscription);
+        public bool AddSubscription(OpcUaSubscriptionWrapper subscription) => _session.AddSubscription(subscription.Subscription);
 
         public bool AddSubscription(Subscription subscription) => _session.AddSubscription(subscription);
 
@@ -78,11 +78,11 @@ namespace OpcPublisher
 
         public DataValue ReadValue(NodeId nodeId) => _session.ReadValue(nodeId);
 
-        public bool RemoveSubscription(IOpcUaSubscription subscription) => _session.RemoveSubscription(subscription.Subscription);
+        public bool RemoveSubscription(OpcUaSubscriptionWrapper subscription) => _session.RemoveSubscription(subscription.Subscription);
 
         public bool RemoveSubscription(Subscription subscription) => _session.RemoveSubscription(subscription);
 
-        public bool RemoveSubscriptions(IEnumerable<IOpcUaSubscription> subscriptions) => _session.RemoveSubscriptions(subscriptions.Select(s => s.Subscription));
+        public bool RemoveSubscriptions(IEnumerable<OpcUaSubscriptionWrapper> subscriptions) => _session.RemoveSubscriptions(subscriptions.Select(s => s.Subscription));
 
         public bool RemoveSubscriptions(IEnumerable<Subscription> subscriptions) => _session.RemoveSubscriptions(subscriptions);
 

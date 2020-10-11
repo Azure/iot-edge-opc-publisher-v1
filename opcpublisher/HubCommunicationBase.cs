@@ -309,8 +309,7 @@ namespace OpcPublisher
                     else
                     {
                         // find the session we need to monitor the node
-                        IOpcSession opcSession = null;
-                        opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                        OpcUaSessionManager opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
 
                         // add a new session.
                         if (opcSession == null)
@@ -322,7 +321,7 @@ namespace OpcPublisher
                             }
                             
                             // create new session info.
-                            opcSession = new OpcSession(endpointUri.OriginalString, useSecurity, OpcSessionCreationTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
+                            opcSession = new OpcUaSessionManager(endpointUri.OriginalString, useSecurity, OpcSessionCreationTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
                             NodeConfiguration.OpcSessions.Add(opcSession);
                             Logger.Information($"{logPrefix} No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                         }
@@ -538,7 +537,7 @@ namespace OpcPublisher
                     else
                     {
                         // find the session we need to monitor the node
-                        IOpcSession opcSession = null;
+                        OpcUaSessionManager opcSession = null;
                         try
                         {
                             opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));

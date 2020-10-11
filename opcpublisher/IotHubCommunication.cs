@@ -88,7 +88,7 @@
             Logger.Information($"IoTHub device cert path is: {IotDeviceCertStorePath}");
             if (string.IsNullOrEmpty(IotHubOwnerConnectionString))
             {
-                Logger.Information("IoT Hub owner connection string not specified. Assume device connection string already in cert store or passed in via command line option.");
+                Logger.Information("IoT Hub owner connection string not specified. Please pass in device connection string via command line options.");
             }
             else
             {
