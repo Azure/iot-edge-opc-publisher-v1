@@ -414,13 +414,20 @@ namespace OpcPublisher
         {
             get
             {
-                lock (_singletonLock)
+                if (_instance != null)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new PublisherTelemetryConfiguration();
-                    }
                     return _instance;
+                }
+                else
+                {
+                    lock (_singletonLock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new PublisherTelemetryConfiguration();
+                        }
+                        return _instance;
+                    }
                 }
             }
         }

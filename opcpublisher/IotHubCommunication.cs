@@ -55,13 +55,20 @@
         {
             get
             {
-                lock (_singletonLock)
+                if (_instance != null)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new IotHubCommunication();
-                    }
                     return _instance;
+                }
+                else
+                {
+                    lock (_singletonLock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new IotHubCommunication();
+                        }
+                        return _instance;
+                    }
                 }
             }
         }

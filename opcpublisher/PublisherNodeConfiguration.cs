@@ -222,13 +222,20 @@ namespace OpcPublisher
         {
             get
             {
-                lock (_singletonLock)
+                if (_instance != null)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new PublisherNodeConfiguration();
-                    }
                     return _instance;
+                }
+                else
+                {
+                    lock (_singletonLock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new PublisherNodeConfiguration();
+                        }
+                        return _instance;
+                    }
                 }
             }
         }
