@@ -109,9 +109,9 @@ namespace OpcPublisher
         /// <summary>
         /// The protocol to use for hub communication.
         /// </summary>
-        public const TransportType IotHubProtocolDefault = TransportType.Mqtt_WebSocket_Only;
-        public const TransportType IotEdgeHubProtocolDefault = TransportType.Amqp_Tcp_Only;
-        public static TransportType HubProtocol { get; set; } = IotHubProtocolDefault;
+        public const Microsoft.Azure.Devices.Client.TransportType IotHubProtocolDefault = Microsoft.Azure.Devices.Client.TransportType.Mqtt_WebSocket_Only;
+        public const Microsoft.Azure.Devices.Client.TransportType IotEdgeHubProtocolDefault = Microsoft.Azure.Devices.Client.TransportType.Amqp_Tcp_Only;
+        public static Microsoft.Azure.Devices.Client.TransportType HubProtocol { get; set; } = IotHubProtocolDefault;
 
         /// <summary>
         /// Dictionary of available IoTHub direct methods.
@@ -121,7 +121,7 @@ namespace OpcPublisher
         /// <summary>
         /// Check if transport type to use is HTTP.
         /// </summary>
-        bool IsHttp1Transport() => HubProtocol == TransportType.Http1;
+        bool IsHttp1Transport() => HubProtocol == Microsoft.Azure.Devices.Client.TransportType.Http1;
 
         /// <summary>
         /// Ctor for the class.
