@@ -1,4 +1,9 @@
-﻿using Opc.Ua;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Opc.Ua;
 using Opc.Ua.Client;
 using System;
 using System.Collections.Generic;
@@ -133,7 +138,7 @@ namespace OpcPublisher
 
         public bool HeartbeatIntervalFromConfiguration { get; set; } = false;
 
-        public MessageData HeartbeatMessage { get; set; } = null;
+        public MessageDataModel HeartbeatMessage { get; set; } = null;
 
         public Timer HeartbeatSendTimer { get; set; } = null;
 
@@ -265,7 +270,7 @@ namespace OpcPublisher
                 // stop the heartbeat timer
                 HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
-                MessageData messageData = new MessageData();
+                MessageDataModel messageData = new MessageDataModel();
                 if (IotCentralMode)
                 {
                     // for IoTCentral we use the DisplayName as the key in the telemetry and the Value as the value.

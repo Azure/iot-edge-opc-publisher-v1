@@ -1,4 +1,9 @@
-﻿using Microsoft.Azure.Devices.Client;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Microsoft.Azure.Devices.Client;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,7 +83,7 @@ namespace OpcPublisher
         /// <summary>
         /// Enqueue a message for sending to IoTHub.
         /// </summary>
-        void Enqueue(MessageData json);
+        void Enqueue(MessageDataModel json);
 
         /// <summary>
         /// Dequeue monitored item notification messages, batch them for send (if needed) and send them to IoTHub.

@@ -1,4 +1,9 @@
-﻿using Microsoft.Azure.Devices.Client;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using Opc.Ua;
 using OpcPublisher.Crypto;
@@ -1394,7 +1399,7 @@ namespace OpcPublisher
                 Logger.Information($"Message processing and hub communication configured with a send interval of {DefaultSendIntervalSeconds} sec and a message buffer size of {HubMessageSize} bytes.");
 
                 // create the queue for monitored items
-                _monitoredItemsDataQueue = new BlockingCollection<MessageData>(MonitoredItemsQueueCapacity);
+                _monitoredItemsDataQueue = new BlockingCollection<MessageDataModel>(MonitoredItemsQueueCapacity);
 
                 // start up task to send telemetry to IoTHub
                 _monitoredItemsProcessorTask = null;
@@ -1413,7 +1418,7 @@ namespace OpcPublisher
         /// <summary>
         /// Enqueue a message for sending to IoTHub.
         /// </summary>
-        public virtual void Enqueue(MessageData json)
+        public virtual void Enqueue(MessageDataModel json)
         {
             // Try to add the message.
             Interlocked.Increment(ref _enqueueCount);
@@ -1430,7 +1435,7 @@ namespace OpcPublisher
         /// <summary>
         /// Creates a JSON message to be sent to IoTHub, based on the telemetry configuration for the endpoint.
         /// </summary>
-        private async Task<string> CreateJsonMessageAsync(MessageData messageData)
+        private async Task<string> CreateJsonMessageAsync(MessageDataModel messageData)
         {
             try
             {
@@ -1563,7 +1568,7 @@ namespace OpcPublisher
         /// <summary>
         /// Creates a JSON message to be sent to IoTCentral.
         /// </summary>
-        private async Task<string> CreateIotCentralJsonMessageAsync(MessageData messageData)
+        private async Task<string> CreateIotCentralJsonMessageAsync(MessageDataModel messageData)
         {
             try
             {
@@ -1609,7 +1614,7 @@ namespace OpcPublisher
                 try
                 {
                     string jsonMessage = string.Empty;
-                    MessageData messageData = new MessageData();
+                    MessageDataModel messageData = new MessageDataModel();
                     bool needToBufferMessage = false;
                     int jsonMessageSize = 0;
 
@@ -1864,7 +1869,7 @@ namespace OpcPublisher
 
         private static long _enqueueCount;
         private static long _enqueueFailureCount;
-        private static BlockingCollection<MessageData> _monitoredItemsDataQueue;
+        private static BlockingCollection<MessageDataModel> _monitoredItemsDataQueue;
         private static Task _monitoredItemsProcessorTask;
         private static IHubClient _hubClient;
         private CancellationTokenSource _hubCommunicationCts;

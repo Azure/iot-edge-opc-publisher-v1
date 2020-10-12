@@ -1,11 +1,16 @@
-﻿using static OpcPublisher.Program;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
     /// <summary>
     /// Class used to pass data from the MonitoredItem notification to the hub message processing.
     /// </summary>
-    public class MessageData
+    public class MessageDataModel
     {
         /// <summary>
         /// The endpoint URL the monitored item belongs to.
@@ -60,7 +65,7 @@ namespace OpcPublisher
         /// <summary>
         /// Ctor of the object.
         /// </summary>
-        public MessageData()
+        public MessageDataModel()
         {
             EndpointUrl = null;
             NodeId = null;
