@@ -71,6 +71,8 @@ namespace OpcPublisher
 
         public bool AddSubscription(Subscription subscription) => _session.AddSubscription(subscription);
 
+        public Subscription DefaultSubscription => _session.DefaultSubscription;
+
         public StatusCode Close() => _session.Close();
 
         public Node ReadNode(NodeId nodeId) => _session.ReadNode(nodeId);
@@ -85,6 +87,6 @@ namespace OpcPublisher
 
         public bool RemoveSubscriptions(IEnumerable<Subscription> subscriptions) => _session.RemoveSubscriptions(subscriptions);
 
-        private Session _session = null;
+        private Session _session;
     }
 }

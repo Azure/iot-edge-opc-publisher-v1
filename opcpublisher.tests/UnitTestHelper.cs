@@ -25,7 +25,7 @@ namespace OpcPublisher
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
             }
-            return iter < _maxIterations ? (iter * _sleepMilliseconds) / 1000 : -1;
+            return iter < _maxIterations ? iter * _sleepMilliseconds / 1000 : -1;
         }
         public static int WaitTilItemsAreMonitoredAndFirstEventReceived()
         {
@@ -37,13 +37,14 @@ namespace OpcPublisher
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
             }
-            return iter < _maxIterations ? (iter * _sleepMilliseconds) / 1000 : -1;
+            return iter < _maxIterations ? iter * _sleepMilliseconds / 1000 : -1;
         }
 
         public static void SetPublisherDefaults()
         {
             OpcApplicationConfiguration.OpcSamplingInterval = 1000;
             OpcApplicationConfiguration.OpcPublishingInterval = 0;
+            OpcApplicationConfiguration.AutoAcceptCerts = true;
             HubCommunicationBase.DefaultSendIntervalSeconds = 0;
             HubCommunicationBase.HubMessageSize = 0;
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
@@ -52,6 +53,6 @@ namespace OpcPublisher
 
         private const int _maxTimeSeconds = 30;
         private const int _sleepMilliseconds = 100;
-        private const int _maxIterations = (_maxTimeSeconds * 1000) / _sleepMilliseconds;
+        private const int _maxIterations = _maxTimeSeconds * 1000 / _sleepMilliseconds;
     }
 }

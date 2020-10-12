@@ -1,9 +1,0 @@
-﻿
-[assembly: System.Reflection.AssemblyCompany("Microsoft")]
-[assembly: System.Reflection.AssemblyConfiguration("Release")]
-[assembly: System.Reflection.AssemblyDescription("Azure IoT Edge OPC Publisher Module")]
-[assembly: System.Reflection.AssemblyFileVersion("2.5.5")]
-[assembly: System.Reflection.AssemblyInformationalVersion("2.5.5")]
-[assembly: System.Reflection.AssemblyProduct("opcpublisher")]
-[assembly: System.Reflection.AssemblyTitle("opcpublisher")]
-[assembly: System.Reflection.AssemblyVersion("2.5.5.0")]

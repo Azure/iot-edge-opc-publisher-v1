@@ -31,9 +31,9 @@ namespace OpcPublisher
 
         public Subscription Subscription => _subscription;
 
-        public OpcUaSubscriptionWrapper()
+        public OpcUaSubscription(Subscription defaultSubscription)
         {
-            _subscription = new Subscription();
+            _subscription = new Subscription(defaultSubscription);
         }
 
         /// <summary>
@@ -75,6 +75,6 @@ namespace OpcPublisher
         public void SetPublishingMode(bool enabled) => _subscription.SetPublishingMode(enabled);
 
 
-        private Subscription _subscription = null;
+        private Subscription _subscription;
     }
 }

@@ -96,7 +96,7 @@ namespace OpcPublisher
             Match match = _patternRegex.Match(stringToParse);
             if (match.Groups[0].Success)
             {
-                foreach (var group in match.Groups.Values.Skip(1))
+                foreach (var group in match.Groups.Cast<Group>().Skip(1))
                 {
                     result += group.Value;
                 }
@@ -170,8 +170,8 @@ namespace OpcPublisher
         }
 
         private bool? _flat;
-        private TelemetrySettings _applicationUri;
-        private TelemetrySettings _displayName;
+        private readonly ITelemetrySettings _applicationUri;
+        private readonly ITelemetrySettings _displayName;
     }
 
     /// <summary>
@@ -263,10 +263,10 @@ namespace OpcPublisher
         }
 
         private bool? _flat;
-        private TelemetrySettings _value;
-        private TelemetrySettings _sourceTimestamp;
-        private TelemetrySettings _statusCode;
-        private TelemetrySettings _status;
+        private readonly TelemetrySettings _value;
+        private readonly TelemetrySettings _sourceTimestamp;
+        private readonly TelemetrySettings _statusCode;
+        private readonly TelemetrySettings _status;
     }
 
     /// <summary>
@@ -361,11 +361,11 @@ namespace OpcPublisher
             _value = new ValueTelemetryConfiguration();
         }
 
-        private TelemetrySettings _endpointUrl;
-        private MonitoredItemTelemetryConfiguration _monitoredItem;
-        private ValueTelemetryConfiguration _value;
-        private TelemetrySettings _nodeId;
-        private TelemetrySettings _expandedNodeId;
+        private readonly TelemetrySettings _endpointUrl;
+        private readonly MonitoredItemTelemetryConfiguration _monitoredItem;
+        private readonly ValueTelemetryConfiguration _value;
+        private readonly TelemetrySettings _nodeId;
+        private readonly TelemetrySettings _expandedNodeId;
     }
 
     /// <summary>
@@ -655,9 +655,9 @@ namespace OpcPublisher
         }
 
         private TelemetryConfigurationFileModel _telemetryConfiguration;
-        private List<EndpointTelemetryConfigurationModel> _endpointTelemetryConfigurations;
+        private readonly List<EndpointTelemetryConfigurationModel> _endpointTelemetryConfigurations;
         private EndpointTelemetryConfigurationModel _defaultEndpointTelemetryConfiguration;
-        private Dictionary<string, EndpointTelemetryConfigurationModel> _endpointTelemetryConfigurationCache;
+        private readonly Dictionary<string, EndpointTelemetryConfigurationModel> _endpointTelemetryConfigurationCache;
 
         private static readonly object _singletonLock = new object();
         private static PublisherTelemetryConfiguration _instance = null;

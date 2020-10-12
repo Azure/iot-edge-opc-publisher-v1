@@ -1,13 +1,18 @@
-﻿using System;
-using static OpcPublisher.Program;
-
-namespace OpcPublisher
+﻿namespace OpcPublisher
 {
+    using System;
+    using static Program;
+
     /// <summary>
     /// Class to handle all IoTEdge communication.
     /// </summary>
     public class IotEdgeHubCommunication : HubCommunicationBase
     {
+        /// <summary>
+        /// Edge hub connection string - if not running inside iotedge
+        /// </summary>
+        public static string EdgeHubConnectionString { get; set; } = null;
+
         /// <summary>
         /// Get the singleton.
         /// </summary>
@@ -15,20 +20,13 @@ namespace OpcPublisher
         {
             get
             {
-                if (_instance != null)
+                lock (_singletonLock)
                 {
-                    return _instance;
-                }
-                else
-                {
-                    lock (_singletonLock)
+                    if (_instance == null)
                     {
-                        if (_instance == null)
-                        {
-                            _instance = new IotEdgeHubCommunication();
-                        }
-                        return _instance;
+                        _instance = new IotEdgeHubCommunication();
                     }
+                    return _instance;
                 }
             }
         }
@@ -40,7 +38,9 @@ namespace OpcPublisher
         {
             // connect to IoT Edge hub
             Logger.Information($"Create module client using '{HubProtocol}' for communication.");
-            IHubClient hubClient = HubClient.CreateModuleClientFromEnvironment(HubProtocol);
+            IHubClient hubClient = string.IsNullOrEmpty(EdgeHubConnectionString) ?
+                HubClient.CreateModuleClientFromEnvironment(HubProtocol) :
+                HubClient.CreateModuleClientFromConnectionString(EdgeHubConnectionString, HubProtocol);
 
             if (!InitHubCommunicationAsync(hubClient).Result)
             {
@@ -51,6 +51,6 @@ namespace OpcPublisher
         }
 
         private static readonly object _singletonLock = new object();
-        private static IotEdgeHubCommunication _instance = null;
+        private static IotEdgeHubCommunication _instance;
     }
 }

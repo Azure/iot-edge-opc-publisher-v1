@@ -137,8 +137,8 @@ namespace OpcPublisher
 
             method.InputArguments.Value = new Argument[]
             {
-                new Argument() { Name = "NodeId", Description = "NodeId of the node to publish in NodeId format.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
-                new Argument() { Name = "EndpointUrl", Description = "Endpoint URI of the OPC UA server owning the node.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
+                new Argument { Name = "NodeId", Description = "NodeId of the node to publish in NodeId format.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
+                new Argument { Name = "EndpointUrl", Description = "Endpoint URI of the OPC UA server owning the node.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
             };
 
             method.OnCallMethod = new GenericMethodCalledEventHandler(OnPublishNodeCall);
@@ -163,8 +163,8 @@ namespace OpcPublisher
 
             method.InputArguments.Value = new Argument[]
             {
-                new Argument() { Name = "NodeId", Description = "NodeId of the node to publish in NodeId format.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
-                new Argument() { Name = "EndpointUrl", Description = "Endpoint URI of the OPC UA server owning the node.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
+                new Argument { Name = "NodeId", Description = "NodeId of the node to publish in NodeId format.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
+                new Argument { Name = "EndpointUrl", Description = "Endpoint URI of the OPC UA server owning the node.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
             };
 
             method.OnCallMethod = new GenericMethodCalledEventHandler(OnUnpublishNodeCall);
@@ -190,7 +190,7 @@ namespace OpcPublisher
 
             method.InputArguments.Value = new Argument[]
             {
-                new Argument() { Name = "EndpointUrl", Description = "Endpoint URI of the OPC UA server to return the published nodes for.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
+                new Argument { Name = "EndpointUrl", Description = "Endpoint URI of the OPC UA server to return the published nodes for.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
             };
 
             // set output arguments
@@ -207,7 +207,7 @@ namespace OpcPublisher
 
             method.OutputArguments.Value = new Argument[]
             {
-                        new Argument() { Name = "Published nodes", Description = "List of the nodes configured to publish in OPC Publisher in NodeId format",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
+                        new Argument { Name = "Published nodes", Description = "List of the nodes configured to publish in OPC Publisher in NodeId format",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
             };
             method.OnCallMethod = new GenericMethodCalledEventHandler(OnGetPublishedNodesLegacyCall);
         }
@@ -231,8 +231,8 @@ namespace OpcPublisher
 
             method.InputArguments.Value = new Argument[]
             {
-                new Argument() { Name = "MethodName", Description = "Name of the IoTHub direct method.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
-                new Argument() { Name = "RequestJson", Description = "Request model as json string.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
+                new Argument { Name = "MethodName", Description = "Name of the IoTHub direct method.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
+                new Argument { Name = "RequestJson", Description = "Request model as json string.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
             };
 
             // set output arguments
@@ -249,7 +249,7 @@ namespace OpcPublisher
 
             method.OutputArguments.Value = new Argument[]
             {
-                new Argument() { Name = "ResponseJson", Description = "Response model as json string.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
+                new Argument { Name = "ResponseJson", Description = "Response model as json string.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
             };
             method.OnCallMethod = new GenericMethodCalledEventHandler(OnIoTHubDirectMethodCall);
         }
@@ -634,7 +634,7 @@ namespace OpcPublisher
             {
                 NodeConfiguration.OpcSessionsListSemaphore.Release();
             }
-            return (statusCode == HttpStatusCode.OK || statusCode == HttpStatusCode.Accepted ? ServiceResult.Good : ServiceResult.Create(StatusCodes.Bad, "Can not stop monitoring node!"));
+            return statusCode == HttpStatusCode.OK || statusCode == HttpStatusCode.Accepted ? ServiceResult.Good : ServiceResult.Create(StatusCodes.Bad, "Can not stop monitoring node!");
         }
 
         /// <summary>

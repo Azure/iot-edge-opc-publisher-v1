@@ -7,7 +7,9 @@ using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    public partial class PublisherServer : StandardServer
+    using static Program;
+
+    public class PublisherServer : StandardServer
     {
         /// <summary>
         /// Creates the node managers for the server.
@@ -101,7 +103,9 @@ namespace OpcPublisher
                     }
                 }
             }
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
             catch
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
             {
                 // ignore error during shutdown procedure.
             }

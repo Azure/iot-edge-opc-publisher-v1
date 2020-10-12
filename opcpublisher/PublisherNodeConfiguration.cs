@@ -267,7 +267,7 @@ namespace OpcPublisher
         {
             if (disposing)
             {
-                OpcSessionsListSemaphore.Wait();
+                //OpcSessionsListSemaphore.Wait(); avoid get semaphore here, otherwise there will be deadlock during OpcSession disposing 
                 foreach (var opcSession in OpcSessions)
                 {
                     opcSession.Dispose();
@@ -426,7 +426,7 @@ namespace OpcPublisher
 
         public virtual OpcUaSessionManager CreateOpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
-            return new OpcUaSessionManager(endpointUrl, _nodePublishingConfiguration.Where(n => n.EndpointUrl == endpointUrl).First().UseSecurity, OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
+            return new OpcSession(endpointUrl, _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl).UseSecurity, OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
         }
 
         /// <summary>
@@ -444,7 +444,7 @@ namespace OpcPublisher
                 var uniqueEndpointUrls = _nodePublishingConfiguration.Select(n => n.EndpointUrl).Distinct();
                 foreach (var endpointUrl in uniqueEndpointUrls)
                 {
-                    var currentNodePublishingConfiguration = _nodePublishingConfiguration.Where(n => n.EndpointUrl == endpointUrl).First();
+                    var currentNodePublishingConfiguration = _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl);
 
                     EncryptedNetworkCredential encryptedAuthCredential = null;
 
@@ -721,6 +721,6 @@ namespace OpcPublisher
         private List<ConfigurationFileEntryLegacyModel> _configurationFileEntries;
 
         private static readonly object _singletonLock = new object();
-        private static IPublisherNodeConfiguration _instance = null;
+        private static IPublisherNodeConfiguration _instance;
     }
 }

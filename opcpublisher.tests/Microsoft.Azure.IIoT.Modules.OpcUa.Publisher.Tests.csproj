@@ -17,6 +17,9 @@
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="test.runsettings">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="testdata\heartbeatinterval\pn_plc_empty.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
