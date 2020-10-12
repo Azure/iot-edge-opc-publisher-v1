@@ -170,8 +170,8 @@ namespace OpcPublisher
         }
 
         private bool? _flat;
-        private readonly ITelemetrySettings _applicationUri;
-        private readonly ITelemetrySettings _displayName;
+        private readonly TelemetrySettings _applicationUri;
+        private readonly TelemetrySettings _displayName;
     }
 
     /// <summary>

@@ -1294,7 +1294,7 @@ namespace OpcPublisher
         /// </summary>
         private OpcUaSubscriptionWrapper CreateSubscription(int requestedPublishingInterval, out int revisedPublishingInterval)
         {
-            IOpcUaSubscription subscription = new OpcUaSubscription()
+            OpcUaSubscriptionWrapper subscription = new OpcUaSubscriptionWrapper(OpcUaClientSession.DefaultSubscription)
             {
                 PublishingInterval = requestedPublishingInterval,
             };

@@ -31,7 +31,7 @@ namespace OpcPublisher
 
         public Subscription Subscription => _subscription;
 
-        public OpcUaSubscription(Subscription defaultSubscription)
+        public OpcUaSubscriptionWrapper(Subscription defaultSubscription)
         {
             _subscription = new Subscription(defaultSubscription);
         }

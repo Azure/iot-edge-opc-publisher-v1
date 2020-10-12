@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static Opc.Ua.CertificateStoreType;
 using static OpcPublisher.HubCommunicationBase;
+using static OpcPublisher.IotEdgeHubCommunication;
 using static OpcPublisher.IotHubCommunication;
 using static OpcPublisher.OpcApplicationConfiguration;
 using static OpcPublisher.OpcUaMonitoredItemManager;
@@ -85,11 +86,20 @@ namespace OpcPublisher
         public static string LogLevel { get; set; } = "info";
 
         /// <summary>
+        /// Flag indicating if we are running in an IoT Edge context
+        /// </summary>
+        public static bool RunningInIoTEdgeContext = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_IOTHUBHOSTNAME")) &&
+                                                     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_MODULEGENERATIONID")) &&
+                                                     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_WORKLOADURI")) &&
+                                                     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_DEVICEID")) &&
+                                                     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_MODULEID"));
+
+        /// <summary>
         /// Synchronous main method of the app.
         /// </summary>
         public static void Main(string[] args)
         {
-            if (IotEdgeIndicator.RunsAsIotEdgeModule)
+            if (RunningInIoTEdgeContext)
             {
                 var waitForDebugger = args.Any(a => a.ToLower().Contains("wfd") || a.ToLower().Contains("waitfordebugger"));
 
@@ -121,7 +131,7 @@ namespace OpcPublisher
 
                 // detect the runtime environment. either we run standalone (native or containerized) or as IoT Edge module (containerized)
                 // check if we have an environment variable containing an IoT Edge connectionstring, we run as IoT Edge module
-                if (IotEdgeIndicator.RunsAsIotEdgeModule)
+                if (RunningInIoTEdgeContext)
                 {
                     WriteLine("IoTEdge detected.");
 
@@ -207,7 +217,7 @@ namespace OpcPublisher
                         { "ih|iothubprotocol=", $"the protocol to use for communication with IoTHub (allowed values: {$"{string.Join(", ", Enum.GetNames(HubProtocol.GetType()))}"}) or IoT EdgeHub (allowed values: Mqtt_Tcp_Only, Amqp_Tcp_Only).\nDefault for IoTHub: {IotHubProtocolDefault}\nDefault for IoT EdgeHub: {IotEdgeHubProtocolDefault}",
                             (Microsoft.Azure.Devices.Client.TransportType p) => {
                                 HubProtocol = p;
-                                if (IotEdgeIndicator.RunsAsIotEdgeModule)
+                                if (RunningInIoTEdgeContext)
                                 {
                                     if (p != Microsoft.Azure.Devices.Client.TransportType.Mqtt_Tcp_Only && p != Microsoft.Azure.Devices.Client.TransportType.Amqp_Tcp_Only)
                                     {
@@ -240,11 +250,11 @@ namespace OpcPublisher
                             }
                         },
 
-                        { "dc|deviceconnectionstring=", $"{(IotEdgeIndicator.RunsAsIotEdgeModule ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
-                            (string dc) => DeviceConnectionString = (IotEdgeIndicator.RunsAsIotEdgeModule ? null : dc)
+                        { "dc|deviceconnectionstring=", $"{(RunningInIoTEdgeContext ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
+                            (string dc) => DeviceConnectionString = (RunningInIoTEdgeContext ? null : dc)
                         },
-                        { "ec|edgehubconnectionstring=", $"{(IotEdgeIndicator.RunsAsIotEdgeModule ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
-                            (string dc) => EdgeHubConnectionString = (IotEdgeIndicator.RunsAsIotEdgeModule ? null : dc)
+                        { "ec|edgehubconnectionstring=", $"{(RunningInIoTEdgeContext ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
+                            (string dc) => EdgeHubConnectionString = (RunningInIoTEdgeContext ? null : dc)
                         },
                         { "c|connectionstring=", $"the IoTHub owner connectionstring.\nDefault: none",
                             (string cs) => IotHubOwnerConnectionString = cs
@@ -623,7 +633,7 @@ namespace OpcPublisher
                     case 2:
                         {
                             ApplicationName = extraArgs[APP_NAME_INDEX];
-                            if (IotEdgeIndicator.RunsAsIotEdgeModule)
+                            if (RunningInIoTEdgeContext)
                             {
                                 WriteLine($"Warning: connection string parameter is not supported in IoTEdge context, given parameter is ignored");
                             }
@@ -714,7 +724,7 @@ namespace OpcPublisher
                 NodeConfiguration = PublisherNodeConfiguration.Instance;
 
                 // initialize hub communication
-                if (IotEdgeIndicator.RunsAsIotEdgeModule ||
+                if (RunningInIoTEdgeContext ||
                     !string.IsNullOrEmpty(EdgeHubConnectionString))
                 {
                     // initialize and start EdgeHub communication

@@ -426,7 +426,7 @@ namespace OpcPublisher
 
         public virtual OpcUaSessionManager CreateOpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
-            return new OpcSession(endpointUrl, _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl).UseSecurity, OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
+            return new OpcUaSessionManager(endpointUrl, _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl).UseSecurity, OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
         }
 
         /// <summary>
@@ -721,6 +721,6 @@ namespace OpcPublisher
         private List<ConfigurationFileEntryLegacyModel> _configurationFileEntries;
 
         private static readonly object _singletonLock = new object();
-        private static IPublisherNodeConfiguration _instance;
+        private static IPublisherNodeConfiguration _instance = null;
     }
 }

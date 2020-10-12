@@ -130,7 +130,7 @@ namespace OpcPublisher
             catch (Exception ex)
             {
                 // startup might be not completed yet
-                Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
+                Program.Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
             }
             return diagnosticInfo;
         }
@@ -259,7 +259,7 @@ namespace OpcPublisher
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "writing diagnostics output causing error");
+                    Program.Logger.Error(ex, "writing diagnostics output causing error");
                 }
             }
         }
@@ -277,7 +277,7 @@ namespace OpcPublisher
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Dequeue log message causing error");
+                Program.Logger.Error(ex, "Dequeue log message causing error");
             }
             return message;
         }
