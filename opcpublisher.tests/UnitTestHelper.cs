@@ -1,10 +1,13 @@
+// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
 using System.Threading;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using System;
-    using static Program;
-
     /// <summary>
     /// Class with unit test helper methods.
     /// </summary>

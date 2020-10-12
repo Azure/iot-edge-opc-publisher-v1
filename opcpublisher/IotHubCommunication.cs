@@ -5,6 +5,7 @@
 
 using Microsoft.Azure.Devices;
 using Opc.Ua;
+using OpcPublisher.Interfaces;
 using System;
 using static OpcPublisher.OpcApplicationConfiguration;
 using static OpcPublisher.Program;

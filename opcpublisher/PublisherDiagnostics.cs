@@ -3,14 +3,9 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using Serilog;
-using Serilog.Configuration;
-using Serilog.Core;
-using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using static OpcPublisher.HubCommunicationBase;
@@ -135,7 +130,7 @@ namespace OpcPublisher
             catch (Exception ex)
             {
                 // startup might be not completed yet
-                Program.Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
+                Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
             }
             return diagnosticInfo;
         }
@@ -235,36 +230,36 @@ namespace OpcPublisher
                     }
 
                     DiagnosticInfoMethodResponseModel diagnosticInfo = GetDiagnosticInfo();
-                    Program.Logger.Information("==========================================================================");
-                    Program.Logger.Information($"OpcPublisher status @ {System.DateTime.UtcNow} (started @ {diagnosticInfo.PublisherStartTime})");
-                    Program.Logger.Information("---------------------------------");
-                    Program.Logger.Information($"OPC sessions (configured/connected): {diagnosticInfo.NumberOfOpcSessionsConfigured}/{diagnosticInfo.NumberOfOpcSessionsConnected}");
-                    Program.Logger.Information($"OPC subscriptions (configured/connected): {diagnosticInfo.NumberOfOpcSubscriptionsConfigured}/{diagnosticInfo.NumberOfOpcSubscriptionsConnected}");
-                    Program.Logger.Information($"OPC monitored items (configured/monitored/to remove): {diagnosticInfo.NumberOfOpcMonitoredItemsConfigured}/{diagnosticInfo.NumberOfOpcMonitoredItemsMonitored}/{diagnosticInfo.NumberOfOpcMonitoredItemsToRemove}");
-                    Program.Logger.Information("---------------------------------");
-                    Program.Logger.Information($"monitored items queue bounded capacity: {diagnosticInfo.MonitoredItemsQueueCapacity}");
-                    Program.Logger.Information($"monitored items queue current items: {diagnosticInfo.MonitoredItemsQueueCount}");
-                    Program.Logger.Information($"monitored item notifications enqueued: {diagnosticInfo.EnqueueCount}");
-                    Program.Logger.Information($"monitored item notifications enqueue failure: {diagnosticInfo.EnqueueFailureCount}");
-                    Program.Logger.Information("---------------------------------");
-                    Program.Logger.Information($"messages sent to IoTHub: {diagnosticInfo.SentMessages}");
-                    Program.Logger.Information($"last successful msg sent @: {diagnosticInfo.SentLastTime}");
-                    Program.Logger.Information($"bytes sent to IoTHub: {diagnosticInfo.SentBytes}");
-                    Program.Logger.Information($"avg msg size: {diagnosticInfo.SentBytes / (diagnosticInfo.SentMessages == 0 ? 1 : diagnosticInfo.SentMessages)}");
-                    Program.Logger.Information($"msg send failures: {diagnosticInfo.FailedMessages}");
-                    Program.Logger.Information($"messages too large to sent to IoTHub: {diagnosticInfo.TooLargeCount}");
-                    Program.Logger.Information($"times we missed send interval: {diagnosticInfo.MissedSendIntervalCount}");
-                    Program.Logger.Information($"number of events: {diagnosticInfo.NumberOfEvents}");
-                    Program.Logger.Information("---------------------------------");
-                    Program.Logger.Information($"current working set in MB: {diagnosticInfo.WorkingSetMB}");
-                    Program.Logger.Information($"--si setting: {diagnosticInfo.DefaultSendIntervalSeconds}");
-                    Program.Logger.Information($"--ms setting: {diagnosticInfo.HubMessageSize}");
-                    Program.Logger.Information($"--ih setting: {diagnosticInfo.HubProtocol}");
-                    Program.Logger.Information("==========================================================================");
+                    Logger.Information("==========================================================================");
+                    Logger.Information($"OpcPublisher status @ {System.DateTime.UtcNow} (started @ {diagnosticInfo.PublisherStartTime})");
+                    Logger.Information("---------------------------------");
+                    Logger.Information($"OPC sessions (configured/connected): {diagnosticInfo.NumberOfOpcSessionsConfigured}/{diagnosticInfo.NumberOfOpcSessionsConnected}");
+                    Logger.Information($"OPC subscriptions (configured/connected): {diagnosticInfo.NumberOfOpcSubscriptionsConfigured}/{diagnosticInfo.NumberOfOpcSubscriptionsConnected}");
+                    Logger.Information($"OPC monitored items (configured/monitored/to remove): {diagnosticInfo.NumberOfOpcMonitoredItemsConfigured}/{diagnosticInfo.NumberOfOpcMonitoredItemsMonitored}/{diagnosticInfo.NumberOfOpcMonitoredItemsToRemove}");
+                    Logger.Information("---------------------------------");
+                    Logger.Information($"monitored items queue bounded capacity: {diagnosticInfo.MonitoredItemsQueueCapacity}");
+                    Logger.Information($"monitored items queue current items: {diagnosticInfo.MonitoredItemsQueueCount}");
+                    Logger.Information($"monitored item notifications enqueued: {diagnosticInfo.EnqueueCount}");
+                    Logger.Information($"monitored item notifications enqueue failure: {diagnosticInfo.EnqueueFailureCount}");
+                    Logger.Information("---------------------------------");
+                    Logger.Information($"messages sent to IoTHub: {diagnosticInfo.SentMessages}");
+                    Logger.Information($"last successful msg sent @: {diagnosticInfo.SentLastTime}");
+                    Logger.Information($"bytes sent to IoTHub: {diagnosticInfo.SentBytes}");
+                    Logger.Information($"avg msg size: {diagnosticInfo.SentBytes / (diagnosticInfo.SentMessages == 0 ? 1 : diagnosticInfo.SentMessages)}");
+                    Logger.Information($"msg send failures: {diagnosticInfo.FailedMessages}");
+                    Logger.Information($"messages too large to sent to IoTHub: {diagnosticInfo.TooLargeCount}");
+                    Logger.Information($"times we missed send interval: {diagnosticInfo.MissedSendIntervalCount}");
+                    Logger.Information($"number of events: {diagnosticInfo.NumberOfEvents}");
+                    Logger.Information("---------------------------------");
+                    Logger.Information($"current working set in MB: {diagnosticInfo.WorkingSetMB}");
+                    Logger.Information($"--si setting: {diagnosticInfo.DefaultSendIntervalSeconds}");
+                    Logger.Information($"--ms setting: {diagnosticInfo.HubMessageSize}");
+                    Logger.Information($"--ih setting: {diagnosticInfo.HubProtocol}");
+                    Logger.Information("==========================================================================");
                 }
                 catch (Exception ex)
                 {
-                    Program.Logger.Error(ex, "writing diagnostics output causing error");
+                    Logger.Error(ex, "writing diagnostics output causing error");
                 }
             }
         }
@@ -324,76 +319,5 @@ namespace OpcPublisher
 
         private static readonly object _singletonLock = new object();
         private static PublisherDiagnostics _instance = null;
-    }
-
-    /// <summary>
-    /// Diagnostic sink for Serilog.
-    /// </summary>
-    public class DiagnosticLogSink : ILogEventSink
-    {
-        /// <summary>
-        /// Ctor for the object.
-        /// </summary>
-        public DiagnosticLogSink()
-        {
-        }
-
-        /// <summary>
-        /// Put a log event to our sink.
-        /// </summary>
-        public void Emit(LogEvent logEvent)
-        {
-            string message = FormatMessage(logEvent);
-            Diag.WriteLog(message);
-            // enable below for testing
-            //Console.ForegroundColor = ConsoleColor.Red;
-            //Console.WriteLine(message);
-            //Console.ResetColor();
-
-            // also dump exception message and stack
-            if (logEvent.Exception != null)
-            {
-                List<string> exceptionLog = FormatException(logEvent);
-                foreach (var log in exceptionLog)
-                {
-                    Diag.WriteLog(log);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Format the event message.
-        /// </summary>
-        private static string FormatMessage(LogEvent logEvent)
-        {
-            return $"[{logEvent.Timestamp:T} {logEvent.Level.ToString().Substring(0, 3).ToUpper(CultureInfo.InvariantCulture)}] {logEvent.RenderMessage()}";
-        }
-
-        /// <summary>
-        /// Format an exception event.
-        /// </summary>
-        private static List<string> FormatException(LogEvent logEvent)
-        {
-            List<string> exceptionLog = null;
-            if (logEvent.Exception != null)
-            {
-                exceptionLog = new List<string>();
-                exceptionLog.Add(logEvent.Exception.Message);
-                exceptionLog.Add(logEvent.Exception.StackTrace.ToString(CultureInfo.InvariantCulture));
-            }
-            return exceptionLog;
-        }
-    }
-
-    /// <summary>
-    /// Class for own Serilog log extension.
-    /// </summary>
-    public static class DiagnosticLogSinkExtensions
-    {
-        public static LoggerConfiguration DiagnosticLogSink(
-                  this LoggerSinkConfiguration loggerConfiguration)
-        {
-            return loggerConfiguration.Sink(new DiagnosticLogSink());
-        }
     }
 }

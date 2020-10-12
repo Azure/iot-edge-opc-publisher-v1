@@ -1,17 +1,22 @@
+// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Microsoft.Azure.Devices.Client;
+using Moq;
+using OpcPublisher.Configurations;
+using OpcPublisher.Interfaces;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
-    using Moq;
-    using System;
-    using System.IO;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Xunit.Abstractions;
-    using static Program;
-
     [Collection("Need PLC and publisher config")]
     public sealed class TelemetryUnitTests : IDisposable
     {

@@ -4,7 +4,6 @@
 // ------------------------------------------------------------
 
 using Opc.Ua;
-using OpcPublisher.Crypto;
 
 namespace OpcPublisher
 {

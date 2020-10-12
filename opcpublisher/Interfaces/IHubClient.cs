@@ -6,7 +6,7 @@
 using Microsoft.Azure.Devices.Client;
 using System.Threading.Tasks;
 
-namespace OpcPublisher
+namespace OpcPublisher.Interfaces
 {
     /// <summary>
     /// Interface to encapsulate the IoTHub device/module client interface.

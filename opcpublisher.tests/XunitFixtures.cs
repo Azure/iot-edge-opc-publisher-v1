@@ -1,18 +1,21 @@
+// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
 using Docker.DotNet;
 using Docker.DotNet.Models;
+using Opc.Ua;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Opc.Ua;
-    using System.Net.Http;
-    using static OpcApplicationConfiguration;
-    using static Program;
-
     public sealed class PlcOpcUaServer : IDisposable
     {
         public PlcOpcUaServer()

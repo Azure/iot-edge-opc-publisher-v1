@@ -6,6 +6,8 @@
 using Mono.Options;
 using Opc.Ua;
 using Opc.Ua.Server;
+using OpcPublisher.Configurations;
+using OpcPublisher.Interfaces;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -20,6 +22,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using static Opc.Ua.CertificateStoreType;
+using static OpcPublisher.Configurations.PublisherNodeConfiguration;
+using static OpcPublisher.Configurations.PublisherTelemetryConfiguration;
 using static OpcPublisher.HubCommunicationBase;
 using static OpcPublisher.IotEdgeHubCommunication;
 using static OpcPublisher.IotHubCommunication;
@@ -27,8 +31,6 @@ using static OpcPublisher.OpcApplicationConfiguration;
 using static OpcPublisher.OpcUaMonitoredItemManager;
 using static OpcPublisher.OpcUaSessionManager;
 using static OpcPublisher.PublisherDiagnostics;
-using static OpcPublisher.PublisherNodeConfiguration;
-using static OpcPublisher.PublisherTelemetryConfiguration;
 using static System.Console;
 
 namespace OpcPublisher

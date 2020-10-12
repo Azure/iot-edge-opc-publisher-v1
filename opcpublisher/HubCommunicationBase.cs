@@ -6,7 +6,7 @@
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using Opc.Ua;
-using OpcPublisher.Crypto;
+using OpcPublisher.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

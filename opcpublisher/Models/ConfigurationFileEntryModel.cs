@@ -5,7 +5,6 @@
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using OpcPublisher.Crypto;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

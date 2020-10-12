@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OpcPublisher
+namespace OpcPublisher.Interfaces
 {
     /// <summary>
     /// Class to handle all IoTHub/EdgeHub communication.

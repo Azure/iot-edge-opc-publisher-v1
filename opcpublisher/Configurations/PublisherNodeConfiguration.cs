@@ -5,7 +5,7 @@
 
 using Newtonsoft.Json;
 using Opc.Ua;
-using OpcPublisher.Crypto;
+using OpcPublisher.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -18,7 +18,7 @@ using static OpcPublisher.OpcUaMonitoredItemManager;
 using static OpcPublisher.OpcUaSessionManager;
 using static OpcPublisher.Program;
 
-namespace OpcPublisher
+namespace OpcPublisher.Configurations
 {
     public class PublisherNodeConfiguration : IPublisherNodeConfiguration, IDisposable
     {

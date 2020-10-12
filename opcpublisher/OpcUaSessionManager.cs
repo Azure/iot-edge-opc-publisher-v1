@@ -5,7 +5,6 @@
 
 using Opc.Ua;
 using Opc.Ua.Client;
-using OpcPublisher.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

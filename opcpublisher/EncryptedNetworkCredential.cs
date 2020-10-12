@@ -8,7 +8,7 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
-namespace OpcPublisher.Crypto
+namespace OpcPublisher
 {
     /// <summary>
     /// Provides in-memory access to encrypted credentials. It uses the OPC UA app cert to encrypt/decrypt credentials.
