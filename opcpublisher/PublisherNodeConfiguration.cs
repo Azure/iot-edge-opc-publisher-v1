@@ -241,7 +241,7 @@ namespace OpcPublisher
             PublisherNodeConfigurationFileSemaphore = new SemaphoreSlim(1);
             OpcSessions.Clear();
             _nodePublishingConfiguration = new List<NodePublishingConfigurationModel>();
-            _configurationFileEntries = new List<PublisherConfigurationFileEntryLegacyModel>();
+            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
 
             // read the configuration from the configuration file
             if (!ReadConfigAsync().Result)
@@ -346,7 +346,7 @@ namespace OpcPublisher
                     {
                         await PublisherNodeConfigurationFileSemaphore.WaitAsync().ConfigureAwait(false);
                         var json = File.ReadAllText(PublisherNodeConfigurationFilename);
-                        _configurationFileEntries = JsonConvert.DeserializeObject<List<PublisherConfigurationFileEntryLegacyModel>>(json);
+                        _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(json);
                     }
                     finally
                     {
@@ -521,9 +521,9 @@ namespace OpcPublisher
         /// Returns a list of all published nodes for a specific endpoint in config file format.
         /// </summary>
         /// <returns></returns>
-        public List<PublisherConfigurationFileEntryModel> GetPublisherConfigurationFileEntries(string endpointUrl, bool getAll, out uint nodeConfigVersion)
+        public List<ConfigurationFileEntryModel> GetPublisherConfigurationFileEntries(string endpointUrl, bool getAll, out uint nodeConfigVersion)
         {
-            List<PublisherConfigurationFileEntryModel> publisherConfigurationFileEntries = new List<PublisherConfigurationFileEntryModel>();
+            List<ConfigurationFileEntryModel> publisherConfigurationFileEntries = new List<ConfigurationFileEntryModel>();
             nodeConfigVersion = (uint)NodeConfigVersion;
             try
             {
@@ -542,7 +542,7 @@ namespace OpcPublisher
                             sessionLocked = session.LockSessionAsync().Result;
                             if (sessionLocked && (endpointUrl == null || session.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)))
                             {
-                                PublisherConfigurationFileEntryModel publisherConfigurationFileEntry = new PublisherConfigurationFileEntryModel();
+                                ConfigurationFileEntryModel publisherConfigurationFileEntry = new ConfigurationFileEntryModel();
 
                                 publisherConfigurationFileEntry.EndpointUrl = new Uri(session.EndpointUrl);
                                 publisherConfigurationFileEntry.OpcAuthenticationMode = session.OpcAuthenticationMode;
@@ -603,9 +603,9 @@ namespace OpcPublisher
         /// Returns a list of all configured nodes in NodeId format.
         /// </summary>
         /// <returns></returns>
-        public async Task<List<PublisherConfigurationFileEntryLegacyModel>> GetPublisherConfigurationFileEntriesAsNodeIdsAsync(string endpointUrl)
+        public async Task<List<ConfigurationFileEntryLegacyModel>> GetPublisherConfigurationFileEntriesAsNodeIdsAsync(string endpointUrl)
         {
-            List<PublisherConfigurationFileEntryLegacyModel> publisherConfigurationFileEntriesLegacy = new List<PublisherConfigurationFileEntryLegacyModel>();
+            List<ConfigurationFileEntryLegacyModel> publisherConfigurationFileEntriesLegacy = new List<ConfigurationFileEntryLegacyModel>();
             try
             {
                 await PublisherNodeConfigurationSemaphore.WaitAsync().ConfigureAwait(false);
@@ -631,7 +631,7 @@ namespace OpcPublisher
                                         // ignore items tagged to stop
                                         if (monitoredItem.State != OpcMonitoredItemState.RemovalRequested)
                                         {
-                                            PublisherConfigurationFileEntryLegacyModel publisherConfigurationFileEntryLegacy = new PublisherConfigurationFileEntryLegacyModel();
+                                            ConfigurationFileEntryLegacyModel publisherConfigurationFileEntryLegacy = new ConfigurationFileEntryLegacyModel();
                                             publisherConfigurationFileEntryLegacy.EndpointUrl = new Uri(session.EndpointUrl);
                                             publisherConfigurationFileEntryLegacy.NodeId = null;
                                             publisherConfigurationFileEntryLegacy.OpcNodes = null;
@@ -696,7 +696,7 @@ namespace OpcPublisher
             try
             {
                 // iterate through all sessions, subscriptions and monitored items and create config file entries
-                List<PublisherConfigurationFileEntryModel> publisherNodeConfiguration = GetPublisherConfigurationFileEntries(null, true, out _lastNodeConfigVersion);
+                List<ConfigurationFileEntryModel> publisherNodeConfiguration = GetPublisherConfigurationFileEntries(null, true, out _lastNodeConfigVersion);
 
                 Logger.Debug($"Update node configuration file, version: {_lastNodeConfigVersion:X8}");
 
@@ -718,7 +718,7 @@ namespace OpcPublisher
         }
 
         private List<NodePublishingConfigurationModel> _nodePublishingConfiguration;
-        private List<PublisherConfigurationFileEntryLegacyModel> _configurationFileEntries;
+        private List<ConfigurationFileEntryLegacyModel> _configurationFileEntries;
 
         private static readonly object _singletonLock = new object();
         private static IPublisherNodeConfiguration _instance = null;

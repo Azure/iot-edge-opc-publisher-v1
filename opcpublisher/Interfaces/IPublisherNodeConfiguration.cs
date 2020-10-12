@@ -85,13 +85,13 @@ namespace OpcPublisher
         /// Returns a list of all published nodes for a specific endpoint in config file format.
         /// </summary>
         /// <returns></returns>
-        List<PublisherConfigurationFileEntryModel> GetPublisherConfigurationFileEntries(string endpointUrl, bool getAll, out uint nodeConfigVersion);
+        List<ConfigurationFileEntryModel> GetPublisherConfigurationFileEntries(string endpointUrl, bool getAll, out uint nodeConfigVersion);
 
         /// <summary>
         /// Returns a list of all configured nodes in NodeId format.
         /// </summary>
         /// <returns></returns>
-        Task<List<PublisherConfigurationFileEntryLegacyModel>> GetPublisherConfigurationFileEntriesAsNodeIdsAsync(string endpointUrl);
+        Task<List<ConfigurationFileEntryLegacyModel>> GetPublisherConfigurationFileEntriesAsNodeIdsAsync(string endpointUrl);
 
         /// <summary>
         /// Updates the configuration file to persist all currently published nodes

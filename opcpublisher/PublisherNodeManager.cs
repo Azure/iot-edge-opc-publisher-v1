@@ -666,7 +666,7 @@ namespace OpcPublisher
             }
 
             // get the list of published nodes in NodeId format
-            List<PublisherConfigurationFileEntryLegacyModel> configFileEntries = NodeConfiguration.GetPublisherConfigurationFileEntriesAsNodeIdsAsync(endpointUri.OriginalString).Result;
+            List<ConfigurationFileEntryLegacyModel> configFileEntries = NodeConfiguration.GetPublisherConfigurationFileEntriesAsNodeIdsAsync(endpointUri.OriginalString).Result;
             outputArguments[0] = JsonConvert.SerializeObject(configFileEntries);
             Logger.Information($"{logPrefix} Success (number of entries: {configFileEntries.Count})");
             return ServiceResult.Good;
