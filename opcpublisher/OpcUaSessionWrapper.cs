@@ -67,7 +67,7 @@ namespace OpcPublisher
         }
 
 
-        public bool AddSubscription(OpcUaSubscriptionWrapper subscription) => _session.AddSubscription(subscription.Subscription);
+        public bool AddSubscription(OpcUaSubscriptionWrapper subscriptionWrapper) => _session.AddSubscription(subscriptionWrapper.Subscription);
 
         public bool AddSubscription(Subscription subscription) => _session.AddSubscription(subscription);
 
@@ -79,11 +79,11 @@ namespace OpcPublisher
 
         public DataValue ReadValue(NodeId nodeId) => _session.ReadValue(nodeId);
 
-        public bool RemoveSubscription(OpcUaSubscriptionWrapper subscription) => _session.RemoveSubscription(subscription.Subscription);
+        public bool RemoveSubscription(OpcUaSubscriptionWrapper subscriptionWrapper) => _session.RemoveSubscription(subscriptionWrapper.Subscription);
 
         public bool RemoveSubscription(Subscription subscription) => _session.RemoveSubscription(subscription);
 
-        public bool RemoveSubscriptions(IEnumerable<OpcUaSubscriptionWrapper> subscriptions) => _session.RemoveSubscriptions(subscriptions.Select(s => s.Subscription));
+        public bool RemoveSubscriptions(IEnumerable<OpcUaSubscriptionWrapper> subscriptionWrappers) => _session.RemoveSubscriptions(subscriptionWrappers.Select(s => s.Subscription));
 
         public bool RemoveSubscriptions(IEnumerable<Subscription> subscriptions) => _session.RemoveSubscriptions(subscriptions);
 
