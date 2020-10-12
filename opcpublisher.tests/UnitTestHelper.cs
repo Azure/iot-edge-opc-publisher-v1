@@ -46,8 +46,8 @@ namespace OpcPublisher
             OpcApplicationConfiguration.OpcPublishingInterval = 0;
             HubCommunicationBase.DefaultSendIntervalSeconds = 0;
             HubCommunicationBase.HubMessageSize = 0;
-            OpcMonitoredItem.SkipFirstDefault = false;
-            OpcMonitoredItem.HeartbeatIntervalDefault = 0;
+            OpcUaMonitoredItemManager.SkipFirstDefault = false;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
         }
 
         private const int _maxTimeSeconds = 30;

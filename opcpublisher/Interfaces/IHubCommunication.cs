@@ -1,11 +1,10 @@
-﻿using System.Threading;
+﻿using Microsoft.Azure.Devices.Client;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
-    using System.Collections.Generic;
-
     /// <summary>
     /// Class to handle all IoTHub/EdgeHub communication.
     /// </summary>

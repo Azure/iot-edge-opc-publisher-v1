@@ -1,20 +1,19 @@
-﻿using Opc.Ua.Client;
+﻿using Opc.Ua;
+using Opc.Ua.Client;
+using OpcPublisher.Crypto;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.OpcUaMonitoredItemManager;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Opc.Ua;
-    using OpcPublisher.Crypto;
-    using System.Diagnostics;
-    using System.Net;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using static OpcApplicationConfiguration;
-    using static OpcPublisher.OpcMonitoredItem;
-    using static Program;
-
     /// <summary>
     /// Class to manage OPC sessions.
     /// </summary>
@@ -73,7 +72,7 @@ namespace OpcPublisher
         /// <summary>
         /// The subscriptions on this session.
         /// </summary>
-        public List<OpcSubscription> OpcSubscriptions { get; }
+        public List<OpcUaSubscriptionManager> OpcSubscriptions { get; }
 
         /// <summary>
         /// Counts session connection attempts which were unsuccessful.
@@ -236,7 +235,7 @@ namespace OpcPublisher
             State = SessionState.Disconnected;
             EndpointUrl = endpointUrl;
             SessionTimeout = sessionTimeout * 1000;
-            OpcSubscriptions = new List<OpcSubscription>();
+            OpcSubscriptions = new List<OpcUaSubscriptionManager>();
             UnsuccessfulConnectionCount = 0;
             MissedKeepAlives = 0;
             PublishingInterval = OpcPublishingInterval;
@@ -660,7 +659,7 @@ namespace OpcPublisher
                             }
 
                             // add the new monitored item.
-                            OpcUaMonitoredItem monitoredItem = new OpcUaMonitoredItem()
+                            OpcUaMonitoredItemWrapper monitoredItem = new OpcUaMonitoredItemWrapper()
                             {
                                 StartNodeId = currentNodeId,
                                 AttributeId = item.AttributeId,
@@ -987,7 +986,7 @@ namespace OpcPublisher
 
                 // check if there is already a subscription with the same publishing interval, which can be used to monitor the node
                 int opcPublishingIntervalForNode = opcPublishingInterval ?? OpcPublishingIntervalDefault;
-                OpcSubscription opcSubscription = OpcSubscriptions.FirstOrDefault(s => s.RequestedPublishingInterval == opcPublishingIntervalForNode);
+                OpcUaSubscriptionManager opcSubscription = OpcSubscriptions.FirstOrDefault(s => s.RequestedPublishingInterval == opcPublishingIntervalForNode);
 
                 // if there was none found, create one
                 if (opcSubscription == null)
@@ -1002,7 +1001,7 @@ namespace OpcPublisher
                         Logger.Information($"{logPrefix} No matching subscription with publishing interval of {opcPublishingInterval} found.");
                         Logger.Information($"Create a new subscription with a publishing interval of {opcPublishingInterval}.");
                     }
-                    opcSubscription = new OpcSubscription(opcPublishingInterval);
+                    opcSubscription = new OpcUaSubscriptionManager(opcPublishingInterval);
                     OpcSubscriptions.Add(opcSubscription);
                 }
 
@@ -1026,15 +1025,15 @@ namespace OpcPublisher
                 // todo check properties and update
                 if (!IsNodePublishedInSessionInternal(nodeIdCheck, expandedNodeIdCheck))
                 {
-                    OpcMonitoredItem opcMonitoredItem = null;
+                    OpcUaMonitoredItemManager opcMonitoredItem = null;
                     // add a new item to monitor
                     if (expandedNodeId == null)
                     {
-                        opcMonitoredItem = new OpcMonitoredItem(nodeId, EndpointUrl, opcSamplingInterval, displayName, heartbeatInterval, skipFirst);
+                        opcMonitoredItem = new OpcUaMonitoredItemManager(nodeId, EndpointUrl, opcSamplingInterval, displayName, heartbeatInterval, skipFirst);
                     }
                     else
                     {
-                        opcMonitoredItem = new OpcMonitoredItem(expandedNodeId, EndpointUrl, opcSamplingInterval, displayName, heartbeatInterval, skipFirst);
+                        opcMonitoredItem = new OpcUaMonitoredItemManager(expandedNodeId, EndpointUrl, opcSamplingInterval, displayName, heartbeatInterval, skipFirst);
                     }
                     opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
                     Interlocked.Increment(ref NodeConfigVersion);
@@ -1246,7 +1245,7 @@ namespace OpcPublisher
                         Logger.Information($"Removing {OpcUaClientSession.SubscriptionCount} subscriptions from session.");
                         while (OpcSubscriptions.Count > 0)
                         {
-                            OpcSubscription opcSubscription = OpcSubscriptions.ElementAt(0);
+                            OpcUaSubscriptionManager opcSubscription = OpcSubscriptions.ElementAt(0);
                             OpcSubscriptions.RemoveAt(0);
                             OpcUaSubscriptionWrapper opcUaClientSubscription = opcSubscription.OpcUaClientSubscription;
                             opcUaClientSubscription.Delete(true);

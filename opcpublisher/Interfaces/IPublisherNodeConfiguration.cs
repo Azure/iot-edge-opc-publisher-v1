@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpcPublisher
 {
-    using System.Threading;
-
     public interface IPublisherNodeConfiguration
     {
         /// <summary>

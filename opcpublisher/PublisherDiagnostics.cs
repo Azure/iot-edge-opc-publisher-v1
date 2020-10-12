@@ -1,19 +1,18 @@
-﻿using Serilog.Core;
+﻿using Serilog;
+using Serilog.Configuration;
+using Serilog.Core;
+using Serilog.Events;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using static OpcPublisher.HubCommunicationBase;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Serilog;
-    using Serilog.Configuration;
-    using Serilog.Events;
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using static HubCommunicationBase;
-    using static Program;
-
     /// <summary>
     /// Class to enable output to the console.
     /// </summary>
@@ -230,32 +229,32 @@ namespace OpcPublisher
                     }
 
                     DiagnosticInfoMethodResponseModel diagnosticInfo = GetDiagnosticInfo();
-                    Logger.Information("==========================================================================");
-                    Logger.Information($"OpcPublisher status @ {System.DateTime.UtcNow} (started @ {diagnosticInfo.PublisherStartTime})");
-                    Logger.Information("---------------------------------");
-                    Logger.Information($"OPC sessions (configured/connected): {diagnosticInfo.NumberOfOpcSessionsConfigured}/{diagnosticInfo.NumberOfOpcSessionsConnected}");
-                    Logger.Information($"OPC subscriptions (configured/connected): {diagnosticInfo.NumberOfOpcSubscriptionsConfigured}/{diagnosticInfo.NumberOfOpcSubscriptionsConnected}");
-                    Logger.Information($"OPC monitored items (configured/monitored/to remove): {diagnosticInfo.NumberOfOpcMonitoredItemsConfigured}/{diagnosticInfo.NumberOfOpcMonitoredItemsMonitored}/{diagnosticInfo.NumberOfOpcMonitoredItemsToRemove}");
-                    Logger.Information("---------------------------------");
-                    Logger.Information($"monitored items queue bounded capacity: {diagnosticInfo.MonitoredItemsQueueCapacity}");
-                    Logger.Information($"monitored items queue current items: {diagnosticInfo.MonitoredItemsQueueCount}");
-                    Logger.Information($"monitored item notifications enqueued: {diagnosticInfo.EnqueueCount}");
-                    Logger.Information($"monitored item notifications enqueue failure: {diagnosticInfo.EnqueueFailureCount}");
-                    Logger.Information("---------------------------------");
-                    Logger.Information($"messages sent to IoTHub: {diagnosticInfo.SentMessages}");
-                    Logger.Information($"last successful msg sent @: {diagnosticInfo.SentLastTime}");
-                    Logger.Information($"bytes sent to IoTHub: {diagnosticInfo.SentBytes}");
-                    Logger.Information($"avg msg size: {diagnosticInfo.SentBytes / (diagnosticInfo.SentMessages == 0 ? 1 : diagnosticInfo.SentMessages)}");
-                    Logger.Information($"msg send failures: {diagnosticInfo.FailedMessages}");
-                    Logger.Information($"messages too large to sent to IoTHub: {diagnosticInfo.TooLargeCount}");
-                    Logger.Information($"times we missed send interval: {diagnosticInfo.MissedSendIntervalCount}");
-                    Logger.Information($"number of events: {diagnosticInfo.NumberOfEvents}");
-                    Logger.Information("---------------------------------");
-                    Logger.Information($"current working set in MB: {diagnosticInfo.WorkingSetMB}");
-                    Logger.Information($"--si setting: {diagnosticInfo.DefaultSendIntervalSeconds}");
-                    Logger.Information($"--ms setting: {diagnosticInfo.HubMessageSize}");
-                    Logger.Information($"--ih setting: {diagnosticInfo.HubProtocol}");
-                    Logger.Information("==========================================================================");
+                    Program.Logger.Information("==========================================================================");
+                    Program.Logger.Information($"OpcPublisher status @ {System.DateTime.UtcNow} (started @ {diagnosticInfo.PublisherStartTime})");
+                    Program.Logger.Information("---------------------------------");
+                    Program.Logger.Information($"OPC sessions (configured/connected): {diagnosticInfo.NumberOfOpcSessionsConfigured}/{diagnosticInfo.NumberOfOpcSessionsConnected}");
+                    Program.Logger.Information($"OPC subscriptions (configured/connected): {diagnosticInfo.NumberOfOpcSubscriptionsConfigured}/{diagnosticInfo.NumberOfOpcSubscriptionsConnected}");
+                    Program.Logger.Information($"OPC monitored items (configured/monitored/to remove): {diagnosticInfo.NumberOfOpcMonitoredItemsConfigured}/{diagnosticInfo.NumberOfOpcMonitoredItemsMonitored}/{diagnosticInfo.NumberOfOpcMonitoredItemsToRemove}");
+                    Program.Logger.Information("---------------------------------");
+                    Program.Logger.Information($"monitored items queue bounded capacity: {diagnosticInfo.MonitoredItemsQueueCapacity}");
+                    Program.Logger.Information($"monitored items queue current items: {diagnosticInfo.MonitoredItemsQueueCount}");
+                    Program.Logger.Information($"monitored item notifications enqueued: {diagnosticInfo.EnqueueCount}");
+                    Program.Logger.Information($"monitored item notifications enqueue failure: {diagnosticInfo.EnqueueFailureCount}");
+                    Program.Logger.Information("---------------------------------");
+                    Program.Logger.Information($"messages sent to IoTHub: {diagnosticInfo.SentMessages}");
+                    Program.Logger.Information($"last successful msg sent @: {diagnosticInfo.SentLastTime}");
+                    Program.Logger.Information($"bytes sent to IoTHub: {diagnosticInfo.SentBytes}");
+                    Program.Logger.Information($"avg msg size: {diagnosticInfo.SentBytes / (diagnosticInfo.SentMessages == 0 ? 1 : diagnosticInfo.SentMessages)}");
+                    Program.Logger.Information($"msg send failures: {diagnosticInfo.FailedMessages}");
+                    Program.Logger.Information($"messages too large to sent to IoTHub: {diagnosticInfo.TooLargeCount}");
+                    Program.Logger.Information($"times we missed send interval: {diagnosticInfo.MissedSendIntervalCount}");
+                    Program.Logger.Information($"number of events: {diagnosticInfo.NumberOfEvents}");
+                    Program.Logger.Information("---------------------------------");
+                    Program.Logger.Information($"current working set in MB: {diagnosticInfo.WorkingSetMB}");
+                    Program.Logger.Information($"--si setting: {diagnosticInfo.DefaultSendIntervalSeconds}");
+                    Program.Logger.Information($"--ms setting: {diagnosticInfo.HubMessageSize}");
+                    Program.Logger.Information($"--ih setting: {diagnosticInfo.HubProtocol}");
+                    Program.Logger.Information("==========================================================================");
                 }
                 catch
                 {

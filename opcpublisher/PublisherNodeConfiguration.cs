@@ -1,22 +1,20 @@
 ﻿using Newtonsoft.Json;
 using Opc.Ua;
+using OpcPublisher.Crypto;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.OpcUaMonitoredItemManager;
+using static OpcPublisher.OpcUaSessionManager;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using OpcPublisher.Crypto;
-    using System.Globalization;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Threading;
-    using static OpcApplicationConfiguration;
-    using static OpcMonitoredItem;
-    using static OpcUaSessionManager;
-    using static Program;
-
     public class PublisherNodeConfiguration : IPublisherNodeConfiguration, IDisposable
     {
         /// <summary>
@@ -222,20 +220,13 @@ namespace OpcPublisher
         {
             get
             {
-                if (_instance != null)
+                lock (_singletonLock)
                 {
-                    return _instance;
-                }
-                else
-                {
-                    lock (_singletonLock)
+                    if (_instance == null)
                     {
-                        if (_instance == null)
-                        {
-                            _instance = new PublisherNodeConfiguration();
-                        }
-                        return _instance;
+                        _instance = new PublisherNodeConfiguration();
                     }
+                    return _instance;
                 }
             }
         }
@@ -475,7 +466,7 @@ namespace OpcPublisher
                     foreach (var nodeDistinctPublishingInterval in nodesDistinctPublishingInterval)
                     {
                         // create a subscription for the publishing interval and add it to the session.
-                        OpcSubscription opcSubscription = new OpcSubscription(nodeDistinctPublishingInterval);
+                        OpcUaSubscriptionManager opcSubscription = new OpcUaSubscriptionManager(nodeDistinctPublishingInterval);
 
                         // add all nodes with this OPC publishing interval to this subscription.
                         var nodesWithSamePublishingInterval = _nodePublishingConfiguration.Where(n => n.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)).Where(n => n.OpcPublishingInterval == nodeDistinctPublishingInterval);
@@ -486,7 +477,7 @@ namespace OpcPublisher
                             {
                                 // create a monitored item for the node, we do not have the namespace index without a connected session. 
                                 // so request a namespace update.
-                                OpcMonitoredItem opcMonitoredItem = new OpcMonitoredItem(nodeInfo.ExpandedNodeId, opcSession.EndpointUrl,
+                                OpcUaMonitoredItemManager opcMonitoredItem = new OpcUaMonitoredItemManager(nodeInfo.ExpandedNodeId, opcSession.EndpointUrl,
                                     nodeInfo.OpcSamplingInterval, nodeInfo.DisplayName, nodeInfo.HeartbeatInterval, nodeInfo.SkipFirst);
                                 opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
                                 Interlocked.Increment(ref NodeConfigVersion);
@@ -494,7 +485,7 @@ namespace OpcPublisher
                             else if (nodeInfo.NodeId != null)
                             {
                                 // create a monitored item for the node with the configured or default sampling interval
-                                OpcMonitoredItem opcMonitoredItem = new OpcMonitoredItem(nodeInfo.NodeId, opcSession.EndpointUrl,
+                                OpcUaMonitoredItemManager opcMonitoredItem = new OpcUaMonitoredItemManager(nodeInfo.NodeId, opcSession.EndpointUrl,
                                     nodeInfo.OpcSamplingInterval, nodeInfo.DisplayName, nodeInfo.HeartbeatInterval, nodeInfo.SkipFirst);
                                 opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
                                 Interlocked.Increment(ref NodeConfigVersion);

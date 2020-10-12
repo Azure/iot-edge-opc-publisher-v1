@@ -1,21 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using static OpcPublisher.OpcApplicationConfiguration;
 
 namespace OpcPublisher
 {
-    using System;
-    using System.Threading;
-    using static OpcApplicationConfiguration;
-
     /// <summary>
     /// Class to manage OPC subscriptions. We create a subscription for each different publishing interval
     /// on an endpoint.
     /// </summary>
-    public class OpcSubscription
+    public class OpcUaSubscriptionManager
     {
         /// <summary>
         /// List of monitored items on this subscription.
         /// </summary>
-        public List<OpcMonitoredItem> OpcMonitoredItems { get; }
+        public List<OpcUaMonitoredItemManager> OpcMonitoredItems { get; }
 
         /// <summary>
         /// The OPC UA stack subscription object.
@@ -41,9 +40,9 @@ namespace OpcPublisher
         /// Ctor of the object.
         /// </summary>
         /// <param name="publishingInterval"></param>
-        public OpcSubscription(int? publishingInterval)
+        public OpcUaSubscriptionManager(int? publishingInterval)
         {
-            OpcMonitoredItems = new List<OpcMonitoredItem>();
+            OpcMonitoredItems = new List<OpcUaMonitoredItemManager>();
             RequestedPublishingInterval = publishingInterval ?? OpcPublishingInterval;
             RequestedPublishingIntervalFromConfiguration = publishingInterval != null ? true : false;
             PublishingInterval = RequestedPublishingInterval;

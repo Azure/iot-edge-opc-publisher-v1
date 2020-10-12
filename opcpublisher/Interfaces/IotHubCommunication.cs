@@ -1,12 +1,11 @@
-﻿namespace OpcPublisher
-{
-    using Microsoft.Azure.Devices;
-    using Microsoft.Azure.Devices.Client;
-    using Opc.Ua;
-    using System;
-    using static OpcApplicationConfiguration;
-    using static Program;
+﻿using Microsoft.Azure.Devices;
+using Opc.Ua;
+using System;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Program;
 
+namespace OpcPublisher
+{
     /// <summary>
     /// Class to handle all IoTHub communication.
     /// </summary>

@@ -216,7 +216,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             // mock IoTHub communication
             var hubMockBase = new Mock<HubCommunicationBase>();
@@ -286,8 +286,8 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {PublisherNodeConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
-            OpcMonitoredItem.HeartbeatIntervalDefault = 0;
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             // mock IoTHub communication
             var hubMockBase = new Mock<HubCommunicationBase>();
@@ -357,7 +357,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {PublisherNodeConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
-            OpcMonitoredItem.HeartbeatIntervalDefault = 0;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
 
             // mock IoTHub communication
             var hubMockBase = new Mock<HubCommunicationBase>();
@@ -427,7 +427,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {PublisherNodeConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
-            OpcMonitoredItem.HeartbeatIntervalDefault = 0;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
 
             // mock IoTHub communication
             var hubMockBase = new Mock<HubCommunicationBase>();

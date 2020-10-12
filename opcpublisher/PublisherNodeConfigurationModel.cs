@@ -1,17 +1,13 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Opc.Ua;
+using OpcPublisher.Crypto;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace OpcPublisher
 {
-    using Newtonsoft.Json.Converters;
-    using OpcPublisher.Crypto;
-    using System.ComponentModel;
-    using System.Globalization;
-    using System.Net;
-
-
     /// <summary>
     /// Class describing a list of nodes
     /// </summary>

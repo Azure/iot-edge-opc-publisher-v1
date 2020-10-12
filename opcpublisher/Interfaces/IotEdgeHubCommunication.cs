@@ -1,9 +1,8 @@
-﻿namespace OpcPublisher
-{
-    using Microsoft.Azure.Devices.Client;
-    using System;
-    using static Program;
+﻿using System;
+using static OpcPublisher.Program;
 
+namespace OpcPublisher
+{
     /// <summary>
     /// Class to handle all IoTEdge communication.
     /// </summary>

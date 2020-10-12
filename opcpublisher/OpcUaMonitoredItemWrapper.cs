@@ -1,13 +1,12 @@
-﻿using Opc.Ua.Client;
+﻿using Opc.Ua;
+using Opc.Ua.Client;
 
 namespace OpcPublisher
 {
-    using Opc.Ua;
-
     /// <summary>
     /// Class to encapsulate OPC UA monitored item API.
     /// </summary>
-    public class OpcUaMonitoredItem
+    public class OpcUaMonitoredItemWrapper
     {
         public MonitoredItem MonitoredItem => _monitoredItem;
 
@@ -95,7 +94,7 @@ namespace OpcPublisher
             }
         }
 
-        public OpcUaMonitoredItem()
+        public OpcUaMonitoredItemWrapper()
         {
             _monitoredItem = new MonitoredItem();
         }

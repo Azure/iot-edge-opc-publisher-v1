@@ -1,26 +1,25 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.Azure.Devices.Client;
+using Newtonsoft.Json;
+using Opc.Ua;
+using OpcPublisher.Crypto;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.OpcUaMonitoredItemManager;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
-    using Newtonsoft.Json;
-    using Opc.Ua;
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using static OpcApplicationConfiguration;
-    using static OpcPublisher.OpcMonitoredItem;
-    using static Program;
-    using OpcPublisher.Crypto;
-
     /// <summary>
     /// Class to handle all IoTHub/EdgeHub communication.
     /// </summary>

@@ -1,14 +1,13 @@
 ﻿using Opc.Ua;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Threading.Tasks;
-    using static Program;
-
     /// <summary>
     /// Class for OPC Application configuration. Here the security relevant configuration.
     /// </summary>

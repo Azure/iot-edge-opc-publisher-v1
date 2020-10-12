@@ -1,12 +1,11 @@
 ﻿using Opc.Ua;
 using System;
+using System.Globalization;
+using System.Threading.Tasks;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using System.Globalization;
-    using System.Threading.Tasks;
-    using static Program;
-
     /// <summary>
     /// Class for OPC Application configuration.
     /// </summary>

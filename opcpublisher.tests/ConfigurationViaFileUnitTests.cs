@@ -424,7 +424,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
             PublisherNodeConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
-            OpcMonitoredItem.SkipFirstDefault = false;
+            OpcUaMonitoredItemManager.SkipFirstDefault = false;
             _output.WriteLine($"now testing: {PublisherNodeConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
             var nodeConfigurationMockBase = new Mock<PublisherNodeConfiguration>();
@@ -443,7 +443,7 @@ namespace OpcPublisher
                 _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
                 _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
                 _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == OpcMonitoredItem.SkipFirstDefault);
+                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == OpcUaMonitoredItemManager.SkipFirstDefault);
                 await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<PublisherConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<PublisherConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
@@ -481,7 +481,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = false;
+            OpcUaMonitoredItemManager.SkipFirstDefault = false;
 
             try
             {
@@ -531,7 +531,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             try
             {
@@ -581,7 +581,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = false;
+            OpcUaMonitoredItemManager.SkipFirstDefault = false;
 
             try
             {
@@ -633,7 +633,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             try
             {
@@ -699,7 +699,7 @@ namespace OpcPublisher
                 _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
                 _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
                 _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == OpcMonitoredItem.HeartbeatIntervalDefault);
+                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == OpcUaMonitoredItemManager.HeartbeatIntervalDefault);
                 await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<PublisherConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<PublisherConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
@@ -737,7 +737,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.HeartbeatIntervalDefault = 5;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 5;
 
             try
             {
@@ -787,7 +787,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.HeartbeatIntervalDefault = 2;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 2;
 
             try
             {

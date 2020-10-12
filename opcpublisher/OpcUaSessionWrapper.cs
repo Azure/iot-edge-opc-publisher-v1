@@ -1,12 +1,11 @@
-﻿using Opc.Ua.Client;
+﻿using Opc.Ua;
+using Opc.Ua.Client;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpcPublisher
 {
-    using Opc.Ua;
-    using System.Linq;
-
     /// <summary>
     /// Class to encapsulate OPC UA session API.
     /// </summary>

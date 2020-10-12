@@ -3,11 +3,10 @@ using Opc.Ua.Server;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using static Program;
-
     public partial class PublisherServer : StandardServer
     {
         /// <summary>

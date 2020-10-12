@@ -1,33 +1,32 @@
 ﻿using Mono.Options;
+using Opc.Ua;
+using Opc.Ua.Server;
+using Serilog;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using static Opc.Ua.CertificateStoreType;
+using static OpcPublisher.HubCommunicationBase;
+using static OpcPublisher.IotHubCommunication;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.OpcUaMonitoredItemManager;
+using static OpcPublisher.OpcUaSessionManager;
+using static OpcPublisher.PublisherDiagnostics;
+using static OpcPublisher.PublisherNodeConfiguration;
+using static OpcPublisher.PublisherTelemetryConfiguration;
+using static System.Console;
 
 namespace OpcPublisher
 {
-    using Opc.Ua;
-    using Opc.Ua.Server;
-    using Serilog;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Globalization;
-    using System.IO;
-    using System.Text;
-    using System.Text.RegularExpressions;
-    using static HubCommunicationBase;
-    using static IotHubCommunication;
-    using static Opc.Ua.CertificateStoreType;
-    using static OpcApplicationConfiguration;
-    using static OpcMonitoredItem;
-    using static OpcUaSessionManager;
-    using static PublisherDiagnostics;
-    using static PublisherNodeConfiguration;
-    using static PublisherTelemetryConfiguration;
-    using static System.Console;
-
     public sealed class Program
     {
         /// <summary>

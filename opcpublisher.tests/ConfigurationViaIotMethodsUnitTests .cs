@@ -489,7 +489,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = false;
+            OpcUaMonitoredItemManager.SkipFirstDefault = false;
 
             try
             {
@@ -558,7 +558,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             try
             {
@@ -627,7 +627,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = false;
+            OpcUaMonitoredItemManager.SkipFirstDefault = false;
 
             try
             {
@@ -695,7 +695,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             try
             {
@@ -763,7 +763,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             try
             {
@@ -831,7 +831,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = false;
+            OpcUaMonitoredItemManager.SkipFirstDefault = false;
 
             try
             {
@@ -899,7 +899,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.HeartbeatIntervalDefault = 0;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
 
             try
             {
@@ -968,7 +968,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.HeartbeatIntervalDefault = 2;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 2;
 
             try
             {
@@ -1037,7 +1037,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.HeartbeatIntervalDefault = 1;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 1;
 
             try
             {
@@ -1105,7 +1105,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.HeartbeatIntervalDefault = 2;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 2;
 
             try
             {

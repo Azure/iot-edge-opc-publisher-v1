@@ -1,11 +1,10 @@
 ﻿using Opc.Ua.Client;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpcPublisher
 {
-    using System.Linq;
-
     /// <summary>
     /// Class to encapsulate OPC UA subscription API.
     /// </summary>
@@ -59,7 +58,7 @@ namespace OpcPublisher
             GC.SuppressFinalize(this);
         }
 
-        public void AddItem(OpcUaMonitoredItem monitoredItem) => _subscription.AddItem(monitoredItem.MonitoredItem);
+        public void AddItem(OpcUaMonitoredItemWrapper monitoredItem) => _subscription.AddItem(monitoredItem.MonitoredItem);
 
         public void AddItem(MonitoredItem monitoredItem) => _subscription.AddItem(monitoredItem);
 
@@ -69,7 +68,7 @@ namespace OpcPublisher
 
         public void Delete(bool silent) => _subscription.Delete(silent);
 
-        public void RemoveItems(IEnumerable<OpcUaMonitoredItem> monitoredItems) => _subscription.RemoveItems(monitoredItems.Select(m => m.MonitoredItem));
+        public void RemoveItems(IEnumerable<OpcUaMonitoredItemWrapper> monitoredItems) => _subscription.RemoveItems(monitoredItems.Select(m => m.MonitoredItem));
 
         public void RemoveItems(IEnumerable<MonitoredItem> monitoredItems) => _subscription.RemoveItems(monitoredItems);
 

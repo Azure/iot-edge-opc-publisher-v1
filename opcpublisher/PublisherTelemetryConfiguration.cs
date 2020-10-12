@@ -1,15 +1,14 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using System.IO;
-    using System.Linq;
-    using System.Text.RegularExpressions;
-    using static Program;
-
     /// <summary>
     /// Class to control the telemetry publish, name and pattern properties.
     /// </summary>

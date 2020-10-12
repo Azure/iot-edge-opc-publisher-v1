@@ -13,15 +13,19 @@
   <ItemGroup>
     <Compile Remove="CertificateStores\**" />
     <Compile Remove="Logs\**" />
+    <Compile Remove="pki\**" />
     <EmbeddedResource Remove="CertificateStores\**" />
     <EmbeddedResource Remove="Logs\**" />
+    <EmbeddedResource Remove="pki\**" />
     <None Remove="CertificateStores\**" />
     <None Remove="Logs\**" />
+    <None Remove="pki\**" />
   </ItemGroup>
   <ItemGroup>
     <ProjectCapability Include="AzureIoTEdgeModule" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="8d638a7b8750-publisher.log" />
     <None Remove="publishednodes.json" />
   </ItemGroup>
   <ItemGroup>

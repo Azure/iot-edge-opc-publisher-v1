@@ -1,18 +1,17 @@
+using Microsoft.Azure.Devices.Client;
+using Newtonsoft.Json;
 using Opc.Ua;
 using Opc.Ua.Server;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Text;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
-    using Newtonsoft.Json;
-    using System.Linq;
-    using System.Net;
-    using System.Text;
-    using static OpcApplicationConfiguration;
-    using static OpcPublisher.Program;
-
     public class PublisherNodeManager : CustomNodeManager2
     {
         public PublisherNodeManager(Opc.Ua.Server.IServerInternal server, ApplicationConfiguration configuration)
