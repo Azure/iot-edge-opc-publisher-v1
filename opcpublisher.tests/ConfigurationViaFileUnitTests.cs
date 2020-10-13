@@ -3,17 +3,17 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System.Collections.Generic;
-using Xunit;
 using Moq;
 using Newtonsoft.Json;
 using OpcPublisher.Configurations;
 using OpcPublisher.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Xunit;
 using Xunit.Abstractions;
-using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Configurations.OpcApplicationConfiguration;
 using static OpcPublisher.Program;
 
 namespace OpcPublisher

@@ -11,7 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using static OpcPublisher.Program;
 
-namespace OpcPublisher
+namespace OpcPublisher.Configurations
 {
     /// <summary>
     /// Class for OPC Application configuration. Here the security relevant configuration.

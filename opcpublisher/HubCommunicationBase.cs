@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Configurations.OpcApplicationConfiguration;
 using static OpcPublisher.OpcUaMonitoredItemManager;
 using static OpcPublisher.Program;
 

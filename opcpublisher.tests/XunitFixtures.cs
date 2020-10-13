@@ -6,12 +6,13 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Opc.Ua;
+using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Configurations.OpcApplicationConfiguration;
 using static OpcPublisher.Program;
 
 namespace OpcPublisher

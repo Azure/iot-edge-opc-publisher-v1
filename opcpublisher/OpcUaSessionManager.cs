@@ -5,6 +5,7 @@
 
 using Opc.Ua;
 using Opc.Ua.Client;
+using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Configurations.OpcApplicationConfiguration;
 using static OpcPublisher.OpcUaMonitoredItemManager;
 using static OpcPublisher.Program;
 

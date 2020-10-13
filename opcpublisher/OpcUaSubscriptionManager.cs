@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Configurations.OpcApplicationConfiguration;
 
 namespace OpcPublisher
 {
