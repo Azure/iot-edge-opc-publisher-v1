@@ -11,7 +11,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using static OpcPublisher.HubCommunicationBase;
-using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Configurations.OpcApplicationConfiguration;
 using static OpcPublisher.Program;
 
 namespace OpcPublisher

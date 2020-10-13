@@ -3,16 +3,15 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System.Collections.Generic;
-using Xunit;
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using OpcPublisher.Configurations;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Xunit;
 using Xunit.Abstractions;
-using static OpcPublisher.OpcApplicationConfiguration;
 using static OpcPublisher.Program;
 
 namespace OpcPublisher
@@ -155,7 +154,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcPublishingInterval = 3000;
+            OpcApplicationConfiguration.OpcPublishingInterval = 3000;
 
             try
             {
@@ -223,7 +222,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcPublishingInterval = 2000;
+            OpcApplicationConfiguration.OpcPublishingInterval = 2000;
 
             try
             {
@@ -357,7 +356,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcSamplingInterval = 3000;
+            OpcApplicationConfiguration.OpcSamplingInterval = 3000;
 
             try
             {
@@ -425,7 +424,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcSamplingInterval = 2000;
+            OpcApplicationConfiguration.OpcSamplingInterval = 2000;
 
             try
             {

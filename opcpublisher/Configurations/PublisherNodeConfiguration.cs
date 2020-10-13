@@ -13,7 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Configurations.OpcApplicationConfiguration;
 using static OpcPublisher.OpcUaMonitoredItemManager;
 using static OpcPublisher.OpcUaSessionManager;
 using static OpcPublisher.Program;

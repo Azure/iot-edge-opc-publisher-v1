@@ -9,7 +9,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using static OpcPublisher.Program;
 
-namespace OpcPublisher
+namespace OpcPublisher.Configurations
 {
     /// <summary>
     /// Class for OPC Application configuration.
