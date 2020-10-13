@@ -1,11 +1,15 @@
-﻿using System.Threading.Tasks;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Microsoft.Azure.Devices.Client;
+using OpcPublisher.Interfaces;
+using System;
+using System.Threading.Tasks;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
-    using System;
-
-
     /// <summary>
     /// Class to encapsulate the IoTHub device/module client interface.
     /// </summary>

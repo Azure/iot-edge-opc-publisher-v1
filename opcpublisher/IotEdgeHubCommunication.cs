@@ -1,8 +1,14 @@
-﻿namespace OpcPublisher
-{
-    using System;
-    using static Program;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 
+using OpcPublisher.Interfaces;
+using System;
+using static OpcPublisher.Program;
+
+namespace OpcPublisher
+{
     /// <summary>
     /// Class to handle all IoTEdge communication.
     /// </summary>
@@ -20,13 +26,20 @@
         {
             get
             {
-                lock (_singletonLock)
+                if (_instance != null)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new IotEdgeHubCommunication();
-                    }
                     return _instance;
+                }
+                else
+                {
+                    lock (_singletonLock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new IotEdgeHubCommunication();
+                        }
+                        return _instance;
+                    }
                 }
             }
         }
@@ -51,6 +64,6 @@
         }
 
         private static readonly object _singletonLock = new object();
-        private static IotEdgeHubCommunication _instance;
+        private static IotEdgeHubCommunication _instance = null;
     }
 }

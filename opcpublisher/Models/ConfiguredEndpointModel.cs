@@ -6,17 +6,15 @@
 namespace OpcPublisher
 {
     /// <summary>
-    /// Enum that defines the authentication method to connect to OPC UA
+    /// Model for configured endpoint response element.
     /// </summary>
-    public enum OpcAuthenticationMode
+    public class ConfiguredEndpointModel
     {
-        /// <summary>
-        /// Anonymous authentication
-        /// </summary>
-        Anonymous,
-        /// <summary>
-        /// Username/Password authentication
-        /// </summary>
-        UsernamePassword
+        public ConfiguredEndpointModel(string endpointUrl)
+        {
+            EndpointUrl = endpointUrl;
+        }
+
+        public string EndpointUrl { get; set; }
     }
 }

@@ -1,26 +1,30 @@
-﻿using System.Collections.Concurrent;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Microsoft.Azure.Devices.Client;
+using Newtonsoft.Json;
+using Opc.Ua;
+using OpcPublisher.Interfaces;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.OpcUaMonitoredItemManager;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
-    using Newtonsoft.Json;
-    using Opc.Ua;
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using static OpcApplicationConfiguration;
-    using static OpcPublisher.OpcMonitoredItem;
-    using static Program;
-    using OpcPublisher.Crypto;
-
     /// <summary>
     /// Class to handle all IoTHub/EdgeHub communication.
     /// </summary>
@@ -309,8 +313,7 @@ namespace OpcPublisher
                     else
                     {
                         // find the session we need to monitor the node
-                        IOpcSession opcSession = null;
-                        opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                        OpcUaSessionManager opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
 
                         // add a new session.
                         if (opcSession == null)
@@ -322,7 +325,7 @@ namespace OpcPublisher
                             }
 
                             // create new session info.
-                            opcSession = new OpcSession(endpointUri.OriginalString, useSecurity, OpcSessionCreationTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
+                            opcSession = new OpcUaSessionManager(endpointUri.OriginalString, useSecurity, OpcSessionCreationTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
                             NodeConfiguration.OpcSessions.Add(opcSession);
                             Logger.Information($"{logPrefix} No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                         }
@@ -538,7 +541,7 @@ namespace OpcPublisher
                     else
                     {
                         // find the session we need to monitor the node
-                        IOpcSession opcSession = null;
+                        OpcUaSessionManager opcSession = null;
                         try
                         {
                             opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
@@ -1018,7 +1021,7 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of published nodes for the endpoint
-                List<PublisherConfigurationFileEntryModel> configFileEntries = NodeConfiguration.GetPublisherConfigurationFileEntries(endpointUri.OriginalString, false, out nodeConfigVersion);
+                List<ConfigurationFileEntryModel> configFileEntries = NodeConfiguration.GetPublisherConfigurationFileEntries(endpointUri.OriginalString, false, out nodeConfigVersion);
 
                 // return if there are no nodes configured for this endpoint
                 if (configFileEntries.Count == 0)
@@ -1396,7 +1399,7 @@ namespace OpcPublisher
                 Logger.Information($"Message processing and hub communication configured with a send interval of {DefaultSendIntervalSeconds} sec and a message buffer size of {HubMessageSize} bytes.");
 
                 // create the queue for monitored items
-                _monitoredItemsDataQueue = new BlockingCollection<MessageData>(MonitoredItemsQueueCapacity);
+                _monitoredItemsDataQueue = new BlockingCollection<MessageDataModel>(MonitoredItemsQueueCapacity);
 
                 // start up task to send telemetry to IoTHub
                 _monitoredItemsProcessorTask = null;
@@ -1415,7 +1418,7 @@ namespace OpcPublisher
         /// <summary>
         /// Enqueue a message for sending to IoTHub.
         /// </summary>
-        public virtual void Enqueue(MessageData json)
+        public virtual void Enqueue(MessageDataModel json)
         {
             // Try to add the message.
             Interlocked.Increment(ref _enqueueCount);
@@ -1432,7 +1435,7 @@ namespace OpcPublisher
         /// <summary>
         /// Creates a JSON message to be sent to IoTHub, based on the telemetry configuration for the endpoint.
         /// </summary>
-        private async Task<string> CreateJsonMessageAsync(MessageData messageData)
+        private async Task<string> CreateJsonMessageAsync(MessageDataModel messageData)
         {
             try
             {
@@ -1565,7 +1568,7 @@ namespace OpcPublisher
         /// <summary>
         /// Creates a JSON message to be sent to IoTCentral.
         /// </summary>
-        private async Task<string> CreateIotCentralJsonMessageAsync(MessageData messageData)
+        private async Task<string> CreateIotCentralJsonMessageAsync(MessageDataModel messageData)
         {
             try
             {
@@ -1611,7 +1614,7 @@ namespace OpcPublisher
                 try
                 {
                     string jsonMessage = string.Empty;
-                    MessageData messageData = new MessageData();
+                    MessageDataModel messageData = new MessageDataModel();
                     bool needToBufferMessage = false;
                     int jsonMessageSize = 0;
 
@@ -1866,7 +1869,7 @@ namespace OpcPublisher
 
         private static long _enqueueCount;
         private static long _enqueueFailureCount;
-        private static BlockingCollection<MessageData> _monitoredItemsDataQueue;
+        private static BlockingCollection<MessageDataModel> _monitoredItemsDataQueue;
         private static Task _monitoredItemsProcessorTask;
         private static IHubClient _hubClient;
         private CancellationTokenSource _hubCommunicationCts;

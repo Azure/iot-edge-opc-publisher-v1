@@ -1,22 +1,26 @@
+// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Microsoft.Azure.Devices.Client;
+using Newtonsoft.Json;
 using Opc.Ua;
 using Opc.Ua.Server;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Text;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
-    using Newtonsoft.Json;
-    using System.Linq;
-    using System.Net;
-    using System.Text;
-    using static OpcApplicationConfiguration;
-    using static OpcPublisher.Program;
-
     public class PublisherNodeManager : CustomNodeManager2
     {
         public PublisherNodeManager(Opc.Ua.Server.IServerInternal server, ApplicationConfiguration configuration)
-        : base(server, configuration, Namespaces.PublisherApplications)
+        : base(server, configuration, "http://microsoft.com/Opc/Publisher/")
         {
             SystemContext.NodeIdFactory = this;
         }
@@ -500,14 +504,13 @@ namespace OpcPublisher
                 }
 
                 // find the session we need to monitor the node
-                IOpcSession opcSession = null;
-                opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                OpcUaSessionManager opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
 
                 // add a new session.
                 if (opcSession == null)
                 {
                     // create new session info.
-                    opcSession = new OpcSession(endpointUri.OriginalString, true, OpcSessionCreationTimeout, OpcAuthenticationMode.Anonymous, null);
+                    opcSession = new OpcUaSessionManager(endpointUri.OriginalString, true, OpcSessionCreationTimeout, OpcAuthenticationMode.Anonymous, null);
                     NodeConfiguration.OpcSessions.Add(opcSession);
                     Logger.Information($"OnPublishNodeCall: No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                 }
@@ -595,7 +598,7 @@ namespace OpcPublisher
                 }
 
                 // find the session we need to monitor the node
-                IOpcSession opcSession = null;
+                OpcUaSessionManager opcSession = null;
                 try
                 {
                     opcSession = NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
@@ -668,7 +671,7 @@ namespace OpcPublisher
             }
 
             // get the list of published nodes in NodeId format
-            List<PublisherConfigurationFileEntryLegacyModel> configFileEntries = NodeConfiguration.GetPublisherConfigurationFileEntriesAsNodeIdsAsync(endpointUri.OriginalString).Result;
+            List<ConfigurationFileEntryLegacyModel> configFileEntries = NodeConfiguration.GetPublisherConfigurationFileEntriesAsNodeIdsAsync(endpointUri.OriginalString).Result;
             outputArguments[0] = JsonConvert.SerializeObject(configFileEntries);
             Logger.Information($"{logPrefix} Success (number of entries: {configFileEntries.Count})");
             return ServiceResult.Good;

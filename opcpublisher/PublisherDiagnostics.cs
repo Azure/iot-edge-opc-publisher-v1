@@ -1,23 +1,22 @@
-﻿using Serilog.Core;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using static OpcPublisher.HubCommunicationBase;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Serilog;
-    using Serilog.Configuration;
-    using Serilog.Events;
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using static HubCommunicationBase;
-    using static Program;
-
     /// <summary>
     /// Class to enable output to the console.
     /// </summary>
-    public class PublisherDiagnostics : IPublisherDiagnostics, IDisposable
+    public class PublisherDiagnostics : IDisposable
     {
         /// <summary>
         /// Command line argument in which interval in seconds to show the diagnostic info.
@@ -27,17 +26,24 @@ namespace OpcPublisher
         /// <summary>
         /// Get the singleton.
         /// </summary>
-        public static IPublisherDiagnostics Instance
+        public static PublisherDiagnostics Instance
         {
             get
             {
-                lock (_singletonLock)
+                if (_instance != null)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new PublisherDiagnostics();
-                    }
                     return _instance;
+                }
+                else
+                {
+                    lock (_singletonLock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new PublisherDiagnostics();
+                        }
+                        return _instance;
+                    }
                 }
             }
         }
@@ -271,7 +277,7 @@ namespace OpcPublisher
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Dequeue log message causing error");
+                Program.Logger.Error(ex, "Dequeue log message causing error");
             }
             return message;
         }
@@ -312,77 +318,6 @@ namespace OpcPublisher
         private static readonly List<string> _startupLog = new List<string>();
 
         private static readonly object _singletonLock = new object();
-        private static IPublisherDiagnostics _instance;
-    }
-
-    /// <summary>
-    /// Diagnostic sink for Serilog.
-    /// </summary>
-    public class DiagnosticLogSink : ILogEventSink
-    {
-        /// <summary>
-        /// Ctor for the object.
-        /// </summary>
-        public DiagnosticLogSink()
-        {
-        }
-
-        /// <summary>
-        /// Put a log event to our sink.
-        /// </summary>
-        public void Emit(LogEvent logEvent)
-        {
-            string message = FormatMessage(logEvent);
-            Diag.WriteLog(message);
-            // enable below for testing
-            //Console.ForegroundColor = ConsoleColor.Red;
-            //Console.WriteLine(message);
-            //Console.ResetColor();
-
-            // also dump exception message and stack
-            if (logEvent.Exception != null)
-            {
-                List<string> exceptionLog = FormatException(logEvent);
-                foreach (var log in exceptionLog)
-                {
-                    Diag.WriteLog(log);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Format the event message.
-        /// </summary>
-        private static string FormatMessage(LogEvent logEvent)
-        {
-            return $"[{logEvent.Timestamp:T} {logEvent.Level.ToString().Substring(0, 3).ToUpper(CultureInfo.InvariantCulture)}] {logEvent.RenderMessage()}";
-        }
-
-        /// <summary>
-        /// Format an exception event.
-        /// </summary>
-        private static List<string> FormatException(LogEvent logEvent)
-        {
-            List<string> exceptionLog = null;
-            if (logEvent.Exception != null)
-            {
-                exceptionLog = new List<string>();
-                exceptionLog.Add(logEvent.Exception.Message);
-                exceptionLog.Add(logEvent.Exception.StackTrace.ToString(CultureInfo.InvariantCulture));
-            }
-            return exceptionLog;
-        }
-    }
-
-    /// <summary>
-    /// Class for own Serilog log extension.
-    /// </summary>
-    public static class DiagnosticLogSinkExtensions
-    {
-        public static LoggerConfiguration DiagnosticLogSink(
-                  this LoggerSinkConfiguration loggerConfiguration)
-        {
-            return loggerConfiguration.Sink(new DiagnosticLogSink());
-        }
+        private static PublisherDiagnostics _instance = null;
     }
 }

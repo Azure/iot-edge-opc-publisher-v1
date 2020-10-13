@@ -6,17 +6,15 @@
 namespace OpcPublisher
 {
     /// <summary>
-    /// Enum that defines the authentication method to connect to OPC UA
+    /// Model for an unpublish all nodes request.
     /// </summary>
-    public enum OpcAuthenticationMode
+    public class UnpublishAllNodesMethodRequestModel
     {
-        /// <summary>
-        /// Anonymous authentication
-        /// </summary>
-        Anonymous,
-        /// <summary>
-        /// Username/Password authentication
-        /// </summary>
-        UsernamePassword
+        public UnpublishAllNodesMethodRequestModel(string endpointUrl = null)
+        {
+            EndpointUrl = endpointUrl;
+        }
+
+        public string EndpointUrl { get; set; }
     }
 }

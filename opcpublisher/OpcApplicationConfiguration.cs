@@ -1,12 +1,16 @@
-﻿using Opc.Ua;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Opc.Ua;
 using System;
+using System.Globalization;
+using System.Threading.Tasks;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using System.Globalization;
-    using System.Threading.Tasks;
-    using static Program;
-
     /// <summary>
     /// Class for OPC Application configuration.
     /// </summary>

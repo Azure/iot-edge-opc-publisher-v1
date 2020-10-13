@@ -1,12 +1,17 @@
-﻿namespace OpcPublisher
-{
-    using Microsoft.Azure.Devices;
-    using Microsoft.Azure.Devices.Client;
-    using Opc.Ua;
-    using System;
-    using static OpcApplicationConfiguration;
-    using static Program;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 
+using Microsoft.Azure.Devices;
+using Opc.Ua;
+using OpcPublisher.Interfaces;
+using System;
+using static OpcPublisher.OpcApplicationConfiguration;
+using static OpcPublisher.Program;
+
+namespace OpcPublisher
+{
     /// <summary>
     /// Class to handle all IoTHub communication.
     /// </summary>
@@ -55,13 +60,20 @@
         {
             get
             {
-                lock (_singletonLock)
+                if (_instance != null)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new IotHubCommunication();
-                    }
                     return _instance;
+                }
+                else
+                {
+                    lock (_singletonLock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new IotHubCommunication();
+                        }
+                        return _instance;
+                    }
                 }
             }
         }
@@ -88,7 +100,7 @@
             Logger.Information($"IoTHub device cert path is: {IotDeviceCertStorePath}");
             if (string.IsNullOrEmpty(IotHubOwnerConnectionString))
             {
-                Logger.Information("IoT Hub owner connection string not specified. Assume device connection string already in cert store or passed in via command line option.");
+                Logger.Information("IoT Hub owner connection string not specified. Please pass in device connection string via command line options.");
             }
             else
             {
@@ -131,20 +143,9 @@
                 }
             }
 
-            // save the device connectionstring, if we have one
-            if (!string.IsNullOrEmpty(DeviceConnectionString))
-            {
-                Logger.Information($"Adding device connectionstring to secure store.");
-                SecureIoTHubToken.WriteAsync(ApplicationName, DeviceConnectionString, IotDeviceCertStoreType, IotDeviceCertStorePath).Wait();
-            }
-
-            // try to read connection string from secure store and open IoTHub client
-            Logger.Information($"Attempting to read device connection string from cert store using subject name: {ApplicationName}");
-            DeviceConnectionString = SecureIoTHubToken.ReadAsync(ApplicationName, IotDeviceCertStoreType, IotDeviceCertStorePath).Result;
-
             if (string.IsNullOrEmpty(DeviceConnectionString))
             {
-                string errorMessage = $"Device connection string not found in secure store. Please pass it in at least once via command line option. Can not connect to IoTHub. Exiting...";
+                string errorMessage = $"Please pass the device connection string in via command line option. Can not connect to IoTHub. Exiting...";
                 Logger.Fatal(errorMessage);
                 throw new ArgumentException(errorMessage);
             }
@@ -161,6 +162,6 @@
         }
 
         private static readonly object _singletonLock = new object();
-        private static IotHubCommunication _instance;
+        private static IotHubCommunication _instance = null;
     }
 }

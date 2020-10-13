@@ -3,20 +3,20 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using Newtonsoft.Json;
+
 namespace OpcPublisher
 {
     /// <summary>
-    /// Enum that defines the authentication method to connect to OPC UA
+    /// Model for an exit application request.
     /// </summary>
-    public enum OpcAuthenticationMode
+    public class ExitApplicationMethodRequestModel
     {
-        /// <summary>
-        /// Anonymous authentication
-        /// </summary>
-        Anonymous,
-        /// <summary>
-        /// Username/Password authentication
-        /// </summary>
-        UsernamePassword
+        public ExitApplicationMethodRequestModel()
+        {
+        }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Include)]
+        public int SecondsTillExit { get; set; }
     }
 }

@@ -1,17 +1,22 @@
+// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using Microsoft.Azure.Devices.Client;
+using Moq;
+using OpcPublisher.Configurations;
+using OpcPublisher.Interfaces;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
+using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using Microsoft.Azure.Devices.Client;
-    using Moq;
-    using System;
-    using System.IO;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Xunit.Abstractions;
-    using static Program;
-
     [Collection("Need PLC and publisher config")]
     public sealed class TelemetryUnitTests : IDisposable
     {
@@ -216,7 +221,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             // mock IoTHub communication
             var hubMockBase = new Mock<HubCommunicationBase>();
@@ -286,8 +291,8 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {PublisherNodeConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
-            OpcMonitoredItem.HeartbeatIntervalDefault = 0;
-            OpcMonitoredItem.SkipFirstDefault = true;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
+            OpcUaMonitoredItemManager.SkipFirstDefault = true;
 
             // mock IoTHub communication
             var hubMockBase = new Mock<HubCommunicationBase>();
@@ -357,7 +362,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {PublisherNodeConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
-            OpcMonitoredItem.HeartbeatIntervalDefault = 0;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
 
             // mock IoTHub communication
             var hubMockBase = new Mock<HubCommunicationBase>();
@@ -427,7 +432,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {PublisherNodeConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
 
-            OpcMonitoredItem.HeartbeatIntervalDefault = 0;
+            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
 
             // mock IoTHub communication
             var hubMockBase = new Mock<HubCommunicationBase>();
