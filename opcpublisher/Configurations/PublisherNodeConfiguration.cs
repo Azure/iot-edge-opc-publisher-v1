@@ -13,10 +13,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static OpcPublisher.Configurations.OpcApplicationConfiguration;
-using static OpcPublisher.OpcUaMonitoredItemManager;
-using static OpcPublisher.OpcUaSessionManager;
-using static OpcPublisher.Program;
 
 namespace OpcPublisher.Configurations
 {
@@ -30,7 +26,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Name of the node configuration file.
         /// </summary>
-        public static string PublisherNodeConfigurationFilename { get; set; } = $"{System.IO.Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}publishednodes.json";
+        public static string PublisherNodeConfigurationFilename { get; set; } = $"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}publishednodes.json";
 
         /// <summary>
         /// Number of configured OPC UA sessions.
@@ -225,13 +221,20 @@ namespace OpcPublisher.Configurations
         {
             get
             {
-                lock (_singletonLock)
+                if (_instance != null)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new PublisherNodeConfiguration();
-                    }
                     return _instance;
+                }
+                else
+                {
+                    lock (_singletonLock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new PublisherNodeConfiguration();
+                        }
+                        return _instance;
+                    }
                 }
             }
         }
@@ -239,7 +242,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Ctor to initialize resources for the telemetry configuration.
         /// </summary>
-        public PublisherNodeConfiguration()
+        private PublisherNodeConfiguration()
         {
             OpcSessionsListSemaphore = new SemaphoreSlim(1);
             PublisherNodeConfigurationSemaphore = new SemaphoreSlim(1);
@@ -252,7 +255,7 @@ namespace OpcPublisher.Configurations
             if (!ReadConfigAsync().Result)
             {
                 string errorMessage = $"Error while reading the node configuration file '{PublisherNodeConfigurationFilename}'";
-                Logger.Error(errorMessage);
+                Program.Logger.Error(errorMessage);
                 throw new Exception(errorMessage);
             }
 
@@ -260,7 +263,7 @@ namespace OpcPublisher.Configurations
             if (!CreateOpcPublishingDataAsync().Result)
             {
                 string errorMessage = $"Error while creating node configuration data structures.";
-                Logger.Error(errorMessage);
+                Program.Logger.Error(errorMessage);
                 throw new Exception(errorMessage);
             }
         }
@@ -286,10 +289,6 @@ namespace OpcPublisher.Configurations
                 PublisherNodeConfigurationFileSemaphore = null;
                 _nodePublishingConfiguration?.Clear();
                 _nodePublishingConfiguration = null;
-                lock (_singletonLock)
-                {
-                    _instance = null;
-                }
             }
         }
 
@@ -313,7 +312,7 @@ namespace OpcPublisher.Configurations
             if (!await ReadConfigAsync().ConfigureAwait(false))
             {
                 string errorMessage = $"Error while reading the node configuration file '{PublisherNodeConfigurationFilename}'";
-                Logger.Error(errorMessage);
+                Program.Logger.Error(errorMessage);
                 throw new Exception(errorMessage);
             }
 
@@ -321,7 +320,7 @@ namespace OpcPublisher.Configurations
             if (!await CreateOpcPublishingDataAsync().ConfigureAwait(false))
             {
                 string errorMessage = $"Error while creating node configuration data structures.";
-                Logger.Error(errorMessage);
+                Program.Logger.Error(errorMessage);
                 throw new Exception(errorMessage);
             }
         }
@@ -338,15 +337,15 @@ namespace OpcPublisher.Configurations
                 await PublisherNodeConfigurationSemaphore.WaitAsync().ConfigureAwait(false);
                 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("_GW_PNFP")))
                 {
-                    Logger.Information("Publishing node configuration file path read from environment.");
+                    Program.Logger.Information("Publishing node configuration file path read from environment.");
                     PublisherNodeConfigurationFilename = Environment.GetEnvironmentVariable("_GW_PNFP");
                 }
-                Logger.Information($"The name of the configuration file for published nodes is: {PublisherNodeConfigurationFilename}");
+                Program.Logger.Information($"The name of the configuration file for published nodes is: {PublisherNodeConfigurationFilename}");
 
                 // if the file exists, read it, if not just continue 
                 if (File.Exists(PublisherNodeConfigurationFilename))
                 {
-                    Logger.Information($"Attemtping to load node configuration from: {PublisherNodeConfigurationFilename}");
+                    Program.Logger.Information($"Attemtping to load node configuration from: {PublisherNodeConfigurationFilename}");
                     try
                     {
                         await PublisherNodeConfigurationFileSemaphore.WaitAsync().ConfigureAwait(false);
@@ -360,7 +359,7 @@ namespace OpcPublisher.Configurations
 
                     if (_configurationFileEntries != null)
                     {
-                        Logger.Information($"Loaded {_configurationFileEntries.Count} config file entry/entries.");
+                        Program.Logger.Information($"Loaded {_configurationFileEntries.Count} config file entry/entries.");
                         foreach (var publisherConfigFileEntryLegacy in _configurationFileEntries)
                         {
                             if (publisherConfigFileEntryLegacy.NodeId == null)
@@ -413,25 +412,25 @@ namespace OpcPublisher.Configurations
                 }
                 else
                 {
-                    Logger.Information($"The node configuration file '{PublisherNodeConfigurationFilename}' does not exist. Continue and wait for remote configuration requests.");
+                    Program.Logger.Information($"The node configuration file '{PublisherNodeConfigurationFilename}' does not exist. Continue and wait for remote configuration requests.");
                 }
             }
             catch (Exception e)
             {
-                Logger.Fatal(e, "Loading of the node configuration file failed. Does the file exist and has correct syntax? Exiting...");
+                Program.Logger.Fatal(e, "Loading of the node configuration file failed. Does the file exist and has correct syntax? Exiting...");
                 return false;
             }
             finally
             {
                 PublisherNodeConfigurationSemaphore.Release();
             }
-            Logger.Information($"There are {_nodePublishingConfiguration.Count.ToString(CultureInfo.InvariantCulture)} nodes to publish.");
+            Program.Logger.Information($"There are {_nodePublishingConfiguration.Count.ToString(CultureInfo.InvariantCulture)} nodes to publish.");
             return true;
         }
 
         public virtual OpcUaSessionManager CreateOpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
-            return new OpcUaSessionManager(endpointUrl, _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl).UseSecurity, OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
+            return new OpcUaSessionManager(endpointUrl, _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl).UseSecurity, OpcApplicationConfiguration.OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
         }
 
         /// <summary>
@@ -464,7 +463,7 @@ namespace OpcPublisher.Configurations
                     }
 
                     // create new session info.
-                    OpcUaSessionManager opcSession = new OpcUaSessionManager(endpointUrl, currentNodePublishingConfiguration.UseSecurity, OpcSessionCreationTimeout, currentNodePublishingConfiguration.OpcAuthenticationMode, encryptedAuthCredential);
+                    OpcUaSessionManager opcSession = new OpcUaSessionManager(endpointUrl, currentNodePublishingConfiguration.UseSecurity, OpcApplicationConfiguration.OpcSessionCreationTimeout, currentNodePublishingConfiguration.OpcAuthenticationMode, encryptedAuthCredential);
 
                     // create a subscription for each distinct publishing inverval
                     var nodesDistinctPublishingInterval = _nodePublishingConfiguration.Where(n => n.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)).Select(c => c.OpcPublishingInterval).Distinct();
@@ -485,7 +484,7 @@ namespace OpcPublisher.Configurations
                                 OpcUaMonitoredItemManager opcMonitoredItem = new OpcUaMonitoredItemManager(nodeInfo.ExpandedNodeId, opcSession.EndpointUrl,
                                     nodeInfo.OpcSamplingInterval, nodeInfo.DisplayName, nodeInfo.HeartbeatInterval, nodeInfo.SkipFirst);
                                 opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
-                                Interlocked.Increment(ref NodeConfigVersion);
+                                Interlocked.Increment(ref OpcUaSessionManager.NodeConfigVersion);
                             }
                             else if (nodeInfo.NodeId != null)
                             {
@@ -493,11 +492,11 @@ namespace OpcPublisher.Configurations
                                 OpcUaMonitoredItemManager opcMonitoredItem = new OpcUaMonitoredItemManager(nodeInfo.NodeId, opcSession.EndpointUrl,
                                     nodeInfo.OpcSamplingInterval, nodeInfo.DisplayName, nodeInfo.HeartbeatInterval, nodeInfo.SkipFirst);
                                 opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
-                                Interlocked.Increment(ref NodeConfigVersion);
+                                Interlocked.Increment(ref OpcUaSessionManager.NodeConfigVersion);
                             }
                             else
                             {
-                                Logger.Error($"Node {nodeInfo.OriginalId} has an invalid format. Skipping...");
+                                Program.Logger.Error($"Node {nodeInfo.OriginalId} has an invalid format. Skipping...");
                             }
                         }
 
@@ -511,7 +510,7 @@ namespace OpcPublisher.Configurations
             }
             catch (Exception e)
             {
-                Logger.Fatal(e, "Creation of the internal OPC data managment structures failed. Exiting...");
+                Program.Logger.Fatal(e, "Creation of the internal OPC data managment structures failed. Exiting...");
                 return false;
             }
             finally
@@ -529,7 +528,7 @@ namespace OpcPublisher.Configurations
         public List<ConfigurationFileEntryModel> GetPublisherConfigurationFileEntries(string endpointUrl, bool getAll, out uint nodeConfigVersion)
         {
             List<ConfigurationFileEntryModel> publisherConfigurationFileEntries = new List<ConfigurationFileEntryModel>();
-            nodeConfigVersion = (uint)NodeConfigVersion;
+            nodeConfigVersion = (uint)OpcUaSessionManager.NodeConfigVersion;
             try
             {
                 PublisherNodeConfigurationSemaphore.Wait();
@@ -560,7 +559,7 @@ namespace OpcPublisher.Configurations
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
                                     {
                                         // ignore items tagged to stop
-                                        if (monitoredItem.State != OpcMonitoredItemState.RemovalRequested || getAll == true)
+                                        if (monitoredItem.State != OpcUaMonitoredItemManager.OpcMonitoredItemState.RemovalRequested || getAll == true)
                                         {
                                             OpcNodeOnEndpointModel opcNodeOnEndpoint = new OpcNodeOnEndpointModel(monitoredItem.OriginalId)
                                             {
@@ -585,7 +584,7 @@ namespace OpcPublisher.Configurations
                             }
                         }
                     }
-                    nodeConfigVersion = (uint)NodeConfigVersion;
+                    nodeConfigVersion = (uint)OpcUaSessionManager.NodeConfigVersion;
                 }
                 finally
                 {
@@ -594,7 +593,7 @@ namespace OpcPublisher.Configurations
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Reading configuration file entries failed.");
+                Program.Logger.Error(e, "Reading configuration file entries failed.");
                 publisherConfigurationFileEntries = null;
             }
             finally
@@ -634,14 +633,14 @@ namespace OpcPublisher.Configurations
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
                                     {
                                         // ignore items tagged to stop
-                                        if (monitoredItem.State != OpcMonitoredItemState.RemovalRequested)
+                                        if (monitoredItem.State != OpcUaMonitoredItemManager.OpcMonitoredItemState.RemovalRequested)
                                         {
                                             ConfigurationFileEntryLegacyModel publisherConfigurationFileEntryLegacy = new ConfigurationFileEntryLegacyModel();
                                             publisherConfigurationFileEntryLegacy.EndpointUrl = new Uri(session.EndpointUrl);
                                             publisherConfigurationFileEntryLegacy.NodeId = null;
                                             publisherConfigurationFileEntryLegacy.OpcNodes = null;
 
-                                            if (monitoredItem.ConfigType == OpcMonitoredItemConfigurationType.ExpandedNodeId)
+                                            if (monitoredItem.ConfigType == OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.ExpandedNodeId)
                                             {
                                                 // for certain scenarios we support returning the NodeId format even so the
                                                 // actual configuration of the node was in ExpandedNodeId format
@@ -680,7 +679,7 @@ namespace OpcPublisher.Configurations
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Creation of configuration file entries failed.");
+                Program.Logger.Error(e, "Creation of configuration file entries failed.");
                 publisherConfigurationFileEntriesLegacy = null;
             }
             finally
@@ -695,7 +694,7 @@ namespace OpcPublisher.Configurations
         /// </summary>
         public async Task UpdateNodeConfigurationFileAsync()
         {
-            if (NodeConfigVersion == _lastNodeConfigVersion)
+            if (OpcUaSessionManager.NodeConfigVersion == _lastNodeConfigVersion)
                 return;
 
             try
@@ -703,7 +702,7 @@ namespace OpcPublisher.Configurations
                 // iterate through all sessions, subscriptions and monitored items and create config file entries
                 List<ConfigurationFileEntryModel> publisherNodeConfiguration = GetPublisherConfigurationFileEntries(null, true, out _lastNodeConfigVersion);
 
-                Logger.Debug($"Update node configuration file, version: {_lastNodeConfigVersion:X8}");
+                Program.Logger.Debug($"Update node configuration file, version: {_lastNodeConfigVersion:X8}");
 
                 // update the config file
                 try
@@ -718,7 +717,7 @@ namespace OpcPublisher.Configurations
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Update of node configuration file failed.");
+                Program.Logger.Error(e, "Update of node configuration file failed.");
             }
         }
 

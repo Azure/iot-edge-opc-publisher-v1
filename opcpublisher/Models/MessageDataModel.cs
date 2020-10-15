@@ -3,7 +3,6 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
@@ -112,7 +111,7 @@ namespace OpcPublisher
             {
                 if (!string.IsNullOrEmpty(telemetryConfiguration.Value.StatusCode.Pattern))
                 {
-                    Logger.Information($"'Pattern' settngs for StatusCode are ignored.");
+                    Program.Logger.Information($"'Pattern' settngs for StatusCode are ignored.");
                 }
             }
             if (telemetryConfiguration.Value.Status.Publish == true)

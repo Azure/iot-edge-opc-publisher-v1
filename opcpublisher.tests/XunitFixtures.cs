@@ -12,8 +12,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using static OpcPublisher.Configurations.OpcApplicationConfiguration;
-using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
@@ -241,9 +239,9 @@ namespace OpcPublisher
             }
             try
             {
-                if (File.Exists(LogFileName))
+                if (File.Exists(Program.LogFileName))
                 {
-                    File.Delete(LogFileName);
+                    File.Delete(Program.LogFileName);
                 }
             }
             catch (Exception)
@@ -261,19 +259,19 @@ namespace OpcPublisher
         {
             // init publisher logging
             //LogLevel = "debug";
-            LogLevel = "info";
-            if (Logger == null)
+            Program.LogLevel = "info";
+            if (Program.Logger == null)
             {
-                InitLogging();
+                Program.InitLogging();
             }
 
             // init publisher application configuration
-            AutoAcceptCerts = true;
+            OpcSecurityConfiguration.AutoAcceptCerts = true;
             // mitigation for bug in .NET Core 2.1
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                OpcOwnCertStoreType = CertificateStoreType.X509Store;
-                OpcOwnCertStorePath = OpcOwnCertX509StorePathDefault;
+                OpcSecurityConfiguration.OpcOwnCertStoreType = CertificateStoreType.X509Store;
+                OpcSecurityConfiguration.OpcOwnCertStorePath = OpcSecurityConfiguration.OpcOwnCertX509StorePathDefault;
             }
             if (_opcApplicationConfiguration == null)
             {
@@ -282,8 +280,8 @@ namespace OpcPublisher
             }
 
             // configure hub communication
-            HubCommunicationBase.DefaultSendIntervalSeconds = 0;
-            HubCommunicationBase.HubMessageSize = 0;
+            HubClientWrapper.Instance.DefaultSendIntervalSeconds = 0;
+            HubClientWrapper.Instance.HubMessageSize = 0;
         }
 
         /// <summary>

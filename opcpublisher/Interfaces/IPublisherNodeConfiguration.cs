@@ -102,10 +102,5 @@ namespace OpcPublisher.Interfaces
         /// Updates the configuration file to persist all currently published nodes
         /// </summary>
         Task UpdateNodeConfigurationFileAsync();
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        void Dispose();
     }
 }

@@ -27,8 +27,8 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Ctor of the object.
-        /// </summary>
+         /// Ctor of the object.
+         /// </summary>
         public ConfigurationFileEntryLegacyModel(string nodeId, string endpointUrl)
         {
             NodeId = new NodeId(nodeId);

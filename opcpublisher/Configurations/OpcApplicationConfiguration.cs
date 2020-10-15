@@ -7,14 +7,13 @@ using Opc.Ua;
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
-using static OpcPublisher.Program;
 
 namespace OpcPublisher.Configurations
 {
     /// <summary>
     /// Class for OPC Application configuration.
     /// </summary>
-    public partial class OpcApplicationConfiguration
+    public class OpcApplicationConfiguration
     {
         /// <summary>
         /// Configuration info for the OPC application.
@@ -52,7 +51,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Set the max string length the OPC stack supports.
         /// </summary>
-        public static int OpcMaxStringLength { get; set; } = HubCommunicationBase.MaxResponsePayloadLength;
+        public static int OpcMaxStringLength { get; set; } = HubMethodHandler.Instance.MaxResponsePayloadLength;
 
         /// <summary>
         /// Mapping of the application logging levels to OPC stack logging levels.
@@ -94,15 +93,6 @@ namespace OpcPublisher.Configurations
 
         public static string PublisherServerSecurityPolicy { get; set; } = SecurityPolicies.Basic128Rsa15;
 
-
-
-        /// <summary>
-        /// Ctor of the OPC application configuration.
-        /// </summary>
-        public OpcApplicationConfiguration()
-        {
-        }
-
         /// <summary>
         /// Configures all OPC stack settings.
         /// </summary>
@@ -122,7 +112,7 @@ namespace OpcPublisher.Configurations
             ApplicationConfiguration.TraceConfiguration.TraceMasks = OpcStackTraceMask;
             ApplicationConfiguration.TraceConfiguration.ApplySettings();
             Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(LoggerOpcUaTraceHandler);
-            Logger.Information($"opcstacktracemask set to: 0x{OpcStackTraceMask:X}");
+            Program.Logger.Information($"opcstacktracemask set to: 0x{OpcStackTraceMask:X}");
 
             // configure transport settings
             ApplicationConfiguration.TransportQuotas = new TransportQuotas();
@@ -131,7 +121,7 @@ namespace OpcPublisher.Configurations
 
             // the OperationTimeout should be twice the minimum value for PublishingInterval * KeepAliveCount, so set to 120s
             ApplicationConfiguration.TransportQuotas.OperationTimeout = OpcOperationTimeout;
-            Logger.Information($"OperationTimeout set to {ApplicationConfiguration.TransportQuotas.OperationTimeout}");
+            Program.Logger.Information($"OperationTimeout set to {ApplicationConfiguration.TransportQuotas.OperationTimeout}");
 
             // configure OPC UA server
             ApplicationConfiguration.ServerConfiguration = new ServerConfiguration();
@@ -144,7 +134,7 @@ namespace OpcPublisher.Configurations
             }
             foreach (var endpoint in ApplicationConfiguration.ServerConfiguration.BaseAddresses)
             {
-                Logger.Information($"OPC UA server base address: {endpoint}");
+                Program.Logger.Information($"OPC UA server base address: {endpoint}");
             }
 
             // by default use high secure transport
@@ -154,7 +144,7 @@ namespace OpcPublisher.Configurations
                 SecurityPolicyUri = SecurityPolicies.Basic256Sha256
             };
             ApplicationConfiguration.ServerConfiguration.SecurityPolicies.Add(newPolicy);
-            Logger.Information($"Security policy {newPolicy.SecurityPolicyUri} with mode {newPolicy.SecurityMode} added");
+            Program.Logger.Information($"Security policy {newPolicy.SecurityPolicyUri} with mode {newPolicy.SecurityMode} added");
 
             // add none secure transport on request
             if (EnableUnsecureTransport)
@@ -165,28 +155,28 @@ namespace OpcPublisher.Configurations
                     SecurityPolicyUri = SecurityPolicies.None
                 };
                 ApplicationConfiguration.ServerConfiguration.SecurityPolicies.Add(newPolicy);
-                Logger.Information($"Unsecure security policy {newPolicy.SecurityPolicyUri} with mode {newPolicy.SecurityMode} added");
-                Logger.Warning($"Note: This is a security risk and needs to be disabled for production use");
+                Program.Logger.Information($"Unsecure security policy {newPolicy.SecurityPolicyUri} with mode {newPolicy.SecurityMode} added");
+                Program.Logger.Warning($"Note: This is a security risk and needs to be disabled for production use");
             }
 
             // add default client configuration
             ApplicationConfiguration.ClientConfiguration = new ClientConfiguration();
 
             // security configuration
-            await InitApplicationSecurityAsync().ConfigureAwait(false);
+            await OpcSecurityConfiguration.InitApplicationSecurityAsync().ConfigureAwait(false);
 
             // set LDS registration interval
             ApplicationConfiguration.ServerConfiguration.MaxRegistrationInterval = LdsRegistrationInterval;
-            Logger.Information($"LDS(-ME) registration intervall set to {LdsRegistrationInterval} ms (0 means no registration)");
+            Program.Logger.Information($"LDS(-ME) registration intervall set to {LdsRegistrationInterval} ms (0 means no registration)");
 
             // show certificate store information
-            await ShowCertificateStoreInformationAsync().ConfigureAwait(false);
+            await OpcSecurityConfiguration.ShowCertificateStoreInformationAsync().ConfigureAwait(false);
 
             return ApplicationConfiguration;
         }
 
         /// <summary>
-        /// Event handler to log OPC UA stack trace messages into own logger.
+        /// Event handler to log OPC UA stack trace messages into own Program.Logger.
         /// </summary>
         private static void LoggerOpcUaTraceHandler(object sender, TraceEventArgs e)
         {
@@ -206,32 +196,32 @@ namespace OpcPublisher.Configurations
             // map logging level
             if ((e.TraceMask & OpcTraceToLoggerVerbose) != 0)
             {
-                Logger.Verbose(message);
+                Program.Logger.Verbose(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerDebug) != 0)
             {
-                Logger.Debug(message);
+                Program.Logger.Debug(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerInformation) != 0)
             {
-                Logger.Information(message);
+                Program.Logger.Information(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerWarning) != 0)
             {
-                Logger.Warning(message);
+                Program.Logger.Warning(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerError) != 0)
             {
-                Logger.Error(message);
+                Program.Logger.Error(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerFatal) != 0)
             {
-                Logger.Fatal(message);
+                Program.Logger.Fatal(message);
                 return;
             }
             return;

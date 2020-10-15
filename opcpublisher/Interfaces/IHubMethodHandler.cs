@@ -5,7 +5,6 @@
 
 using Microsoft.Azure.Devices.Client;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpcPublisher.Interfaces
@@ -13,22 +12,12 @@ namespace OpcPublisher.Interfaces
     /// <summary>
     /// Class to handle all IoTHub/EdgeHub communication.
     /// </summary>
-    public interface IHubCommunication
+    public interface IHubMethodHandler
     {
         /// <summary>
         /// Dictionary of available IoTHub direct methods.
         /// </summary>
         Dictionary<string, MethodCallback> IotHubDirectMethods { get; }
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        void Dispose();
-
-        /// <summary>
-        /// Initializes the hub communication.
-        /// </summary>
-        Task<bool> InitHubCommunicationAsync(IHubClient hubClient);
 
         /// <summary>
         /// Handle publish node method call.
@@ -79,16 +68,6 @@ namespace OpcPublisher.Interfaces
         /// Method that is called for any unimplemented call. Just returns that info to the caller
         /// </summary>
         Task<MethodResponse> DefaultMethodHandlerAsync(MethodRequest methodRequest, object userContext);
-
-        /// <summary>
-        /// Enqueue a message for sending to IoTHub.
-        /// </summary>
-        void Enqueue(MessageDataModel json);
-
-        /// <summary>
-        /// Dequeue monitored item notification messages, batch them for send (if needed) and send them to IoTHub.
-        /// </summary>
-        Task MonitoredItemsProcessorAsync(CancellationToken ct);
 
         /// <summary>
         /// Exit the application.

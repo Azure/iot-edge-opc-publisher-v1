@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using static OpcPublisher.Configurations.OpcApplicationConfiguration;
 
 namespace OpcPublisher
 {
@@ -48,7 +47,7 @@ namespace OpcPublisher
         public OpcUaSubscriptionManager(int? publishingInterval)
         {
             OpcMonitoredItems = new List<OpcUaMonitoredItemManager>();
-            RequestedPublishingInterval = publishingInterval ?? OpcPublishingInterval;
+            RequestedPublishingInterval = publishingInterval ?? Configurations.OpcApplicationConfiguration.OpcPublishingInterval;
             RequestedPublishingIntervalFromConfiguration = publishingInterval != null ? true : false;
             PublishingInterval = RequestedPublishingInterval;
         }

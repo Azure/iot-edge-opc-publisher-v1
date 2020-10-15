@@ -12,7 +12,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
-using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
@@ -26,14 +25,14 @@ namespace OpcPublisher
             _server = server;
 
             // init configuration objects
-            TelemetryConfiguration = PublisherTelemetryConfiguration.Instance;
-            Diag = PublisherDiagnostics.Instance;
+            Program.TelemetryConfiguration = PublisherTelemetryConfiguration.Instance;
+            Program.Diag = PublisherDiagnostics.Instance;
         }
 
         private void CheckWhetherToSkip() {
             Skip.If(_server.Plc == null, "Server not reachable - Ensure docker endpoint is properly configured.");
             try {
-                Hub = IotHubCommunication.Instance;
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
             }
             catch {
                 Skip.If(true, "IoT Hub not configured.");
@@ -89,43 +88,41 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].RequestedPublishingInterval == OpcApplicationConfiguration.OpcPublishingInterval);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].RequestedPublishingInterval == OpcApplicationConfiguration.OpcPublishingInterval);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == null);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -158,42 +155,40 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].RequestedPublishingInterval == 2000);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].RequestedPublishingInterval == 2000);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -226,43 +221,41 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].RequestedPublishingInterval == 2000);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].RequestedPublishingInterval == 2000);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -292,42 +285,40 @@ namespace OpcPublisher
             UnitTestHelper.SetPublisherDefaults();
 
             try {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].RequestedSamplingInterval == OpcApplicationConfiguration.OpcSamplingInterval);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].RequestedSamplingInterval == OpcApplicationConfiguration.OpcSamplingInterval);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == null);
             }
             finally {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -360,42 +351,40 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -428,43 +417,41 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -497,43 +484,41 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == false);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == false);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == null);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -566,43 +551,41 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == true);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == true);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == null);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -635,42 +618,40 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == true);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == true);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -703,42 +684,40 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == true);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == true);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -771,42 +750,40 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == false);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == false);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -839,42 +816,40 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == false);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].SkipFirst == false);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -907,43 +882,41 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == 0);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == 0);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == null);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -976,43 +949,41 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == null);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -1045,42 +1016,40 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 
@@ -1113,42 +1082,40 @@ namespace OpcPublisher
 
             try
             {
-                Hub = IotHubCommunication.Instance;
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-                Assert.True(NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await Hub.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
-                Assert.True(NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
-                await NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions.Count == 1);
+                Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptions[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
+                await Program.NodeConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
-                Assert.True(NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-                Assert.True(NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-                Assert.True(NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-                _output.WriteLine($"sessions configured {NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {NodeConfiguration.NumberOfOpcSessionsConnected}");
-                _output.WriteLine($"subscriptions configured {NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
-                _output.WriteLine($"items configured {NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
+                Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
+                Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove}");
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
             }
             finally
             {
-                NodeConfiguration.Dispose();
-                NodeConfiguration = null;
-                Hub.Dispose();
-                Hub = null;
+                Program.NodeConfiguration = null;
+                HubClientWrapper.Instance.Close();
             }
         }
 

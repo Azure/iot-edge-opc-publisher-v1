@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 using Microsoft.Azure.Devices.Client;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpcPublisher.Interfaces
@@ -11,7 +12,7 @@ namespace OpcPublisher.Interfaces
     /// <summary>
     /// Interface to encapsulate the IoTHub device/module client interface.
     /// </summary>
-    public interface IHubClient
+    public interface IHubClientWrapper
     {
         /// <summary>
         /// Stores custom product information that will be appended to the user agent string that is sent to IoT Hub.
@@ -19,15 +20,14 @@ namespace OpcPublisher.Interfaces
         string ProductInfo { get; set; }
 
         /// <summary>
-        /// Implement IDisposable.
+        /// Initializes the hub communication.
         /// </summary>
-        void Dispose();
-
+        void InitHubCommunication(bool runningInIoTEdgeContext, string connectionString);
 
         /// <summary>
         /// Close the client instance
         /// </summary>
-        Task CloseAsync();
+        void Close();
 
         /// <summary>
         /// Sets the retry policy used in the operation retries.
@@ -41,25 +41,18 @@ namespace OpcPublisher.Interfaces
         void SetConnectionStatusChangesHandler(ConnectionStatusChangesHandler statusChangesHandler);
 
         /// <summary>
-        /// Explicitly open the DeviceClient instance.
-        /// </summary>
-        Task OpenAsync();
-
-        /// <summary>
-        /// Registers a new delegate for the named method. If a delegate is already associated with
-        /// the named method, it will be replaced with the new delegate.
-        /// </summary>
-        Task SetMethodHandlerAsync(string methodName, MethodCallback methodHandler);
-
-        /// <summary>
-        /// Registers a new delegate that is called for a method that doesn't have a delegate registered for its name. 
-        /// If a default delegate is already registered it will replace with the new delegate.
-        /// </summary>
-        Task SetMethodDefaultHandlerAsync(MethodCallback methodHandler);
-
-        /// <summary>
         /// Sends an event to device hub
         /// </summary>
         Task SendEventAsync(Message message);
+
+        /// <summary>
+        /// Enqueue a message for sending to IoTHub.
+        /// </summary>
+        void Enqueue(MessageDataModel json);
+
+        /// <summary>
+        /// Dequeue monitored item notification messages, batch them for send (if needed) and send them to IoTHub.
+        /// </summary>
+        Task MonitoredItemsProcessorAsync(CancellationToken ct);
     }
 }

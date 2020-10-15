@@ -8,12 +8,9 @@ using Opc.Ua.Server;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
-    using static Program;
-
     public class PublisherServer : StandardServer
     {
         /// <summary>
@@ -98,7 +95,7 @@ namespace OpcPublisher
                     ServerInternal.Status.Variable.State.Value = ServerState.Shutdown;
                     ServerInternal.Status.Variable.ClearChangeMasks(ServerInternal.DefaultSystemContext, true);
 
-                    for (uint timeTillShutdown = PublisherShutdownWaitPeriod; timeTillShutdown > 0; timeTillShutdown--)
+                    for (uint timeTillShutdown = Program.PublisherShutdownWaitPeriod; timeTillShutdown > 0; timeTillShutdown--)
                     {
                         ServerInternal.Status.Value.SecondsTillShutdown = timeTillShutdown;
                         ServerInternal.Status.Variable.SecondsTillShutdown.Value = timeTillShutdown;

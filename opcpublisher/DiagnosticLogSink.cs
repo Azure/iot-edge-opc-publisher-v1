@@ -9,7 +9,6 @@ using Serilog.Core;
 using Serilog.Events;
 using System.Collections.Generic;
 using System.Globalization;
-using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
@@ -19,19 +18,12 @@ namespace OpcPublisher
     public class DiagnosticLogSink : ILogEventSink
     {
         /// <summary>
-        /// Ctor for the object.
-        /// </summary>
-        public DiagnosticLogSink()
-        {
-        }
-
-        /// <summary>
         /// Put a log event to our sink.
         /// </summary>
         public void Emit(LogEvent logEvent)
         {
             string message = FormatMessage(logEvent);
-            Diag.WriteLog(message);
+            Program.Diag.WriteLog(message);
             // enable below for testing
             //Console.ForegroundColor = ConsoleColor.Red;
             //Console.WriteLine(message);
@@ -43,7 +35,7 @@ namespace OpcPublisher
                 List<string> exceptionLog = FormatException(logEvent);
                 foreach (var log in exceptionLog)
                 {
-                    Diag.WriteLog(log);
+                    Program.Diag.WriteLog(log);
                 }
             }
         }

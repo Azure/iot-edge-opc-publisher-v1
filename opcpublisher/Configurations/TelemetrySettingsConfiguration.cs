@@ -6,7 +6,6 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using static OpcPublisher.Program;
 
 namespace OpcPublisher.Configurations
 {
@@ -63,7 +62,7 @@ namespace OpcPublisher.Configurations
                     }
                     catch
                     {
-                        Logger.Fatal($"The regular expression '{value}' used for the property 'Pattern' is not a valid regular expression. Please change.");
+                        Program.Logger.Fatal($"The regular expression '{value}' used for the property 'Pattern' is not a valid regular expression. Please change.");
                         throw new Exception($"The regular expression '{value}' used for the property 'Pattern' is not a valid regular expression. Please change.");
                     }
                 }

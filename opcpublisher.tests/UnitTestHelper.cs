@@ -5,7 +5,6 @@
 
 using OpcPublisher.Configurations;
 using System.Threading;
-using static OpcPublisher.Program;
 
 namespace OpcPublisher
 {
@@ -23,8 +22,8 @@ namespace OpcPublisher
         {
             // wait till monitoring starts
             int iter = 0;
-            int startNum = NodeConfiguration.NumberOfOpcMonitoredItemsMonitored;
-            while (NodeConfiguration.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
+            int startNum = Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored;
+            while (Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
@@ -35,8 +34,8 @@ namespace OpcPublisher
         {
             // wait till monitoring starts
             int iter = 0;
-            long numberOfEventsStart = HubCommunicationBase.NumberOfEvents;
-            while ((NodeConfiguration.NumberOfOpcMonitoredItemsMonitored == 0 || (HubCommunicationBase.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
+            long numberOfEventsStart = HubClientWrapper.Instance.NumberOfEvents;
+            while ((Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored == 0 || (HubClientWrapper.Instance.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
@@ -48,9 +47,9 @@ namespace OpcPublisher
         {
             OpcApplicationConfiguration.OpcSamplingInterval = 1000;
             OpcApplicationConfiguration.OpcPublishingInterval = 0;
-            OpcApplicationConfiguration.AutoAcceptCerts = true;
-            HubCommunicationBase.DefaultSendIntervalSeconds = 0;
-            HubCommunicationBase.HubMessageSize = 0;
+            OpcSecurityConfiguration.AutoAcceptCerts = true;
+            HubClientWrapper.Instance.DefaultSendIntervalSeconds = 0;
+            HubClientWrapper.Instance.HubMessageSize = 0;
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
         }

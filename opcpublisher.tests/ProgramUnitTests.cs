@@ -3,6 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using OpcPublisher.Configurations;
 using System.Collections.Generic;
 using Xunit;
 
@@ -22,8 +23,8 @@ namespace OpcPublisher
             resultOk.Add("d");
 
             List<string> result = new List<string>();
-            result = OpcPublisher.Program.ParseListOfStrings(testString);
-            Assert.Equal(resultOk, OpcPublisher.Program.ParseListOfStrings(testString));
+            result = CommandLineArgumentsConfiguration.ParseListOfStrings(testString);
+            Assert.Equal(resultOk, CommandLineArgumentsConfiguration.ParseListOfStrings(testString));
         }
 
 
@@ -32,7 +33,7 @@ namespace OpcPublisher
         [MemberData(nameof(ParseListOfStringsSimplePass0))]
         public void ParseListOfStringsPass(string test, List<string> expected)
         {
-            Assert.Equal(expected, OpcPublisher.Program.ParseListOfStrings(test));
+            Assert.Equal(expected, CommandLineArgumentsConfiguration.ParseListOfStrings(test));
         }
 
         public static IEnumerable<object[]> ParseListOfStringsSimplePass0 =>
