@@ -30,7 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="publishednodes.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
