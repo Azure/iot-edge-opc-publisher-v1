@@ -278,7 +278,7 @@ namespace OpcPublisher.Configurations
                 //OpcSessionsListSemaphore.Wait(); avoid get semaphore here, otherwise there will be deadlock during OpcSession disposing 
                 foreach (var opcSession in OpcSessions)
                 {
-                    opcSession.Dispose();
+                    opcSession.Close();
                 }
                 OpcSessions?.Clear();
                 OpcSessionsListSemaphore?.Dispose();
