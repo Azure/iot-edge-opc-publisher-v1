@@ -501,7 +501,7 @@ namespace OpcPublisher.Configurations
                         }
 
                         // add subscription to session.
-                        opcSession.OpcSubscriptions.Add(opcSubscription);
+                        opcSession.OpcSubscriptionManagers.Add(opcSubscription);
                     }
 
                     // add session.
@@ -554,7 +554,7 @@ namespace OpcPublisher.Configurations
                                 publisherConfigurationFileEntry.UseSecurity = session.UseSecurity;
                                 publisherConfigurationFileEntry.OpcNodes = new List<OpcNodeOnEndpointModel>();
 
-                                foreach (var subscription in session.OpcSubscriptions)
+                                foreach (var subscription in session.OpcSubscriptionManagers)
                                 {
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
                                     {
@@ -628,7 +628,7 @@ namespace OpcPublisher.Configurations
                             if (sessionLocked && (endpointUrl == null || session.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)))
                             {
 
-                                foreach (var subscription in session.OpcSubscriptions)
+                                foreach (var subscription in session.OpcSubscriptionManagers)
                                 {
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
                                     {

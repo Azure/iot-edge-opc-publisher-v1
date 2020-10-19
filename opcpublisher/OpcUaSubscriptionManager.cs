@@ -3,6 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using Opc.Ua.Client;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -23,7 +24,7 @@ namespace OpcPublisher
         /// <summary>
         /// The OPC UA stack subscription object.
         /// </summary>
-        public OpcUaSubscriptionWrapper OpcUaClientSubscription { get; set; }
+        public Subscription OpcUaClientSubscription { get; set; }
 
         /// <summary>
         /// The publishing interval requested to be used for the subscription.

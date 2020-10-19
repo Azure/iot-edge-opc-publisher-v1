@@ -101,7 +101,7 @@ namespace OpcPublisher
         /// <summary>
         /// The OPC UA stacks monitored item object.
         /// </summary>
-        public OpcUaMonitoredItemWrapper OpcUaClientMonitoredItem { get; set; }
+        public MonitoredItem OpcUaClientMonitoredItem { get; set; }
 
         /// <summary>
         /// The OPC UA identifier of the node in NodeId ("ns=") syntax.

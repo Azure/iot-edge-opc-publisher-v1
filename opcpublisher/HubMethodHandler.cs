@@ -421,7 +421,7 @@ namespace OpcPublisher
                             if (unpublishNodesMethodData?.OpcNodes == null || unpublishNodesMethodData.OpcNodes.Count == 0)
                             {
                                 // loop through all subscriptions of the session
-                                foreach (var subscription in opcSession.OpcSubscriptions)
+                                foreach (var subscription in opcSession.OpcSubscriptionManagers)
                                 {
                                     // loop through all monitored items
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
@@ -643,7 +643,7 @@ namespace OpcPublisher
                                 }
 
                                 // loop through all subscriptions of a connected session
-                                foreach (var subscription in session.OpcSubscriptions)
+                                foreach (var subscription in session.OpcSubscriptionManagers)
                                 {
                                     // loop through all monitored items
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
