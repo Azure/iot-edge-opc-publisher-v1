@@ -280,46 +280,35 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Implement IDisposable.
+        /// Close
         /// </summary>
-        protected virtual void Dispose(bool disposing)
+        public void Close()
         {
-            if (disposing)
-            {
-                // dispose managed resources
-                _sessionCancelationTokenSource?.Cancel();
-                DisconnectAsync().Wait();
+            // dispose managed resources
+            _sessionCancelationTokenSource?.Cancel();
+            DisconnectAsync().Wait();
                 
-                foreach (var opcSubscription in OpcSubscriptionManagers)
-                {
-                    opcSubscription.Dispose();
-                }
-
-                OpcSubscriptionManagers?.Clear();
-                try
-                {
-                    _connectAndMonitorAsync.Wait();
-                }
-                catch (Exception ex)
-                {
-                    Program.Logger.Error(ex, "Error while wait OPC session to finished");
-                }
-                _sessionCancelationTokenSource?.Dispose();
-                _sessionCancelationTokenSource = null;
-                _opcSessionSemaphore?.Dispose();
-                _opcSessionSemaphore = null;
-                OpcUaClientSession?.Dispose();
-                OpcUaClientSession = null;
+            foreach (var opcSubscription in OpcSubscriptionManagers)
+            {
+                opcSubscription.Close();
             }
-        }
 
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            OpcSubscriptionManagers?.Clear();
+            try
+            {
+                _connectAndMonitorAsync.Wait();
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Error(ex, "Error while wait OPC session to finished");
+            }
+
+            _sessionCancelationTokenSource?.Dispose();
+            _sessionCancelationTokenSource = null;
+            _opcSessionSemaphore?.Dispose();
+            _opcSessionSemaphore = null;
+            OpcUaClientSession?.Dispose();
+            OpcUaClientSession = null;
         }
 
         /// <summary>

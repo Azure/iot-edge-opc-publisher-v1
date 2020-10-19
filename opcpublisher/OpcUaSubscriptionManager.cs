@@ -54,30 +54,18 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Implement IDisposable.
+        /// Close
         /// </summary>
-        protected virtual void Dispose(bool disposing)
+        public void Close()
         {
-            if (disposing)
+            // dispose managed resources
+            foreach (var opcMonitoredItem in OpcMonitoredItems)
             {
-                // dispose managed resources
-                foreach (var opcMonitoredItem in OpcMonitoredItems)
-                {
-                    opcMonitoredItem?.HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-                }
-                OpcMonitoredItems?.Clear();
-                OpcUaClientSubscription?.Dispose();
-                OpcUaClientSubscription = null;
+                opcMonitoredItem?.HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
             }
-        }
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            OpcMonitoredItems?.Clear();
+            OpcUaClientSubscription?.Dispose();
+            OpcUaClientSubscription = null;
         }
     }
 }
