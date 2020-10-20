@@ -280,8 +280,8 @@ namespace OpcPublisher
             }
 
             // configure hub communication
-            HubClientWrapper.Instance.DefaultSendIntervalSeconds = 0;
-            HubClientWrapper.Instance.HubMessageSize = 0;
+            Program._clientWrapper.DefaultSendIntervalSeconds = 0;
+            Program._clientWrapper.HubMessageSize = 0;
         }
 
         /// <summary>

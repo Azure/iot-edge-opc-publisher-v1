@@ -3,11 +3,14 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using Microsoft.Azure.Amqp.Transport;
 using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.Devices.Client.Transport.Mqtt;
 using Newtonsoft.Json;
 using OpcPublisher.Interfaces;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -99,8 +102,8 @@ namespace OpcPublisher
         /// <summary>
         /// The protocol to use for hub communication.
         /// </summary>
-        public const TransportType IotHubProtocol = TransportType.Mqtt_WebSocket_Only;
-        public const TransportType EdgeHubProtocol = TransportType.Amqp_Tcp_Only;
+        public const TransportType IotHubProtocol = TransportType.Mqtt;
+        public const TransportType EdgeHubProtocol = TransportType.Amqp;
 
         /// <summary>
         /// Stores custom product information that will be appended to the user agent string that is sent to IoT Hub.
@@ -127,39 +130,6 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Singleton pattern
-        /// </summary>
-        public static HubClientWrapper Instance
-        {
-            get
-            {
-                if (_instance != null)
-                {
-                    return _instance;
-                }
-                else
-                {
-                    lock (_singletonLock)
-                    {
-                        if (_instance == null)
-                        {
-                            _instance = new HubClientWrapper();
-                        }
-                        return _instance;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Private default constructor
-        /// </summary>
-        private HubClientWrapper()
-        {
-            // nothing to do
-        }
-
-        /// <summary>
         /// Close the client instance
         /// </summary>
         public virtual void Close()
@@ -173,12 +143,12 @@ namespace OpcPublisher
 
                 if (_edgeHubClient != null)
                 {
-                    _edgeHubClient.CloseAsync();
+                    _edgeHubClient.CloseAsync().Wait();
                 }
 
                 if (_iotHubClient != null)
                 {
-                    _iotHubClient.CloseAsync();
+                    _iotHubClient.CloseAsync().Wait();
                 }
             }
             catch (Exception e)
@@ -233,7 +203,7 @@ namespace OpcPublisher
                     _edgeHubClient = ModuleClient.CreateFromConnectionString(connectionString, EdgeHubProtocol);
                 }
 
-                HubMethodHandler.Instance.RegisterMethodHandlers(_edgeHubClient);
+                _hubMethodHandler.RegisterMethodHandlers(_edgeHubClient);
             }
             else
             {
@@ -246,9 +216,21 @@ namespace OpcPublisher
 
                 Program.Logger.Information($"Create device client using '{IotHubProtocol}' for communication.");
 
-                _iotHubClient = DeviceClient.CreateFromConnectionString(connectionString, IotHubProtocol);
+                if (connectionString.Contains(";GatewayHostName="))
+                {
+                    // transparent gateway mode
+                    List<ITransportSettings> transportSettingsList = new List<ITransportSettings>();
+                    MqttTransportSettings transportSettings = new MqttTransportSettings(TransportType.Mqtt_Tcp_Only);
+                    transportSettings.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+                    transportSettingsList.Add(transportSettings);
+                    _iotHubClient = DeviceClient.CreateFromConnectionString(connectionString, transportSettingsList.ToArray());
+                }
+                else
+                {
+                    _iotHubClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt);
+                }
 
-                HubMethodHandler.Instance.RegisterMethodHandlers(_iotHubClient);
+                _hubMethodHandler.RegisterMethodHandlers(_iotHubClient);
             }
 
             ProductInfo = "OpcPublisher";
@@ -256,20 +238,12 @@ namespace OpcPublisher
 
             // register connection status change handler
             SetConnectionStatusChangesHandler(ConnectionStatusChange);
-
-            Program.Logger.Debug($"Init D2C message processing");
-            if (InitMessageProcessingAsync().Result == false)
-            {
-                string errorMessage = $"Failure initializing hub message processing";
-                Program.Logger.Fatal(errorMessage);
-                throw new Exception(errorMessage);
-            }
         }
 
         /// <summary>
         /// Initializes internal message processing.
         /// </summary>
-        private Task<bool> InitMessageProcessingAsync()
+        public void InitMessageProcessing()
         {
             try
             {
@@ -280,16 +254,14 @@ namespace OpcPublisher
                 _monitoredItemsDataQueue = new BlockingCollection<MessageDataModel>(MonitoredItemsQueueCapacity);
 
                 // start up task to send telemetry to IoTHub
-                _monitoredItemsProcessorTask = null;
-
                 Program.Logger.Information("Creating task process and batch monitored item data updates...");
                 _monitoredItemsProcessorTask = Task.Run(() => MonitoredItemsProcessorAsync(_shutdownToken).ConfigureAwait(false), _shutdownToken);
-                return Task.FromResult(true);
+                
             }
             catch (Exception e)
             {
                 Program.Logger.Error(e, "Failure initializing message processing.");
-                return Task.FromResult(false);
+                throw e;
             }
         }
 
@@ -622,7 +594,7 @@ namespace OpcPublisher
                             try
                             {
                                 SentBytes += encodedhubMessage.GetBytes().Length;
-                                await SendEventAsync(encodedhubMessage).ConfigureAwait(false);
+                                SendEvent(encodedhubMessage);
                                 SentMessages++;
                                 SentLastTime = DateTime.UtcNow;
                                 Program.Logger.Debug($"Sending {encodedhubMessage.BodyStream.Length} bytes to hub.");
@@ -694,13 +666,16 @@ namespace OpcPublisher
         /// <summary>
         /// Sends an event to device hub
         /// </summary>
-        public virtual Task SendEventAsync(Message message)
+        public virtual void SendEvent(Message message)
         {
             if (_iotHubClient == null)
             {
-                return _edgeHubClient.SendEventAsync(message);
+                _edgeHubClient.SendEventAsync(message).Wait();
             }
-            return _iotHubClient.SendEventAsync(message);
+            else
+            {
+                _iotHubClient.SendEventAsync(message).Wait();
+            }
         }
 
         /// <summary>
@@ -734,7 +709,6 @@ namespace OpcPublisher
         private DeviceClient _iotHubClient;
         private ModuleClient _edgeHubClient;
 
-        private static readonly object _singletonLock = new object();
-        private static HubClientWrapper _instance = null;
+        public HubMethodHandler _hubMethodHandler = new HubMethodHandler(); //TODO: make private
     }
 }

@@ -268,7 +268,7 @@ namespace OpcPublisher
                 HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
                 MessageDataModel messageData = new MessageDataModel();
-                if (HubClientWrapper.Instance.IotCentralMode)
+                if (Program._clientWrapper.IotCentralMode)
                 {
                     // for IoTCentral we use the DisplayName as the key in the telemetry and the Value as the value.
                     if (monitoredItem.DisplayName != null)
@@ -454,7 +454,7 @@ namespace OpcPublisher
                 else
                 {
                     // enqueue the telemetry event
-                    HubClientWrapper.Instance.Enqueue(messageData);
+                    Program._clientWrapper.Enqueue(messageData);
                 }
             }
             catch (Exception ex)
@@ -506,7 +506,7 @@ namespace OpcPublisher
                     }
 
                     // enqueue the message
-                    HubClientWrapper.Instance.Enqueue(HeartbeatMessage);
+                    Program._clientWrapper.Enqueue(HeartbeatMessage);
                     Program.Logger.Debug($"Message enqueued for heartbeat with sourceTimestamp '{HeartbeatMessage.SourceTimestamp}'.");
                 }
                 else

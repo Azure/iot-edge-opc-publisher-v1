@@ -32,7 +32,7 @@ namespace OpcPublisher
         private void CheckWhetherToSkip() {
             Skip.If(_server.Plc == null, "Server not reachable - Ensure docker endpoint is properly configured.");
             try {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
             }
             catch {
                 Skip.If(true, "IoT Hub not configured.");
@@ -88,7 +88,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -102,7 +102,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
@@ -122,7 +122,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -155,7 +155,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -169,7 +169,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == 2000);
@@ -188,7 +188,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -221,7 +221,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -235,7 +235,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
@@ -255,7 +255,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -285,7 +285,7 @@ namespace OpcPublisher
             UnitTestHelper.SetPublisherDefaults();
 
             try {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -299,7 +299,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
@@ -318,7 +318,7 @@ namespace OpcPublisher
             }
             finally {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -351,7 +351,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -365,7 +365,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
@@ -384,7 +384,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -417,7 +417,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -431,7 +431,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
@@ -451,7 +451,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -484,7 +484,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -498,7 +498,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
@@ -518,7 +518,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -551,7 +551,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -565,7 +565,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
@@ -585,7 +585,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -618,7 +618,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -632,7 +632,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
@@ -651,7 +651,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -684,7 +684,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -698,7 +698,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
@@ -717,7 +717,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -750,7 +750,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -764,7 +764,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
@@ -783,7 +783,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -816,7 +816,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -830,7 +830,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
@@ -849,7 +849,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -882,7 +882,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -896,7 +896,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
@@ -916,7 +916,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -949,7 +949,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -963,7 +963,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 await Task.Yield();
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
@@ -983,7 +983,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -1016,7 +1016,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -1030,7 +1030,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
@@ -1049,7 +1049,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 
@@ -1082,7 +1082,7 @@ namespace OpcPublisher
 
             try
             {
-                HubClientWrapper.Instance.InitHubCommunication(false, Program.DeviceConnectionString);
+                Program._clientWrapper.InitMessageProcessing();
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 0, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
@@ -1096,7 +1096,7 @@ namespace OpcPublisher
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(PublisherNodeConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-                await HubMethodHandler.Instance.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Program._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
                 Assert.True(Program.NodeConfiguration.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
@@ -1115,7 +1115,7 @@ namespace OpcPublisher
             finally
             {
                 Program.NodeConfiguration = null;
-                HubClientWrapper.Instance.Close();
+                Program._clientWrapper.Close();
             }
         }
 

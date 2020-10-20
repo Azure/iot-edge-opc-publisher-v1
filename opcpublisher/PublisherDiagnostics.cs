@@ -105,20 +105,20 @@ namespace OpcPublisher
                 diagnosticInfo.NumberOfOpcMonitoredItemsConfigured = Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured;
                 diagnosticInfo.NumberOfOpcMonitoredItemsMonitored = Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored;
                 diagnosticInfo.NumberOfOpcMonitoredItemsToRemove = Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove;
-                diagnosticInfo.MonitoredItemsQueueCapacity = HubClientWrapper.Instance.MonitoredItemsQueueCapacity;
-                diagnosticInfo.MonitoredItemsQueueCount = HubClientWrapper.Instance.MonitoredItemsQueueCount;
-                diagnosticInfo.EnqueueCount = HubClientWrapper.Instance.EnqueueCount;
-                diagnosticInfo.EnqueueFailureCount = HubClientWrapper.Instance.EnqueueFailureCount;
-                diagnosticInfo.NumberOfEvents = HubClientWrapper.Instance.NumberOfEvents;
-                diagnosticInfo.SentMessages = HubClientWrapper.Instance.SentMessages;
-                diagnosticInfo.SentLastTime = HubClientWrapper.Instance.SentLastTime;
-                diagnosticInfo.SentBytes = HubClientWrapper.Instance.SentBytes;
-                diagnosticInfo.FailedMessages = HubClientWrapper.Instance.FailedMessages;
-                diagnosticInfo.TooLargeCount = HubClientWrapper.Instance.TooLargeCount;
-                diagnosticInfo.MissedSendIntervalCount = HubClientWrapper.Instance.MissedSendIntervalCount;
+                diagnosticInfo.MonitoredItemsQueueCapacity = Program._clientWrapper.MonitoredItemsQueueCapacity;
+                diagnosticInfo.MonitoredItemsQueueCount = Program._clientWrapper.MonitoredItemsQueueCount;
+                diagnosticInfo.EnqueueCount = Program._clientWrapper.EnqueueCount;
+                diagnosticInfo.EnqueueFailureCount = Program._clientWrapper.EnqueueFailureCount;
+                diagnosticInfo.NumberOfEvents = Program._clientWrapper.NumberOfEvents;
+                diagnosticInfo.SentMessages = Program._clientWrapper.SentMessages;
+                diagnosticInfo.SentLastTime = Program._clientWrapper.SentLastTime;
+                diagnosticInfo.SentBytes = Program._clientWrapper.SentBytes;
+                diagnosticInfo.FailedMessages = Program._clientWrapper.FailedMessages;
+                diagnosticInfo.TooLargeCount = Program._clientWrapper.TooLargeCount;
+                diagnosticInfo.MissedSendIntervalCount = Program._clientWrapper.MissedSendIntervalCount;
                 diagnosticInfo.WorkingSetMB = Process.GetCurrentProcess().WorkingSet64 / (1024 * 1024);
-                diagnosticInfo.DefaultSendIntervalSeconds = HubClientWrapper.Instance.DefaultSendIntervalSeconds;
-                diagnosticInfo.HubMessageSize = HubClientWrapper.Instance.HubMessageSize;
+                diagnosticInfo.DefaultSendIntervalSeconds = Program._clientWrapper.DefaultSendIntervalSeconds;
+                diagnosticInfo.HubMessageSize = Program._clientWrapper.HubMessageSize;
             }
             catch (Exception ex)
             {

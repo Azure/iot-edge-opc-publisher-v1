@@ -34,34 +34,9 @@ namespace OpcPublisher
         public Dictionary<string, MethodCallback> IotHubDirectMethods { get; } = new Dictionary<string, MethodCallback>();
 
         /// <summary>
-        /// Singleton pattern
-        /// </summary>
-        public static HubMethodHandler Instance
-        {
-            get
-            {
-                if (_instance != null)
-                {
-                    return _instance;
-                }
-                else
-                {
-                    lock (_singletonLock)
-                    {
-                        if (_instance == null)
-                        {
-                            _instance = new HubMethodHandler();
-                        }
-                        return _instance;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Private default constructor
         /// </summary>
-        private HubMethodHandler()
+        public HubMethodHandler()
         {
             IotHubDirectMethods.Add("PublishNodes", HandlePublishNodesMethodAsync);
             IotHubDirectMethods.Add("UnpublishNodes", HandleUnpublishNodesMethodAsync);
@@ -1256,7 +1231,7 @@ namespace OpcPublisher
             {
                 resultString = JsonConvert.SerializeObject(statusResponse.GetRange(0, maxIndex));
                 result = Encoding.UTF8.GetBytes(resultString);
-                if (result.Length > _instance.MaxResponsePayloadLength)
+                if (result.Length > MaxResponsePayloadLength)
                 {
                     maxIndex /= 2;
                     continue;
@@ -1298,8 +1273,5 @@ namespace OpcPublisher
             // exit
             Environment.Exit(2);
         }
-
-        private static readonly object _singletonLock = new object();
-        private static HubMethodHandler _instance = null;
     }
 }

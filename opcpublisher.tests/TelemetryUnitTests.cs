@@ -89,23 +89,24 @@ namespace OpcPublisher
             // configure hub client mock
             var hubClientMockBase = new Mock<HubClientWrapper>();
             var hubClientMock = hubClientMockBase.As<IHubClientWrapper>();
+            hubClientMock.CallBase = true;
 
             int eventsReceived = 0;
-            hubClientMock.Setup(m => m.SendEventAsync(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
-            hubClientMockBase.Object.InitHubCommunication(false, Program.DeviceConnectionString);
+            hubClientMock.Setup(m => m.SendEvent(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
+            hubClientMock.Object.InitMessageProcessing();
 
             try
             {
-                long eventsAtStart = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAtStart = hubClientMockBase.Object.NumberOfEvents;
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
                 int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived();
-                long eventsAfterConnect = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterConnect = hubClientMockBase.Object.NumberOfEvents;
                 await Task.Delay(2500).ConfigureAwait(false);
-                long eventsAfterDelay = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterDelay = hubClientMockBase.Object.NumberOfEvents;
                 _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
                 _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
                 _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
@@ -155,22 +156,24 @@ namespace OpcPublisher
             // configure hub client mock
             var hubClientMockBase = new Mock<HubClientWrapper>();
             var hubClientMock = hubClientMockBase.As<IHubClientWrapper>();
+            hubClientMock.CallBase = true;
+
             int eventsReceived = 0;
-            hubClientMock.Setup(m => m.SendEventAsync(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
-            hubClientMockBase.Object.InitHubCommunication(false, Program.DeviceConnectionString);
+            hubClientMock.Setup(m => m.SendEvent(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
+            hubClientMock.Object.InitMessageProcessing();
 
             try
             {
-                long eventsAtStart = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAtStart = hubClientMockBase.Object.NumberOfEvents;
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
                 int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
-                long eventsAfterConnect = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterConnect = hubClientMockBase.Object.NumberOfEvents;
                 await Task.Delay(3000).ConfigureAwait(false);
-                long eventsAfterDelay = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterDelay = hubClientMockBase.Object.NumberOfEvents;
                 _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
                 _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
                 _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
@@ -221,22 +224,24 @@ namespace OpcPublisher
             // configure hub client mock
             var hubClientMockBase = new Mock<HubClientWrapper>();
             var hubClientMock = hubClientMockBase.As<IHubClientWrapper>();
+            hubClientMock.CallBase = true;
+
             int eventsReceived = 0;
-            hubClientMock.Setup(m => m.SendEventAsync(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
-            hubClientMockBase.Object.InitHubCommunication(false, Program.DeviceConnectionString);
+            hubClientMock.Setup(m => m.SendEvent(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
+            hubClientMock.Object.InitMessageProcessing();
 
             try
             {
-                long eventsAtStart = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAtStart = hubClientMockBase.Object.NumberOfEvents;
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
                 int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
-                long eventsAfterConnect = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterConnect = hubClientMockBase.Object.NumberOfEvents;
                 await Task.Delay(1900).ConfigureAwait(false);
-                long eventsAfterDelay = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterDelay = hubClientMockBase.Object.NumberOfEvents;
                 _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
                 _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
                 _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
@@ -287,22 +292,24 @@ namespace OpcPublisher
             // configure hub client mock
             var hubClientMockBase = new Mock<HubClientWrapper>();
             var hubClientMock = hubClientMockBase.As<IHubClientWrapper>();
+            hubClientMock.CallBase = true;
+
             int eventsReceived = 0;
-            hubClientMock.Setup(m => m.SendEventAsync(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
-            hubClientMockBase.Object.InitHubCommunication(false, Program.DeviceConnectionString);
+            hubClientMock.Setup(m => m.SendEvent(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
+            hubClientMock.Object.InitMessageProcessing();
 
             try
             {
-                long eventsAtStart = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAtStart = hubClientMockBase.Object.NumberOfEvents;
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
                 int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
-                long eventsAfterConnect = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterConnect = hubClientMockBase.Object.NumberOfEvents;
                 await Task.Delay(3000).ConfigureAwait(false);
-                long eventsAfterDelay = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterDelay = hubClientMockBase.Object.NumberOfEvents;
                 _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
                 _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
                 _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
@@ -352,22 +359,24 @@ namespace OpcPublisher
             // configure hub client mock
             var hubClientMockBase = new Mock<HubClientWrapper>();
             var hubClientMock = hubClientMockBase.As<IHubClientWrapper>();
+            hubClientMock.CallBase = true;
+
             int eventsReceived = 0;
-            hubClientMock.Setup(m => m.SendEventAsync(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
-            hubClientMockBase.Object.InitHubCommunication(false, Program.DeviceConnectionString);
+            hubClientMock.Setup(m => m.SendEvent(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
+            hubClientMock.Object.InitMessageProcessing();
 
             try
             {
-                long eventsAtStart = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAtStart = hubClientMockBase.Object.NumberOfEvents;
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
                 int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
-                long eventsAfterConnect = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterConnect = hubClientMockBase.Object.NumberOfEvents;
                 await Task.Delay(5000).ConfigureAwait(false);
-                long eventsAfterDelay = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterDelay = hubClientMockBase.Object.NumberOfEvents;
                 _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
                 _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
                 _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");
@@ -417,22 +426,24 @@ namespace OpcPublisher
             // configure hub client mock
             var hubClientMockBase = new Mock<HubClientWrapper>();
             var hubClientMock = hubClientMockBase.As<IHubClientWrapper>();
+            hubClientMock.CallBase = true;
+
             int eventsReceived = 0;
-            hubClientMock.Setup(m => m.SendEventAsync(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
-            hubClientMockBase.Object.InitHubCommunication(false, Program.DeviceConnectionString);
+            hubClientMock.Setup(m => m.SendEvent(It.IsAny<Message>())).Callback<Message>(m => eventsReceived++);
+            hubClientMock.Object.InitMessageProcessing();
 
             try
             {
-                long eventsAtStart = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAtStart = hubClientMockBase.Object.NumberOfEvents;
                 Program.NodeConfiguration = PublisherNodeConfiguration.Instance;
                 Assert.True(Program.NodeConfiguration.OpcSessions.Count == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
                 Assert.True(Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
                 int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived();
-                long eventsAfterConnect = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterConnect = hubClientMockBase.Object.NumberOfEvents;
                 await Task.Delay(3000).ConfigureAwait(false);
-                long eventsAfterDelay = HubClientWrapper.Instance.NumberOfEvents;
+                long eventsAfterDelay = hubClientMockBase.Object.NumberOfEvents;
                 _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
                 _output.WriteLine($"sessions configured {Program.NodeConfiguration.NumberOfOpcSessionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSessionsConnected}");
                 _output.WriteLine($"subscriptions configured {Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured}, connected {Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected}");

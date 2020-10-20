@@ -172,7 +172,6 @@ namespace OpcPublisher
                 try
                 {
                     Program.Logger.Information($"Starting server on endpoint {OpcApplicationConfiguration.ApplicationConfiguration.ServerConfiguration.BaseAddresses[0].ToString(CultureInfo.InvariantCulture)} ...");
-                    _publisherServer = new PublisherServer();
                     _publisherServer.Start(OpcApplicationConfiguration.ApplicationConfiguration);
                     Program.Logger.Information("Server started.");
                 }
@@ -189,10 +188,13 @@ namespace OpcPublisher
                 // initialize the node configuration
                 NodeConfiguration = PublisherNodeConfiguration.Instance;
 
-                
+
                 // initialize and start EdgeHub communication
-                HubClientWrapper.Instance.InitHubCommunication(RunningInIoTEdgeContext, DeviceConnectionString);
-      
+                _clientWrapper.InitHubCommunication(RunningInIoTEdgeContext, DeviceConnectionString);
+                
+                // initialize message processing
+                _clientWrapper.InitMessageProcessing();
+
                 // kick off OPC session creation and node monitoring
                 await SessionStartAsync().ConfigureAwait(false);
 
@@ -233,7 +235,7 @@ namespace OpcPublisher
                 await SessionShutdownAsync().ConfigureAwait(false);
 
                 // shutdown the IoTHub messaging
-                HubClientWrapper.Instance.Close();
+                _clientWrapper.Close();
 
                 // free resources
                 ShutdownTokenSource = null;
@@ -416,6 +418,7 @@ namespace OpcPublisher
             return;
         }
                
-        private static PublisherServer _publisherServer;
+        private static PublisherServer _publisherServer = new PublisherServer();
+        public static HubClientWrapper _clientWrapper = new HubClientWrapper(); //TODO: make private
     }
 }

@@ -51,7 +51,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Set the max string length the OPC stack supports.
         /// </summary>
-        public static int OpcMaxStringLength { get; set; } = HubMethodHandler.Instance.MaxResponsePayloadLength;
+        public static int OpcMaxStringLength { get; set; } = Program._clientWrapper._hubMethodHandler.MaxResponsePayloadLength;
 
         /// <summary>
         /// Mapping of the application logging levels to OPC stack logging levels.

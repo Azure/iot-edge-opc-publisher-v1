@@ -34,8 +34,8 @@ namespace OpcPublisher
         {
             // wait till monitoring starts
             int iter = 0;
-            long numberOfEventsStart = HubClientWrapper.Instance.NumberOfEvents;
-            while ((Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored == 0 || (HubClientWrapper.Instance.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
+            long numberOfEventsStart = Program._clientWrapper.NumberOfEvents;
+            while ((Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored == 0 || (Program._clientWrapper.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
@@ -48,8 +48,8 @@ namespace OpcPublisher
             OpcApplicationConfiguration.OpcSamplingInterval = 1000;
             OpcApplicationConfiguration.OpcPublishingInterval = 0;
             OpcSecurityConfiguration.AutoAcceptCerts = true;
-            HubClientWrapper.Instance.DefaultSendIntervalSeconds = 0;
-            HubClientWrapper.Instance.HubMessageSize = 0;
+            Program._clientWrapper.DefaultSendIntervalSeconds = 0;
+            Program._clientWrapper.HubMessageSize = 0;
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
         }

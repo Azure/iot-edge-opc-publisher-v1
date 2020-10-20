@@ -40,7 +40,7 @@ namespace OpcPublisher.Configurations
                     }
                 }
                 },
-            { "ic|iotcentral", $"publisher will send OPC UA data in IoTCentral compatible format (DisplayName of a node is used as key, this key is the Field name in IoTCentral). you need to ensure that all DisplayName's are unique. (Auto enables fetch display name)\nDefault: {HubClientWrapper.Instance.IotCentralMode}", b => HubClientWrapper.Instance.IotCentralMode = OpcUaSessionManager.FetchOpcNodeDisplayName = b != null },
+            { "ic|iotcentral", $"publisher will send OPC UA data in IoTCentral compatible format (DisplayName of a node is used as key, this key is the Field name in IoTCentral). you need to ensure that all DisplayName's are unique. (Auto enables fetch display name)\nDefault: {Program._clientWrapper.IotCentralMode}", b => Program._clientWrapper.IotCentralMode = OpcUaSessionManager.FetchOpcNodeDisplayName = b != null },
             { "sw|sessionconnectwait=", $"specify the wait time in seconds publisher is trying to connect to disconnected endpoints and starts monitoring unmonitored items\nMin: 10\nDefault: {OpcUaSessionManager.SessionConnectWaitSec}", (int i) => {
                     if (i > 10)
                     {
@@ -52,10 +52,10 @@ namespace OpcPublisher.Configurations
                     }
                 }
             },
-            { "mq|monitoreditemqueuecapacity=", $"specify how many notifications of monitored items can be stored in the internal queue, if the data can not be sent quick enough to IoTHub\nMin: 1024\nDefault: {HubClientWrapper.Instance.MonitoredItemsQueueCapacity}", (int i) => {
+            { "mq|monitoreditemqueuecapacity=", $"specify how many notifications of monitored items can be stored in the internal queue, if the data can not be sent quick enough to IoTHub\nMin: 1024\nDefault: {Program._clientWrapper.MonitoredItemsQueueCapacity}", (int i) => {
                     if (i >= 1024)
                     {
-                        HubClientWrapper.Instance.MonitoredItemsQueueCapacity = i;
+                        Program._clientWrapper.MonitoredItemsQueueCapacity = i;
                     }
                     else
                     {
@@ -96,10 +96,10 @@ namespace OpcPublisher.Configurations
             },
 
 
-            { "ms|iothubmessagesize=", $"the max size of a message which can be send to IoTHub. when telemetry of this size is available it will be sent.\n0 will enforce immediate send when telemetry is available\nMin: 0\nMax: {HubClientWrapper.HubMessageSizeMax}\nDefault: {HubClientWrapper.Instance.HubMessageSize}", (uint u) => {
+            { "ms|iothubmessagesize=", $"the max size of a message which can be send to IoTHub. when telemetry of this size is available it will be sent.\n0 will enforce immediate send when telemetry is available\nMin: 0\nMax: {HubClientWrapper.HubMessageSizeMax}\nDefault: {Program._clientWrapper.HubMessageSize}", (uint u) => {
                     if (u >= 0 && u <= HubClientWrapper.HubMessageSizeMax)
                     {
-                        HubClientWrapper.Instance.HubMessageSize = u;
+                        Program._clientWrapper.HubMessageSize = u;
                     }
                     else
                     {
@@ -107,10 +107,10 @@ namespace OpcPublisher.Configurations
                     }
                 }
             },
-            { "si|iothubsendinterval=", $"the interval in seconds when telemetry should be send to IoTHub. If 0, then only the iothubmessagesize parameter controls when telemetry is sent.\nDefault: '{HubClientWrapper.Instance.DefaultSendIntervalSeconds}'", (int i) => {
+            { "si|iothubsendinterval=", $"the interval in seconds when telemetry should be send to IoTHub. If 0, then only the iothubmessagesize parameter controls when telemetry is sent.\nDefault: '{Program._clientWrapper.DefaultSendIntervalSeconds}'", (int i) => {
                     if (i >= 0)
                     {
-                        HubClientWrapper.Instance.DefaultSendIntervalSeconds = i;
+                        Program._clientWrapper.DefaultSendIntervalSeconds = i;
                     }
                     else
                     {
@@ -119,13 +119,10 @@ namespace OpcPublisher.Configurations
                 }
             },
 
-            { "dc|deviceconnectionstring=", $"{(Program.RunningInIoTEdgeContext ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
+            { "dc|deviceconnectionstring=", $"{(Program.RunningInIoTEdgeContext ? "not supported when running as IoTEdge module\n" : $"You must create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
                 (string dc) => Program.DeviceConnectionString = (Program.RunningInIoTEdgeContext ? null : dc)
             },
-            { "ec|edgehubconnectionstring=", $"{(Program.RunningInIoTEdgeContext ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
-                (string dc) => Program.DeviceConnectionString = (Program.RunningInIoTEdgeContext ? null : dc)
-            },
-
+           
             { "hb|heartbeatinterval=", "the publisher is using this as default value in seconds for the heartbeat interval setting of nodes without\n" +
                 "a heartbeat interval setting.\n" +
                 $"Default: {OpcUaMonitoredItemManager.HeartbeatIntervalDefault}", (int i) => {
@@ -243,8 +240,8 @@ namespace OpcPublisher.Configurations
 
             { "aa|autoaccept", $"the publisher trusts all servers it is establishing a connection to.\nDefault: {OpcSecurityConfiguration.AutoAcceptCerts}", b => OpcSecurityConfiguration.AutoAcceptCerts = b != null },
 
-            { "fd|fetchdisplayname=", $"same as fetchname.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", (bool b) => OpcUaSessionManager.FetchOpcNodeDisplayName = HubClientWrapper.Instance.IotCentralMode ? true : b },
-            { "fn|fetchname", $"enable to read the display name of a published node from the server. this will increase the runtime.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", b => OpcUaSessionManager.FetchOpcNodeDisplayName = HubClientWrapper.Instance.IotCentralMode ? true : b != null },
+            { "fd|fetchdisplayname=", $"same as fetchname.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", (bool b) => OpcUaSessionManager.FetchOpcNodeDisplayName = Program._clientWrapper.IotCentralMode ? true : b },
+            { "fn|fetchname", $"enable to read the display name of a published node from the server. this will increase the runtime.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", b => OpcUaSessionManager.FetchOpcNodeDisplayName = Program._clientWrapper.IotCentralMode ? true : b != null },
 
             { "ss|suppressedopcstatuscodes=", $"specifies the OPC UA status codes for which no events should be generated.\n" +
                 $"Default: {OpcUaMonitoredItemManager.SuppressedOpcStatusCodesDefault}", (string s) => opcStatusCodesToSuppress = s },
