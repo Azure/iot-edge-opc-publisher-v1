@@ -31,11 +31,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amd64", "amd64", "{7AE30F71
 		docker\linux\amd64\Dockerfile.ssh = docker\linux\amd64\Dockerfile.ssh
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "arm32v7", "arm32v7", "{94E5355D-AA16-4E28-8B34-FA1CDBC77312}"
-	ProjectSection(SolutionItems) = preProject
-		docker\linux\arm32v7\Dockerfile = docker\linux\arm32v7\Dockerfile
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amd64", "amd64", "{8F91D4C5-8CD0-4195-9B3E-1072F0B87E92}"
 	ProjectSection(SolutionItems) = preProject
 		docker\windows\amd64\Dockerfile = docker\windows\amd64\Dockerfile
@@ -66,7 +61,6 @@ Global
 		{E702EA85-1054-4252-B029-78B694D08C08} = {8B205340-83A1-4748-9417-0300C1AA5CA3}
 		{BC12870A-38D7-4A8F-9C6B-925101D402FB} = {8B205340-83A1-4748-9417-0300C1AA5CA3}
 		{7AE30F71-DFA6-4E09-8CAD-334D009515C1} = {E702EA85-1054-4252-B029-78B694D08C08}
-		{94E5355D-AA16-4E28-8B34-FA1CDBC77312} = {E702EA85-1054-4252-B029-78B694D08C08}
 		{8F91D4C5-8CD0-4195-9B3E-1072F0B87E92} = {BC12870A-38D7-4A8F-9C6B-925101D402FB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
