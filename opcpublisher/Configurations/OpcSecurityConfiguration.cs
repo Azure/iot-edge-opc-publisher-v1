@@ -18,25 +18,26 @@ namespace OpcPublisher.Configurations
     public class OpcSecurityConfiguration
     {
         /// <summary>
-        /// Add own certificate to trusted peer store.
-        /// </summary>
-        public static bool TrustMyself { get; set; } = false;
-
-        /// <summary>
         /// Certficate store configuration for own, trusted peer, issuer and rejected stores.
         /// </summary>
-        public static string OpcOwnCertStoreType { get; set; } = CertificateStoreType.Directory;
+        public static string OpcOwnCertStoreType { get; set; } = CertificateStoreType.X509Store;
+
         public static string OpcOwnCertDirectoryStorePathDefault => "pki/own";
+
         public static string OpcOwnCertX509StorePathDefault => "CurrentUser\\UA_MachineDefault";
-        public static string OpcOwnCertStorePath { get; set; } = OpcOwnCertDirectoryStorePathDefault;
+
+        public static string OpcOwnCertStorePath { get; set; } = OpcOwnCertX509StorePathDefault;
 
         public static string OpcTrustedCertDirectoryStorePathDefault => "pki/trusted";
+
         public static string OpcTrustedCertStorePath { get; set; } = OpcTrustedCertDirectoryStorePathDefault;
 
         public static string OpcRejectedCertDirectoryStorePathDefault => "pki/rejected";
+
         public static string OpcRejectedCertStorePath { get; set; } = OpcRejectedCertDirectoryStorePathDefault;
 
         public static string OpcIssuerCertDirectoryStorePathDefault => "pki/issuer";
+
         public static string OpcIssuerCertStorePath { get; set; } = OpcIssuerCertDirectoryStorePathDefault;
 
         /// <summary>
@@ -229,25 +230,6 @@ namespace OpcPublisher.Configurations
             }
             OpcApplicationConfiguration.ApplicationConfiguration.ApplicationUri = Utils.GetApplicationUriFromCertificate(certificate);
             Program.Logger.Information($"Application certificate is for ApplicationUri '{OpcApplicationConfiguration.ApplicationConfiguration.ApplicationUri}', ApplicationName '{OpcApplicationConfiguration.ApplicationConfiguration.ApplicationName}' and Subject is '{OpcApplicationConfiguration.ApplicationConfiguration.ApplicationName}'");
-
-            // we make the default reference stack behavior configurable to put our own certificate into the trusted peer store, but only for self-signed certs
-            // note: SecurityConfiguration.AddAppCertToTrustedStore only works for Application instance objects, which we do not have
-            if (TrustMyself)
-            {
-                // ensure it is trusted
-                try
-                {
-                    using (ICertificateStore trustedStore = OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.TrustedPeerCertificates.OpenStore())
-                    {
-                        Program.Logger.Information($"Adding server certificate to trusted peer store. StorePath={OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.TrustedPeerCertificates.StorePath}");
-                        await trustedStore.Add(certificate).ConfigureAwait(false);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Program.Logger.Warning(e, $"Can not add server certificate to trusted peer store. Maybe it is already there.");
-                }
-            }
 
             // show CreateSigningRequest data
             if (ShowCreateSigningRequestInfo)

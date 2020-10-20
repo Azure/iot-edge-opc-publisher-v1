@@ -243,9 +243,6 @@ namespace OpcPublisher.Configurations
 
             { "aa|autoaccept", $"the publisher trusts all servers it is establishing a connection to.\nDefault: {OpcSecurityConfiguration.AutoAcceptCerts}", b => OpcSecurityConfiguration.AutoAcceptCerts = b != null },
 
-            { "tm|trustmyself=", $"same as trustowncert.\nDefault: {OpcSecurityConfiguration.TrustMyself}", (bool b) => OpcSecurityConfiguration.TrustMyself = b  },
-            { "to|trustowncert", $"the publisher certificate is put into the trusted certificate store automatically.\nDefault: {OpcSecurityConfiguration.TrustMyself}", t => OpcSecurityConfiguration.TrustMyself = t != null  },
-
             { "fd|fetchdisplayname=", $"same as fetchname.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", (bool b) => OpcUaSessionManager.FetchOpcNodeDisplayName = HubClientWrapper.Instance.IotCentralMode ? true : b },
             { "fn|fetchname", $"enable to read the display name of a published node from the server. this will increase the runtime.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", b => OpcUaSessionManager.FetchOpcNodeDisplayName = HubClientWrapper.Instance.IotCentralMode ? true : b != null },
 
