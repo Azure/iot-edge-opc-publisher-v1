@@ -55,9 +55,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
 
@@ -73,7 +73,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -83,7 +83,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == OpcApplicationConfiguration.OpcPublishingInterval);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -120,9 +120,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcApplicationConfiguration.OpcPublishingInterval = 3000;
@@ -139,7 +139,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -148,7 +148,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == 2000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -185,9 +185,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcApplicationConfiguration.OpcPublishingInterval = 2000;
@@ -204,7 +204,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -214,7 +214,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == 2000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -250,9 +250,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
 
@@ -267,7 +267,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -277,7 +277,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == OpcApplicationConfiguration.OpcSamplingInterval);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -313,9 +313,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcApplicationConfiguration.OpcSamplingInterval = 3000;
@@ -332,7 +332,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -341,7 +341,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -378,9 +378,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcApplicationConfiguration.OpcSamplingInterval = 2000;
@@ -397,7 +397,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -407,7 +407,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -444,9 +444,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
@@ -463,7 +463,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -473,7 +473,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -510,9 +510,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = true;
@@ -529,7 +529,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -539,7 +539,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -576,9 +576,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
@@ -595,7 +595,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -604,7 +604,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -641,9 +641,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = true;
@@ -660,7 +660,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -669,7 +669,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -706,9 +706,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = true;
@@ -725,7 +725,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -734,7 +734,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -771,9 +771,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
@@ -790,7 +790,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -799,7 +799,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -836,9 +836,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
@@ -855,7 +855,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -865,7 +865,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 0);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -902,9 +902,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 2;
@@ -921,7 +921,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -931,7 +931,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -968,9 +968,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 1;
@@ -987,7 +987,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -996,7 +996,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
@@ -1033,9 +1033,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 2;
@@ -1052,7 +1052,7 @@ namespace OpcPublisher
                 _output.WriteLine($"items configured {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries.Count == 0);
                 MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
                 await Program.Instance._clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
@@ -1061,7 +1061,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
                 Assert.True(Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");

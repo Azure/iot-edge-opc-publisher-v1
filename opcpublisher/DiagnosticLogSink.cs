@@ -24,6 +24,7 @@ namespace OpcPublisher
         {
             string message = FormatMessage(logEvent);
             Program.Instance._diag.WriteLog(message);
+            
             // enable below for testing
             //Console.ForegroundColor = ConsoleColor.Red;
             //Console.WriteLine(message);

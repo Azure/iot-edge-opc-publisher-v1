@@ -6,8 +6,6 @@
 using Moq;
 using Newtonsoft.Json;
 using OpcPublisher.Configurations;
-using OpcPublisher.Interfaces;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -50,9 +48,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
 
@@ -92,11 +90,11 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
             var nodeConfigurationMockBase = new Mock<PublisherNodeConfiguration>();
-            var nodeConfigurationMock = nodeConfigurationMockBase.As<IPublisherNodeConfiguration>();
+            var nodeConfigurationMock = nodeConfigurationMockBase.As<PublisherNodeConfiguration>();
             nodeConfigurationMock.CallBase = true;
 
             UnitTestHelper.SetPublisherDefaults();
@@ -114,7 +112,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == OpcApplicationConfiguration.OpcPublishingInterval);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == null);
             }
             finally
@@ -143,9 +141,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcApplicationConfiguration.OpcPublishingInterval = 3000;
@@ -162,7 +160,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == 2000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
             }
             finally
@@ -191,9 +189,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcApplicationConfiguration.OpcPublishingInterval = 2000;
@@ -210,7 +208,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == 2000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
             }
             finally
@@ -239,11 +237,11 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
             var nodeConfigurationMockBase = new Mock<PublisherNodeConfiguration>();
-            var nodeConfigurationMock = nodeConfigurationMockBase.As<IPublisherNodeConfiguration>();
+            var nodeConfigurationMock = nodeConfigurationMockBase.As<PublisherNodeConfiguration>();
             nodeConfigurationMock.CallBase = true;
 
             UnitTestHelper.SetPublisherDefaults();
@@ -261,7 +259,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 3000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == null);
             }
             finally
@@ -290,9 +288,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcApplicationConfiguration.OpcSamplingInterval = 3000;
@@ -309,7 +307,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
             }
             finally
@@ -338,9 +336,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcApplicationConfiguration.OpcSamplingInterval = 2000;
@@ -357,7 +355,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
             }
             finally
@@ -386,12 +384,12 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
             var nodeConfigurationMockBase = new Mock<PublisherNodeConfiguration>();
-            var nodeConfigurationMock = nodeConfigurationMockBase.As<IPublisherNodeConfiguration>();
+            var nodeConfigurationMock = nodeConfigurationMockBase.As<PublisherNodeConfiguration>();
             nodeConfigurationMock.CallBase = true;
 
             UnitTestHelper.SetPublisherDefaults();
@@ -408,7 +406,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == OpcUaMonitoredItemManager.SkipFirstDefault);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == null);
             }
             finally
@@ -437,9 +435,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
@@ -456,7 +454,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
             }
             finally
@@ -485,9 +483,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = true;
@@ -504,7 +502,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
             }
             finally
@@ -533,9 +531,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
@@ -552,7 +550,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
             }
             finally
@@ -582,9 +580,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.SkipFirstDefault = true;
@@ -601,7 +599,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
             }
             finally
@@ -631,11 +629,11 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
             var nodeConfigurationMockBase = new Mock<PublisherNodeConfiguration>();
-            var nodeConfigurationMock = nodeConfigurationMockBase.As<IPublisherNodeConfiguration>();
+            var nodeConfigurationMock = nodeConfigurationMockBase.As<PublisherNodeConfiguration>();
             nodeConfigurationMock.CallBase = true;
 
             UnitTestHelper.SetPublisherDefaults();
@@ -652,7 +650,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == OpcUaMonitoredItemManager.HeartbeatIntervalDefault);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == null);
             }
             finally
@@ -681,9 +679,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 5;
@@ -700,7 +698,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
             }
             finally
@@ -729,9 +727,9 @@ namespace OpcPublisher
                 File.Delete(fqTempFilename);
             }
             File.Copy(fqTestFilename, fqTempFilename);
-            Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = fqTempFilename;
-            _output.WriteLine($"now testing: {Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}");
-            Assert.True(File.Exists(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+            _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
+            Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 2;
@@ -748,7 +746,7 @@ namespace OpcPublisher
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(Program.Instance._nodeConfig.PublisherNodeConfigurationFilename));
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
                 Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
             }
             finally

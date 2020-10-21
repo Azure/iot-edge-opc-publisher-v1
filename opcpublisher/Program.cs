@@ -20,61 +20,15 @@ namespace OpcPublisher
     public sealed class Program
     {
         /// <summary>
-        /// run foroever flag
-        /// </summary>
-        public bool NoShutdown = false;
-
-        /// <summary>
-        /// interval for flushing log file
-        /// </summary>
-        public TimeSpan LogFileFlushTimeSpanSec = TimeSpan.FromSeconds(30);
-
-        public string DeviceConnectionString { get; set; } = null;
-
-        /// <summary>
         /// Shutdown token source.
         /// </summary>
         public CancellationTokenSource ShutdownTokenSource { get; set; } = new CancellationTokenSource();
-
-        /// <summary>
-        /// Used as delay in sec when shutting down the application.
-        /// </summary>
-        public uint PublisherShutdownWaitPeriod { get; } = 10;
-
-        /// <summary>
-        /// Stores startup time.
-        /// </summary>
-        public DateTime PublisherStartTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Logging object.
         /// </summary>
         public Serilog.Core.Logger Logger { get; set; } = null;
 
-        /// <summary>
-        /// Signal for completed startup.
-        /// </summary>
-        public bool StartupCompleted { get; set; } = false;
-
-        /// <summary>
-        /// Name of the log file.
-        /// </summary>
-        public string LogFileName { get; set; } = $"{Utils.GetHostName()}-publisher.log";
-
-        /// <summary>
-        /// Log level.
-        /// </summary>
-        public string LogLevel { get; set; } = "info";
-
-        /// <summary>
-        /// Flag indicating if we are running in an IoT Edge context
-        /// </summary>
-        public bool RunningInIoTEdgeContext = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_IOTHUBHOSTNAME")) &&
-                                                     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_MODULEGENERATIONID")) &&
-                                                     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_WORKLOADURI")) &&
-                                                     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_DEVICEID")) &&
-                                                     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_MODULEID"));
-        
         /// <summary>
         /// App instance
         /// </summary>
@@ -100,12 +54,12 @@ namespace OpcPublisher
                 
                 // detect the runtime environment. either we run standalone (native or containerized) or as IoT Edge module (containerized)
                 // check if we have an environment variable containing an IoT Edge connectionstring, we run as IoT Edge module
-                if (RunningInIoTEdgeContext)
+                if (SettingsConfiguration.RunningInIoTEdgeContext)
                 {
                     Console.WriteLine("IoTEdge detected.");
                 }
 
-                CommandLineArgumentsConfiguration.Parse(args);
+                CommandLineArgumentsParser.Parse(args);
                                 
                 // allow cancelling the application
                 var quitEvent = new ManualResetEvent(false);
@@ -161,7 +115,7 @@ namespace OpcPublisher
                 }
 
                 // initialize and start EdgeHub communication
-                _clientWrapper.InitHubCommunication(RunningInIoTEdgeContext, DeviceConnectionString);
+                _clientWrapper.InitHubCommunication(SettingsConfiguration.RunningInIoTEdgeContext, SettingsConfiguration.DeviceConnectionString);
                 
                 // initialize message processing
                 _clientWrapper.InitMessageProcessing();
@@ -175,12 +129,12 @@ namespace OpcPublisher
                 _publisherServer.CurrentInstance.SessionManager.SessionCreated += ServerEventStatus;
 
                 // startup completed
-                StartupCompleted = true;
+                PublisherDiagnostics.StartupCompleted = true;
 
                 // stop on user request
                 Logger.Information("");
                 Logger.Information("");
-                if (NoShutdown)
+                if (SettingsConfiguration.NoShutdown)
                 {
                     // wait forever if asked to do so
                     Logger.Information("Publisher is running infinite...");
@@ -276,7 +230,7 @@ namespace OpcPublisher
             }
 
             // Wait and continue after a while.
-            uint maxTries = PublisherShutdownWaitPeriod;
+            uint maxTries = SettingsConfiguration.PublisherShutdownWaitPeriod;
             while (true)
             {
                 int sessionCount = _nodeConfig.OpcSessions.Count;
@@ -324,7 +278,7 @@ namespace OpcPublisher
             LoggerConfiguration loggerConfiguration = new LoggerConfiguration();
 
             // set the log level
-            switch (LogLevel)
+            switch (SettingsConfiguration.LogLevel)
             {
                 case "fatal":
                     loggerConfiguration.MinimumLevel.Fatal();
@@ -357,28 +311,28 @@ namespace OpcPublisher
             loggerConfiguration.WriteTo.Console();
 
             // enable remote logging
-            if (_diag.DiagnosticsInterval >= 0)
+            if (SettingsConfiguration.DiagnosticsInterval >= 0)
             {
                 loggerConfiguration.WriteTo.DiagnosticLogSink();
             }
 
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("_GW_LOGP")))
             {
-                LogFileName = Environment.GetEnvironmentVariable("_GW_LOGP");
+                SettingsConfiguration.LogFileName = Environment.GetEnvironmentVariable("_GW_LOGP");
             }
 
-            if (!string.IsNullOrEmpty(LogFileName))
+            if (!string.IsNullOrEmpty(SettingsConfiguration.LogFileName))
             {
                 // configure rolling file sink
                 const int MAX_LOGFILE_SIZE = 1024 * 1024;
                 const int MAX_RETAINED_LOGFILES = 2;
-                loggerConfiguration.WriteTo.File(LogFileName, fileSizeLimitBytes: MAX_LOGFILE_SIZE, flushToDiskInterval: LogFileFlushTimeSpanSec, rollOnFileSizeLimit: true, retainedFileCountLimit: MAX_RETAINED_LOGFILES);
+                loggerConfiguration.WriteTo.File(SettingsConfiguration.LogFileName, fileSizeLimitBytes: MAX_LOGFILE_SIZE, flushToDiskInterval: SettingsConfiguration.LogFileFlushTimeSpanSec, rollOnFileSizeLimit: true, retainedFileCountLimit: MAX_RETAINED_LOGFILES);
             }
 
             Logger = loggerConfiguration.CreateLogger();
             Logger.Information($"Current directory is: {System.IO.Directory.GetCurrentDirectory()}");
-            Logger.Information($"Log file is: {LogFileName}");
-            Logger.Information($"Log level is: {LogLevel}");
+            Logger.Information($"Log file is: {SettingsConfiguration.LogFileName}");
+            Logger.Information($"Log level is: {SettingsConfiguration.LogLevel}");
         }
                
         private PublisherServer _publisherServer = new PublisherServer();

@@ -3,6 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,9 +18,64 @@ namespace OpcPublisher
     public class PublisherDiagnostics
     {
         /// <summary>
-        /// Command line argument in which interval in seconds to show the diagnostic info.
+        /// Stores startup time.
         /// </summary>
-        public int DiagnosticsInterval { get; set; } = 0;
+        public static DateTime PublisherStartTime { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Signal for completed startup.
+        /// </summary>
+        public static bool StartupCompleted { get; set; } = false;
+
+        /// <summary>
+        /// Number of events in the monitored items queue.
+        /// </summary>
+        public static long MonitoredItemsQueueCount = 0;
+
+        /// <summary>
+        /// Number of events we enqueued.
+        /// </summary>
+        public static long EnqueueCount = 0;
+
+        /// <summary>
+        /// Number of times enqueueing of events failed.
+        /// </summary>
+        public static long EnqueueFailureCount = 0;
+
+        /// <summary>
+        /// Number of events sent to the cloud.
+        /// </summary>
+        public static long NumberOfEvents { get; set; }
+
+        /// <summary>
+        /// Number of times we were not able to make the send interval, because too high load.
+        /// </summary>
+        public static long MissedSendIntervalCount { get; set; }
+
+        /// <summary>
+        /// Number of times the isze fo the event payload was too large for a telemetry message.
+        /// </summary>
+        public static long TooLargeCount { get; set; }
+
+        /// <summary>
+        /// Number of payload bytes we sent to the cloud.
+        /// </summary>
+        public static long SentBytes { get; set; }
+
+        /// <summary>
+        /// Number of messages we sent to the cloud.
+        /// </summary>
+        public static long SentMessages { get; set; }
+
+        /// <summary>
+        /// Time when we sent the last telemetry message.
+        /// </summary>
+        public static DateTime SentLastTime { get; set; }
+
+        /// <summary>
+        /// Number of times we were not able to sent the telemetry message to the cloud.
+        /// </summary>
+        public static long FailedMessages { get; set; }
 
         /// <summary>
         /// Initialize the diagnostic object.
@@ -34,7 +90,7 @@ namespace OpcPublisher
         public void Init()
         {
             // kick off the task to show diagnostic info
-            if (DiagnosticsInterval > 0)
+            if (SettingsConfiguration.DiagnosticsInterval > 0)
             {
                 _showDiagnosticsInfoTask = Task.Run(() => ShowDiagnosticsInfoAsync(Program.Instance.ShutdownTokenSource.Token).ConfigureAwait(false));
             }
@@ -62,7 +118,7 @@ namespace OpcPublisher
 
             try
             {
-                diagnosticInfo.PublisherStartTime = Program.Instance.PublisherStartTime;
+                diagnosticInfo.PublisherStartTime = PublisherStartTime;
                 diagnosticInfo.NumberOfOpcSessionsConfigured = Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured;
                 diagnosticInfo.NumberOfOpcSessionsConnected = Program.Instance._nodeConfig.NumberOfOpcSessionsConnected;
                 diagnosticInfo.NumberOfOpcSubscriptionsConfigured = Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured;
@@ -70,20 +126,20 @@ namespace OpcPublisher
                 diagnosticInfo.NumberOfOpcMonitoredItemsConfigured = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured;
                 diagnosticInfo.NumberOfOpcMonitoredItemsMonitored = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored;
                 diagnosticInfo.NumberOfOpcMonitoredItemsToRemove = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove;
-                diagnosticInfo.MonitoredItemsQueueCapacity = Program.Instance._clientWrapper.MonitoredItemsQueueCapacity;
-                diagnosticInfo.MonitoredItemsQueueCount = Program.Instance._clientWrapper.MonitoredItemsQueueCount;
-                diagnosticInfo.EnqueueCount = Program.Instance._clientWrapper.EnqueueCount;
-                diagnosticInfo.EnqueueFailureCount = Program.Instance._clientWrapper.EnqueueFailureCount;
-                diagnosticInfo.NumberOfEvents = Program.Instance._clientWrapper.NumberOfEvents;
-                diagnosticInfo.SentMessages = Program.Instance._clientWrapper.SentMessages;
-                diagnosticInfo.SentLastTime = Program.Instance._clientWrapper.SentLastTime;
-                diagnosticInfo.SentBytes = Program.Instance._clientWrapper.SentBytes;
-                diagnosticInfo.FailedMessages = Program.Instance._clientWrapper.FailedMessages;
-                diagnosticInfo.TooLargeCount = Program.Instance._clientWrapper.TooLargeCount;
-                diagnosticInfo.MissedSendIntervalCount = Program.Instance._clientWrapper.MissedSendIntervalCount;
+                diagnosticInfo.MonitoredItemsQueueCapacity = SettingsConfiguration.MonitoredItemsQueueCapacity;
+                diagnosticInfo.MonitoredItemsQueueCount = MonitoredItemsQueueCount;
+                diagnosticInfo.EnqueueCount = EnqueueCount;
+                diagnosticInfo.EnqueueFailureCount = EnqueueFailureCount;
+                diagnosticInfo.NumberOfEvents = NumberOfEvents;
+                diagnosticInfo.SentMessages = SentMessages;
+                diagnosticInfo.SentLastTime = SentLastTime;
+                diagnosticInfo.SentBytes = SentBytes;
+                diagnosticInfo.FailedMessages = FailedMessages;
+                diagnosticInfo.TooLargeCount = TooLargeCount;
+                diagnosticInfo.MissedSendIntervalCount = MissedSendIntervalCount;
                 diagnosticInfo.WorkingSetMB = Process.GetCurrentProcess().WorkingSet64 / (1024 * 1024);
-                diagnosticInfo.DefaultSendIntervalSeconds = Program.Instance._clientWrapper.DefaultSendIntervalSeconds;
-                diagnosticInfo.HubMessageSize = Program.Instance._clientWrapper.HubMessageSize;
+                diagnosticInfo.DefaultSendIntervalSeconds = SettingsConfiguration.DefaultSendIntervalSeconds;
+                diagnosticInfo.HubMessageSize = SettingsConfiguration.HubMessageSize;
             }
             catch (Exception ex)
             {
@@ -102,9 +158,9 @@ namespace OpcPublisher
             diagnosticLogMethodResponseModel.MissedMessageCount = _missedMessageCount;
             diagnosticLogMethodResponseModel.LogMessageCount = _logMessageCount;
 
-            if (DiagnosticsInterval >= 0)
+            if (SettingsConfiguration.DiagnosticsInterval >= 0)
             {
-                if (Program.Instance.StartupCompleted)
+                if (StartupCompleted)
                 {
                     List<string> log = new List<string>();
                     await _logQueueSemaphore.WaitAsync().ConfigureAwait(false);
@@ -146,9 +202,9 @@ namespace OpcPublisher
             diagnosticLogMethodResponseModel.MissedMessageCount = 0;
             diagnosticLogMethodResponseModel.LogMessageCount = _startupLog.Count;
 
-            if (DiagnosticsInterval >= 0)
+            if (SettingsConfiguration.DiagnosticsInterval >= 0)
             {
-                if (Program.Instance.StartupCompleted)
+                if (StartupCompleted)
                 {
                     diagnosticLogMethodResponseModel.Log.AddRange(_startupLog);
                 }
@@ -179,10 +235,10 @@ namespace OpcPublisher
 
                 try
                 {
-                    await Task.Delay(DiagnosticsInterval * 1000, ct).ConfigureAwait(false);
+                    await Task.Delay(SettingsConfiguration.DiagnosticsInterval * 1000, ct).ConfigureAwait(false);
 
                     // only show diag after startup is completed
-                    if (!Program.Instance.StartupCompleted)
+                    if (!StartupCompleted)
                     {
                         continue;
                     }
@@ -245,7 +301,7 @@ namespace OpcPublisher
         /// </summary>
         public void WriteLog(string message)
         {
-            if (Program.Instance.StartupCompleted == false)
+            if (StartupCompleted == false)
             {
                 _startupLog.Add(message);
                 return;

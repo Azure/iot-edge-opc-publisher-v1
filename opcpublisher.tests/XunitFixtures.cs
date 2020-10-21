@@ -187,9 +187,9 @@ namespace OpcPublisher
             }
             try
             {
-                if (File.Exists(Program.Instance.LogFileName))
+                if (File.Exists(SettingsConfiguration.LogFileName))
                 {
-                    File.Delete(Program.Instance.LogFileName);
+                    File.Delete(SettingsConfiguration.LogFileName);
                 }
             }
             catch (Exception)
@@ -207,7 +207,7 @@ namespace OpcPublisher
         {
             // init publisher logging
             //LogLevel = "debug";
-            Program.Instance.LogLevel = "info";
+            SettingsConfiguration.LogLevel = "info";
             if (Program.Instance.Logger == null)
             {
                 Program.Instance.InitLogging();
@@ -228,8 +228,8 @@ namespace OpcPublisher
             }
 
             // configure hub communication
-            Program.Instance._clientWrapper.DefaultSendIntervalSeconds = 0;
-            Program.Instance._clientWrapper.HubMessageSize = 0;
+            SettingsConfiguration.DefaultSendIntervalSeconds = 0;
+            SettingsConfiguration.HubMessageSize = 0;
         }
 
         private static OpcApplicationConfiguration _opcApplicationConfiguration = null;

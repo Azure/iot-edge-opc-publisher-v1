@@ -6,7 +6,6 @@
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using Opc.Ua;
-using OpcPublisher.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +20,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class to handle all IoTHub methods
     /// </summary>
-    public class HubMethodHandler : IHubMethodHandler
+    public class HubMethodHandler
     {
         /// <summary>
         /// Max allowed payload of an IoTHub direct method call response.
@@ -79,7 +78,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle publish node method call.
         /// </summary>
-        public virtual async Task<MethodResponse> HandlePublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
+        public async Task<MethodResponse> HandlePublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandlePublishNodesMethodAsync:";
             bool useSecurity = true;
@@ -324,7 +323,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle unpublish node method call.
         /// </summary>
-        public virtual async Task<MethodResponse> HandleUnpublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
+        public async Task<MethodResponse> HandleUnpublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleUnpublishNodesMethodAsync:";
             NodeId nodeId = null;
@@ -548,7 +547,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle unpublish all nodes method call.
         /// </summary>
-        public virtual async Task<MethodResponse> HandleUnpublishAllNodesMethodAsync(MethodRequest methodRequest, object userContext)
+        public async Task<MethodResponse> HandleUnpublishAllNodesMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleUnpublishAllNodesMethodAsync:";
             Uri endpointUri = null;
@@ -701,7 +700,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle method call to get all endpoints which published nodes.
         /// </summary>
-        public virtual Task<MethodResponse> HandleGetConfiguredEndpointsMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> HandleGetConfiguredEndpointsMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleGetConfiguredEndpointsMethodAsync:";
             GetConfiguredEndpointsMethodRequestModel getConfiguredEndpointsMethodRequest = null;
@@ -812,7 +811,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle method call to get list of configured nodes on a specific endpoint.
         /// </summary>
-        public virtual Task<MethodResponse> HandleGetConfiguredNodesOnEndpointMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> HandleGetConfiguredNodesOnEndpointMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleGetConfiguredNodesOnEndpointMethodAsync:";
             Uri endpointUri = null;
@@ -951,7 +950,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle method call to get diagnostic information.
         /// </summary>
-        public virtual Task<MethodResponse> HandleGetDiagnosticInfoMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> HandleGetDiagnosticInfoMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleGetDiagnosticInfoMethodAsync:";
             HttpStatusCode statusCode = HttpStatusCode.OK;
@@ -997,7 +996,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle method call to get log information.
         /// </summary>
-        public virtual async Task<MethodResponse> HandleGetDiagnosticLogMethodAsync(MethodRequest methodRequest, object userContext)
+        public async Task<MethodResponse> HandleGetDiagnosticLogMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleGetDiagnosticLogMethodAsync:";
             HttpStatusCode statusCode = HttpStatusCode.OK;
@@ -1043,7 +1042,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle method call to get log information.
         /// </summary>
-        public virtual async Task<MethodResponse> HandleGetDiagnosticStartupLogMethodAsync(MethodRequest methodRequest, object userContext)
+        public async Task<MethodResponse> HandleGetDiagnosticStartupLogMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleGetDiagnosticStartupLogMethodAsync:";
             HttpStatusCode statusCode = HttpStatusCode.OK;
@@ -1089,7 +1088,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle method call to get log information.
         /// </summary>
-        public virtual Task<MethodResponse> HandleExitApplicationMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> HandleExitApplicationMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleExitApplicationMethodAsync:";
             HttpStatusCode statusCode = HttpStatusCode.OK;
@@ -1154,7 +1153,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle method call to get application information.
         /// </summary>
-        public virtual Task<MethodResponse> HandleGetInfoMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> HandleGetInfoMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleGetInfoMethodAsync:";
             GetInfoMethodResponseModel getInfoMethodResponseModel = new GetInfoMethodResponseModel();
@@ -1207,7 +1206,7 @@ namespace OpcPublisher
         /// <summary>
         /// Method that is called for any unimplemented call. Just returns that info to the caller
         /// </summary>
-        public virtual Task<MethodResponse> DefaultMethodHandlerAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> DefaultMethodHandlerAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "DefaultMethodHandlerAsync:";
             string errorMessage = $"Method '{methodRequest.Name}' successfully received, but this method is not implemented";
@@ -1251,7 +1250,7 @@ namespace OpcPublisher
         /// <summary>
         /// Exit the application.
         /// </summary>
-        public virtual async Task ExitApplicationAsync(int secondsTillExit)
+        public async Task ExitApplicationAsync(int secondsTillExit)
         {
             string logPrefix = "ExitApplicationAsync:";
 

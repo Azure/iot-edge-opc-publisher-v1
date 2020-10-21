@@ -18,14 +18,14 @@ using System.Text.RegularExpressions;
 
 namespace OpcPublisher.Configurations
 {
-    public class CommandLineArgumentsConfiguration
+    public class CommandLineArgumentsParser
     {
         private static bool shouldShowHelp = false;
 
         // command line options
         private static Mono.Options.OptionSet options = new Mono.Options.OptionSet {
             // Publisher configuration options
-            { "pf|publishfile=", $"the filename to configure the nodes to publish.\nDefault: '{Program.Instance._nodeConfig.PublisherNodeConfigurationFilename}'", (string p) => Program.Instance._nodeConfig.PublisherNodeConfigurationFilename = p },
+            { "pf|publishfile=", $"the filename to configure the nodes to publish.\nDefault: '{SettingsConfiguration.PublisherNodeConfigurationFilename}'", (string p) => SettingsConfiguration.PublisherNodeConfigurationFilename = p },
             { "tc|telemetryconfigfile=", $"the filename to configure the ingested telemetry\nDefault: '{PublisherTelemetryConfiguration.PublisherTelemetryConfigurationFilename}'", (string p) => PublisherTelemetryConfiguration.PublisherTelemetryConfigurationFilename = p },
             { "s|site=", $"the site OPC Publisher is working in. if specified this domain is appended (delimited by a ':' to the 'ApplicationURI' property when telemetry is sent to IoTHub.\n" +
                     "The value must follow the syntactical rules of a DNS hostname.\nDefault: not set", (string s) => {
@@ -40,7 +40,7 @@ namespace OpcPublisher.Configurations
                     }
                 }
                 },
-            { "ic|iotcentral", $"publisher will send OPC UA data in IoTCentral compatible format (DisplayName of a node is used as key, this key is the Field name in IoTCentral). you need to ensure that all DisplayName's are unique. (Auto enables fetch display name)\nDefault: {Program.Instance._clientWrapper.IotCentralMode}", b => Program.Instance._clientWrapper.IotCentralMode = OpcUaSessionManager.FetchOpcNodeDisplayName = b != null },
+            { "ic|iotcentral", $"publisher will send OPC UA data in IoTCentral compatible format (DisplayName of a node is used as key, this key is the Field name in IoTCentral). you need to ensure that all DisplayName's are unique. (Auto enables fetch display name)\nDefault: {SettingsConfiguration.IotCentralMode}", b => SettingsConfiguration.IotCentralMode = OpcUaSessionManager.FetchOpcNodeDisplayName = b != null },
             { "sw|sessionconnectwait=", $"specify the wait time in seconds publisher is trying to connect to disconnected endpoints and starts monitoring unmonitored items\nMin: 10\nDefault: {OpcUaSessionManager.SessionConnectWaitSec}", (int i) => {
                     if (i > 10)
                     {
@@ -52,10 +52,10 @@ namespace OpcPublisher.Configurations
                     }
                 }
             },
-            { "mq|monitoreditemqueuecapacity=", $"specify how many notifications of monitored items can be stored in the internal queue, if the data can not be sent quick enough to IoTHub\nMin: 1024\nDefault: {Program.Instance._clientWrapper.MonitoredItemsQueueCapacity}", (int i) => {
+            { "mq|monitoreditemqueuecapacity=", $"specify how many notifications of monitored items can be stored in the internal queue, if the data can not be sent quick enough to IoTHub\nMin: 1024\nDefault: {SettingsConfiguration.MonitoredItemsQueueCapacity}", (int i) => {
                     if (i >= 1024)
                     {
-                        Program.Instance._clientWrapper.MonitoredItemsQueueCapacity = i;
+                        SettingsConfiguration.MonitoredItemsQueueCapacity = i;
                     }
                     else
                     {
@@ -63,16 +63,16 @@ namespace OpcPublisher.Configurations
                     }
                 }
             },
-            { "di|diagnosticsinterval=", $"shows publisher diagnostic info at the specified interval in seconds (need log level info).\n-1 disables remote diagnostic log and diagnostic output\n0 disables diagnostic output\nDefault: {Program.Instance._diag.DiagnosticsInterval}", (int i) => Program.Instance._diag.DiagnosticsInterval = i },
+            { "di|diagnosticsinterval=", $"shows publisher diagnostic info at the specified interval in seconds (need log level info).\n-1 disables remote diagnostic log and diagnostic output\n0 disables diagnostic output\nDefault: {SettingsConfiguration.DiagnosticsInterval}", (int i) => SettingsConfiguration.DiagnosticsInterval = i },
 
-            { "ns|noshutdown=", $"same as runforever.\nDefault: {Program.Instance.NoShutdown}", (bool b) => Program.Instance.NoShutdown = b },
-            { "rf|runforever", $"publisher can not be stopped by pressing a key on the console, but will run forever.\nDefault: {Program.Instance.NoShutdown}", b => Program.Instance.NoShutdown = b != null },
+            { "ns|noshutdown=", $"same as runforever.\nDefault: {SettingsConfiguration.NoShutdown}", (bool b) => SettingsConfiguration.NoShutdown = b },
+            { "rf|runforever", $"publisher can not be stopped by pressing a key on the console, but will run forever.\nDefault: {SettingsConfiguration.NoShutdown}", b => SettingsConfiguration.NoShutdown = b != null },
 
-            { "lf|logfile=", $"the filename of the logfile to use.\nDefault: './{Program.Instance.LogFileName}'", (string l) => Program.Instance.LogFileName = l },
-            { "lt|logflushtimespan=", $"the timespan in seconds when the logfile should be flushed.\nDefault: {Program.Instance.LogFileFlushTimeSpanSec} sec", (int s) => {
+            { "lf|logfile=", $"the filename of the logfile to use.\nDefault: './{SettingsConfiguration.LogFileName}'", (string l) => SettingsConfiguration.LogFileName = l },
+            { "lt|logflushtimespan=", $"the timespan in seconds when the logfile should be flushed.\nDefault: {SettingsConfiguration.LogFileFlushTimeSpanSec} sec", (int s) => {
                     if (s > 0)
                     {
-                        Program.Instance.LogFileFlushTimeSpanSec = TimeSpan.FromSeconds(s);
+                        SettingsConfiguration.LogFileFlushTimeSpanSec = TimeSpan.FromSeconds(s);
                     }
                     else
                     {
@@ -85,7 +85,7 @@ namespace OpcPublisher.Configurations
 #pragma warning disable CA1308 // Normalize strings to uppercase
                     if (logLevels.Contains(l.ToLowerInvariant()))
                     {
-                        Program.Instance.LogLevel = l.ToLowerInvariant();
+                        SettingsConfiguration.LogLevel = l.ToLowerInvariant();
                     }
 #pragma warning restore CA1308 // Normalize strings to uppercase
                     else
@@ -96,10 +96,10 @@ namespace OpcPublisher.Configurations
             },
 
 
-            { "ms|iothubmessagesize=", $"the max size of a message which can be send to IoTHub. when telemetry of this size is available it will be sent.\n0 will enforce immediate send when telemetry is available\nMin: 0\nMax: {HubClientWrapper.HubMessageSizeMax}\nDefault: {Program.Instance._clientWrapper.HubMessageSize}", (uint u) => {
-                    if (u >= 0 && u <= HubClientWrapper.HubMessageSizeMax)
+            { "ms|iothubmessagesize=", $"the max size of a message which can be send to IoTHub. when telemetry of this size is available it will be sent.\n0 will enforce immediate send when telemetry is available\nMin: 0\nMax: {SettingsConfiguration.HubMessageSizeMax}\nDefault: {SettingsConfiguration.HubMessageSize}", (uint u) => {
+                    if (u >= 0 && u <= SettingsConfiguration.HubMessageSizeMax)
                     {
-                        Program.Instance._clientWrapper.HubMessageSize = u;
+                        SettingsConfiguration.HubMessageSize = u;
                     }
                     else
                     {
@@ -107,10 +107,10 @@ namespace OpcPublisher.Configurations
                     }
                 }
             },
-            { "si|iothubsendinterval=", $"the interval in seconds when telemetry should be send to IoTHub. If 0, then only the iothubmessagesize parameter controls when telemetry is sent.\nDefault: '{Program.Instance._clientWrapper.DefaultSendIntervalSeconds}'", (int i) => {
+            { "si|iothubsendinterval=", $"the interval in seconds when telemetry should be send to IoTHub. If 0, then only the iothubmessagesize parameter controls when telemetry is sent.\nDefault: '{SettingsConfiguration.DefaultSendIntervalSeconds}'", (int i) => {
                     if (i >= 0)
                     {
-                        Program.Instance._clientWrapper.DefaultSendIntervalSeconds = i;
+                        SettingsConfiguration.DefaultSendIntervalSeconds = i;
                     }
                     else
                     {
@@ -119,8 +119,8 @@ namespace OpcPublisher.Configurations
                 }
             },
 
-            { "dc|deviceconnectionstring=", $"{(Program.Instance.RunningInIoTEdgeContext ? "not supported when running as IoTEdge module\n" : $"You must create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
-                (string dc) => Program.Instance.DeviceConnectionString = (Program.Instance.RunningInIoTEdgeContext ? null : dc)
+            { "dc|deviceconnectionstring=", $"{(SettingsConfiguration.RunningInIoTEdgeContext ? "not supported when running as IoTEdge module\n" : $"You must create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
+                (string dc) => SettingsConfiguration.DeviceConnectionString = (SettingsConfiguration.RunningInIoTEdgeContext ? null : dc)
             },
            
             { "hb|heartbeatinterval=", "the publisher is using this as default value in seconds for the heartbeat interval setting of nodes without\n" +
@@ -240,8 +240,8 @@ namespace OpcPublisher.Configurations
 
             { "aa|autoaccept", $"the publisher trusts all servers it is establishing a connection to.\nDefault: {OpcSecurityConfiguration.AutoAcceptCerts}", b => OpcSecurityConfiguration.AutoAcceptCerts = b != null },
 
-            { "fd|fetchdisplayname=", $"same as fetchname.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", (bool b) => OpcUaSessionManager.FetchOpcNodeDisplayName = Program.Instance._clientWrapper.IotCentralMode ? true : b },
-            { "fn|fetchname", $"enable to read the display name of a published node from the server. this will increase the runtime.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", b => OpcUaSessionManager.FetchOpcNodeDisplayName = Program.Instance._clientWrapper.IotCentralMode ? true : b != null },
+            { "fd|fetchdisplayname=", $"same as fetchname.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", (bool b) => OpcUaSessionManager.FetchOpcNodeDisplayName = SettingsConfiguration.IotCentralMode ? true : b },
+            { "fn|fetchname", $"enable to read the display name of a published node from the server. this will increase the runtime.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", b => OpcUaSessionManager.FetchOpcNodeDisplayName = SettingsConfiguration.IotCentralMode ? true : b != null },
 
             { "ss|suppressedopcstatuscodes=", $"specifies the OPC UA status codes for which no events should be generated.\n" +
                 $"Default: {OpcUaMonitoredItemManager.SuppressedOpcStatusCodesDefault}", (string s) => opcStatusCodesToSuppress = s },
@@ -406,7 +406,7 @@ namespace OpcPublisher.Configurations
                         break;
                     case 2:
                         OpcApplicationConfiguration.ApplicationName = extraArgs[APP_NAME_INDEX];
-                        if (Program.Instance.RunningInIoTEdgeContext)
+                        if (SettingsConfiguration.RunningInIoTEdgeContext)
                         {
                             Console.WriteLine($"Warning: connection string parameter is not supported in IoTEdge context, given parameter is ignored");
                         }

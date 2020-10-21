@@ -23,8 +23,8 @@ namespace OpcPublisher
             resultOk.Add("d");
 
             List<string> result = new List<string>();
-            result = CommandLineArgumentsConfiguration.ParseListOfStrings(testString);
-            Assert.Equal(resultOk, CommandLineArgumentsConfiguration.ParseListOfStrings(testString));
+            result = CommandLineArgumentsParser.ParseListOfStrings(testString);
+            Assert.Equal(resultOk, CommandLineArgumentsParser.ParseListOfStrings(testString));
         }
 
 
@@ -33,7 +33,7 @@ namespace OpcPublisher
         [MemberData(nameof(ParseListOfStringsSimplePass0))]
         public void ParseListOfStringsPass(string test, List<string> expected)
         {
-            Assert.Equal(expected, CommandLineArgumentsConfiguration.ParseListOfStrings(test));
+            Assert.Equal(expected, CommandLineArgumentsParser.ParseListOfStrings(test));
         }
 
         public static IEnumerable<object[]> ParseListOfStringsSimplePass0 =>

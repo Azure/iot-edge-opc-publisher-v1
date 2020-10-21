@@ -20,13 +20,13 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Certficate store configuration for own, trusted peer, issuer and rejected stores.
         /// </summary>
-        public static string OpcOwnCertStoreType { get; set; } = CertificateStoreType.X509Store;
+        public static string OpcOwnCertStoreType { get; set; } = CertificateStoreType.Directory;
 
         public static string OpcOwnCertDirectoryStorePathDefault => "pki/own";
 
         public static string OpcOwnCertX509StorePathDefault => "CurrentUser\\UA_MachineDefault";
 
-        public static string OpcOwnCertStorePath { get; set; } = OpcOwnCertX509StorePathDefault;
+        public static string OpcOwnCertStorePath { get; set; } = OpcOwnCertDirectoryStorePathDefault;
 
         public static string OpcTrustedCertDirectoryStorePathDefault => "pki/trusted";
 

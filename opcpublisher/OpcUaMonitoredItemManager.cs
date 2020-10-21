@@ -5,6 +5,7 @@
 
 using Opc.Ua;
 using Opc.Ua.Client;
+using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -268,7 +269,7 @@ namespace OpcPublisher
                 HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
                 MessageDataModel messageData = new MessageDataModel();
-                if (Program.Instance._clientWrapper.IotCentralMode)
+                if (SettingsConfiguration.IotCentralMode)
                 {
                     // for IoTCentral we use the DisplayName as the key in the telemetry and the Value as the value.
                     if (monitoredItem.DisplayName != null)

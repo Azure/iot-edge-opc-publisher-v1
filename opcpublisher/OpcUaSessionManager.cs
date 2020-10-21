@@ -319,7 +319,7 @@ namespace OpcPublisher
         /// - unused subscriptions (without any nodes to monitor) are removed.
         /// - sessions with out subscriptions are removed.
         /// </summary>
-        public virtual async Task ConnectAndMonitorAsync()
+        public async Task ConnectAndMonitorAsync()
         {
             WaitHandle[] connectAndMonitorEvents = new WaitHandle[]
             {

@@ -5,6 +5,7 @@
 
 using Opc.Ua;
 using Opc.Ua.Server;
+using OpcPublisher.Configurations;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
@@ -95,7 +96,7 @@ namespace OpcPublisher
                     ServerInternal.Status.Variable.State.Value = ServerState.Shutdown;
                     ServerInternal.Status.Variable.ClearChangeMasks(ServerInternal.DefaultSystemContext, true);
 
-                    for (uint timeTillShutdown = Program.Instance.PublisherShutdownWaitPeriod; timeTillShutdown > 0; timeTillShutdown--)
+                    for (uint timeTillShutdown = SettingsConfiguration.PublisherShutdownWaitPeriod; timeTillShutdown > 0; timeTillShutdown--)
                     {
                         ServerInternal.Status.Value.SecondsTillShutdown = timeTillShutdown;
                         ServerInternal.Status.Variable.SecondsTillShutdown.Value = timeTillShutdown;

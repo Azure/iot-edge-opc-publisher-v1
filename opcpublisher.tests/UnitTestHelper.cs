@@ -18,24 +18,24 @@ namespace OpcPublisher
             return memberName;
         }
 
-        public static int WaitTilItemsAreMonitored()
+        public static int WaitTilItemsAreMonitored(PublisherNodeConfiguration nodeConfig)
         {
             // wait till monitoring starts
             int iter = 0;
-            int startNum = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored;
-            while (Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
+            int startNum = nodeConfig.NumberOfOpcMonitoredItemsMonitored;
+            while (nodeConfig.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
             }
             return iter < _maxIterations ? iter * _sleepMilliseconds / 1000 : -1;
         }
-        public static int WaitTilItemsAreMonitoredAndFirstEventReceived()
+        public static int WaitTilItemsAreMonitoredAndFirstEventReceived(PublisherNodeConfiguration nodeConfig, HubClientWrapper clientWrapper)
         {
             // wait till monitoring starts
             int iter = 0;
-            long numberOfEventsStart = Program.Instance._clientWrapper.NumberOfEvents;
-            while ((Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored == 0 || (Program.Instance._clientWrapper.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
+            long numberOfEventsStart = PublisherDiagnostics.NumberOfEvents;
+            while ((nodeConfig.NumberOfOpcMonitoredItemsMonitored == 0 || (PublisherDiagnostics.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
@@ -48,8 +48,8 @@ namespace OpcPublisher
             OpcApplicationConfiguration.OpcSamplingInterval = 1000;
             OpcApplicationConfiguration.OpcPublishingInterval = 0;
             OpcSecurityConfiguration.AutoAcceptCerts = true;
-            Program.Instance._clientWrapper.DefaultSendIntervalSeconds = 0;
-            Program.Instance._clientWrapper.HubMessageSize = 0;
+            SettingsConfiguration.DefaultSendIntervalSeconds = 0;
+            SettingsConfiguration.HubMessageSize = 0;
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
         }

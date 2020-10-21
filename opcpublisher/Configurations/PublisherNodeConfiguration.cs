@@ -5,7 +5,6 @@
 
 using Newtonsoft.Json;
 using Opc.Ua;
-using OpcPublisher.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,17 +15,12 @@ using System.Threading.Tasks;
 
 namespace OpcPublisher.Configurations
 {
-    public class PublisherNodeConfiguration : IPublisherNodeConfiguration
+    public class PublisherNodeConfiguration
     {
         /// <summary>
         /// Keeps the version of the node configuration that has lastly been persisted
         /// </summary>
         private uint _lastNodeConfigVersion;
-
-        /// <summary>
-        /// Name of the node configuration file.
-        /// </summary>
-        public string PublisherNodeConfigurationFilename { get; set; } = $"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}publishednodes.json";
 
         /// <summary>
         /// Number of configured OPC UA sessions.
@@ -211,7 +205,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// List of configured OPC UA sessions.
         /// </summary>
-        public virtual List<OpcUaSessionManager> OpcSessions { get; set; } = new List<OpcUaSessionManager>();
+        public List<OpcUaSessionManager> OpcSessions { get; set; } = new List<OpcUaSessionManager>();
 #pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
@@ -230,7 +224,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Close
         /// </summary>
-        protected virtual void Close()
+        protected void Close()
         {
             foreach (var opcSession in OpcSessions)
             {
@@ -251,12 +245,12 @@ namespace OpcPublisher.Configurations
         /// Initialize the node configuration.
         /// </summary>
         /// <returns></returns>
-        public virtual void Init()
+        public void Init()
         {
             // read the configuration from the configuration file
             if (!ReadConfigAsync().Result)
             {
-                string errorMessage = $"Error while reading the node configuration file '{PublisherNodeConfigurationFilename}'";
+                string errorMessage = $"Error while reading the node configuration file '{SettingsConfiguration.PublisherNodeConfigurationFilename}'";
                 Program.Instance.Logger.Error(errorMessage);
                 throw new Exception(errorMessage);
             }
@@ -283,18 +277,18 @@ namespace OpcPublisher.Configurations
                 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("_GW_PNFP")))
                 {
                     Program.Instance.Logger.Information("Publishing node configuration file path read from environment.");
-                    PublisherNodeConfigurationFilename = Environment.GetEnvironmentVariable("_GW_PNFP");
+                    SettingsConfiguration.PublisherNodeConfigurationFilename = Environment.GetEnvironmentVariable("_GW_PNFP");
                 }
-                Program.Instance.Logger.Information($"The name of the configuration file for published nodes is: {PublisherNodeConfigurationFilename}");
+                Program.Instance.Logger.Information($"The name of the configuration file for published nodes is: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
 
                 // if the file exists, read it, if not just continue 
-                if (File.Exists(PublisherNodeConfigurationFilename))
+                if (File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename))
                 {
-                    Program.Instance.Logger.Information($"Attemtping to load node configuration from: {PublisherNodeConfigurationFilename}");
+                    Program.Instance.Logger.Information($"Attemtping to load node configuration from: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
                     try
                     {
                         await PublisherNodeConfigurationFileSemaphore.WaitAsync().ConfigureAwait(false);
-                        var json = File.ReadAllText(PublisherNodeConfigurationFilename);
+                        var json = File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename);
                         _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(json);
                     }
                     finally
@@ -357,7 +351,7 @@ namespace OpcPublisher.Configurations
                 }
                 else
                 {
-                    Program.Instance.Logger.Information($"The node configuration file '{PublisherNodeConfigurationFilename}' does not exist. Continue and wait for remote configuration requests.");
+                    Program.Instance.Logger.Information($"The node configuration file '{SettingsConfiguration.PublisherNodeConfigurationFilename}' does not exist. Continue and wait for remote configuration requests.");
                 }
             }
             catch (Exception e)
@@ -373,7 +367,7 @@ namespace OpcPublisher.Configurations
             return true;
         }
 
-        public virtual OpcUaSessionManager CreateOpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
+        public OpcUaSessionManager CreateOpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
             return new OpcUaSessionManager(endpointUrl, _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl).UseSecurity, OpcApplicationConfiguration.OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
         }
@@ -653,7 +647,7 @@ namespace OpcPublisher.Configurations
                 try
                 {
                     await PublisherNodeConfigurationFileSemaphore.WaitAsync().ConfigureAwait(false);
-                    await File.WriteAllTextAsync(PublisherNodeConfigurationFilename, JsonConvert.SerializeObject(publisherNodeConfiguration, Formatting.Indented)).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(SettingsConfiguration.PublisherNodeConfigurationFilename, JsonConvert.SerializeObject(publisherNodeConfiguration, Formatting.Indented)).ConfigureAwait(false);
                 }
                 finally
                 {
