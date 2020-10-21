@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Devices.Client;
 using Opc.Ua;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace OpcPublisher.Configurations
@@ -72,11 +73,6 @@ namespace OpcPublisher.Configurations
         public static int DefaultSendIntervalSeconds { get; set; } = 10;
 
         /// <summary>
-        /// Allow to ingest data into IoT Central.
-        /// </summary>
-        public static bool IotCentralMode { get; set; } = false;
-
-        /// <summary>
         /// The protocol to use for hub communication.
         /// </summary>
         public const TransportType IotHubProtocol = TransportType.Mqtt;
@@ -91,5 +87,47 @@ namespace OpcPublisher.Configurations
         /// Max allowed payload of an IoTHub direct method call response.
         /// </summary>
         public const int MaxResponsePayloadLength = (128 * 1024) - 256;
+
+        /// <summary>
+        /// Command line option to flag to read the node display names from the server and use it in telemetry events.
+        /// </summary>
+        public static bool FetchOpcNodeDisplayName { get; set; } = false;
+
+        /// <summary>
+        /// Command line argument to set the site to be added to telemetry events, identifying the source of the event,
+        /// by prepending it to the ApplicationUri value of the event.
+        /// </summary>
+        public static string PublisherSite { get; set; }
+
+        /// <summary>
+        /// Command line argument to control the time to wait till a new attempt is made
+        /// to establish a connection which is not yet connected again.
+        /// </summary>
+        public static int SessionConnectWaitSec { get; set; } = 10;
+
+        /// <summary>
+        /// HeartbeatIntvervalMax
+        /// </summary>
+        public const int HeartbeatIntvervalMax = 24 * 60 * 60;
+
+        /// <summary>
+        /// HeartbeatIntervalDefault
+        /// </summary>
+        public static int? HeartbeatIntervalDefault { get; set; } = 0;
+
+        /// <summary>
+        /// SkipFirstDefault
+        /// </summary>
+        public static bool SkipFirstDefault { get; set; } = false;
+
+        /// <summary>
+        /// SuppressedOpcStatusCodesDefault
+        /// </summary>
+        public const string SuppressedOpcStatusCodesDefault = "BadNoCommunication, BadWaitingForInitialData";
+
+        /// <summary>
+        /// SuppressedOpcStatusCodes
+        /// </summary>
+        public static List<uint> SuppressedOpcStatusCodes { get; } = new List<uint>();
     }
 }

@@ -222,26 +222,6 @@ namespace OpcPublisher.Configurations
         }
 
         /// <summary>
-        /// Close
-        /// </summary>
-        protected void Close()
-        {
-            foreach (var opcSession in OpcSessions)
-            {
-                opcSession.Close();
-            }
-            OpcSessions?.Clear();
-            OpcSessionsListSemaphore?.Dispose();
-            OpcSessionsListSemaphore = null;
-            PublisherNodeConfigurationSemaphore?.Dispose();
-            PublisherNodeConfigurationSemaphore = null;
-            PublisherNodeConfigurationFileSemaphore?.Dispose();
-            PublisherNodeConfigurationFileSemaphore = null;
-            _nodePublishingConfiguration?.Clear();
-            _nodePublishingConfiguration = null;
-        }
-
-        /// <summary>
         /// Initialize the node configuration.
         /// </summary>
         /// <returns></returns>

@@ -124,14 +124,10 @@ namespace OpcPublisher
         /// </summary>
         public OpcMonitoredItemConfigurationType ConfigType { get; set; }
 
-        public const int HeartbeatIntvervalMax = 24 * 60 * 60;
-
-        public static int? HeartbeatIntervalDefault { get; set; } = 0;
-
         public int HeartbeatInterval
         {
             get => _heartbeatInterval;
-            set => _heartbeatInterval = value <= 0 ? 0 : value > HeartbeatIntvervalMax ? HeartbeatIntvervalMax : value;
+            set => _heartbeatInterval = value <= 0 ? 0 : value > SettingsConfiguration.HeartbeatIntvervalMax ? SettingsConfiguration.HeartbeatIntvervalMax : value;
         }
 
         public bool HeartbeatIntervalFromConfiguration { get; set; } = false;
@@ -142,15 +138,9 @@ namespace OpcPublisher
 
         public bool SkipNextEvent { get; set; } = false;
 
-        public static bool SkipFirstDefault { get; set; } = false;
-
         public bool SkipFirst { get; set; }
 
         public bool SkipFirstFromConfiguration { get; set; } = false;
-
-        public const string SuppressedOpcStatusCodesDefault = "BadNoCommunication, BadWaitingForInitialData";
-
-        public static List<uint> SuppressedOpcStatusCodes { get; } = new List<uint>();
 
         /// <summary>
         /// Ctor using NodeId (ns syntax for namespace).
@@ -259,7 +249,7 @@ namespace OpcPublisher
                 }
 
                 // filter out configured suppression status codes
-                if (SuppressedOpcStatusCodes != null && SuppressedOpcStatusCodes.Contains(notification.Value.StatusCode.Code))
+                if (SettingsConfiguration.SuppressedOpcStatusCodes != null && SettingsConfiguration.SuppressedOpcStatusCodes.Contains(notification.Value.StatusCode.Code))
                 {
                     Program.Instance.Logger.Debug($"Filtered notification with status code '{notification.Value.StatusCode.Code}'");
                     return;
@@ -269,138 +259,66 @@ namespace OpcPublisher
                 HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
                 MessageDataModel messageData = new MessageDataModel();
-                if (SettingsConfiguration.IotCentralMode)
+                messageData.EndpointUrl = EndpointUrl;
+                messageData.ExpandedNodeId = ConfigExpandedNodeId?.ToString();
+                messageData.NodeId = OriginalId;
+                messageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite) ? "" : $":{SettingsConfiguration.PublisherSite}");
+                
+                if (monitoredItem.DisplayName != null)
                 {
-                    // for IoTCentral we use the DisplayName as the key in the telemetry and the Value as the value.
-                    if (monitoredItem.DisplayName != null)
+                    // use the DisplayName as reported in the MonitoredItem
+                    messageData.DisplayName = monitoredItem.DisplayName;
+                }
+                
+                // use the SourceTimestamp as reported in the notification event argument in ISO8601 format
+                messageData.SourceTimestamp = value.SourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
+                
+                // use the StatusCode as reported in the notification event argument
+                messageData.StatusCode = value.StatusCode.Code;
+                
+                // use the StatusCode as reported in the notification event argument to lookup the symbolic name
+                messageData.Status = StatusCode.LookupSymbolicId(value.StatusCode.Code);
+                
+                if (value.Value != null)
+                {
+                    // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
+                    JsonEncoder encoder = new JsonEncoder(monitoredItem.Subscription.Session.MessageContext, false);
+                    value.ServerTimestamp = DateTime.MinValue;
+                    value.SourceTimestamp = DateTime.MinValue;
+                    value.StatusCode = StatusCodes.Good;
+                    encoder.WriteDataValue("Value", value);
+                    string valueString = encoder.CloseAndReturnText();
+                    // we only want the value string, search for everything till the real value starts
+                    // and get it
+                    string marker = "{\"Value\":{\"Value\":";
+                    int markerStart = valueString.IndexOf(marker, StringComparison.InvariantCulture);
+                    messageData.PreserveValueQuotes = true;
+                    if (markerStart >= 0)
                     {
-                        // use the DisplayName as reported in the MonitoredItem
-                        messageData.DisplayName = monitoredItem.DisplayName;
-                    }
-                    if (value.Value != null)
-                    {
-                        // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
-                        JsonEncoder encoder = new JsonEncoder(monitoredItem.Subscription.Session.MessageContext, false);
-                        value.ServerTimestamp = DateTime.MinValue;
-                        value.SourceTimestamp = DateTime.MinValue;
-                        value.StatusCode = StatusCodes.Good;
-                        encoder.WriteDataValue("Value", value);
-                        string valueString = encoder.CloseAndReturnText();
-                        // we only want the value string, search for everything till the real value starts
-                        // and get it
-                        string marker = "{\"Value\":{\"Value\":";
-                        int markerStart = valueString.IndexOf(marker, StringComparison.InvariantCulture);
-                        messageData.PreserveValueQuotes = true;
-                        if (markerStart >= 0)
+                        // we either have a value in quotes or just a value
+                        int valueLength;
+                        int valueStart = marker.Length;
+                        if (valueString.IndexOf("\"", valueStart, StringComparison.InvariantCulture) >= 0)
                         {
-                            // we either have a value in quotes or just a value
-                            int valueLength;
-                            int valueStart = marker.Length;
-                            if (valueString.IndexOf("\"", valueStart, StringComparison.InvariantCulture) >= 0)
-                            {
-                                // value is in quotes and two closing curly brackets at the end
-                                valueStart++;
-                                valueLength = valueString.Length - valueStart - 3;
-                            }
-                            else
-                            {
-                                // value is without quotes with two curly brackets at the end
-                                valueLength = valueString.Length - marker.Length - 2;
-                                messageData.PreserveValueQuotes = false;
-                            }
-                            messageData.Value = valueString.Substring(valueStart, valueLength);
+                            // value is in quotes and two closing curly brackets at the end
+                            valueStart++;
+                            valueLength = valueString.Length - valueStart - 3;
                         }
-                        Program.Instance.Logger.Debug($"   IoTCentral key: {messageData.DisplayName}");
-                        Program.Instance.Logger.Debug($"   IoTCentral values: {messageData.Value}");
+                        else
+                        {
+                            // value is without quotes with two curly brackets at the end
+                            valueLength = valueString.Length - marker.Length - 2;
+                            messageData.PreserveValueQuotes = false;
+                        }
+                        messageData.Value = valueString.Substring(valueStart, valueLength);
                     }
                 }
-                else
-                {
-                    // update the required message data to pass only the required data to the hub communication
-                    EndpointTelemetryConfigurationModel telemetryConfiguration = Program.Instance._telemetryConfig.GetEndpointTelemetryConfiguration(EndpointUrl);
 
-                    // the endpoint URL is required to allow HubCommunication lookup the telemetry configuration
-                    messageData.EndpointUrl = EndpointUrl;
-
-                    if (telemetryConfiguration.ExpandedNodeId.Publish == true)
-                    {
-                        messageData.ExpandedNodeId = ConfigExpandedNodeId?.ToString();
-                    }
-                    if (telemetryConfiguration.NodeId.Publish == true)
-                    {
-                        messageData.NodeId = OriginalId;
-                    }
-                    if (telemetryConfiguration.MonitoredItem.ApplicationUri.Publish == true)
-                    {
-                        messageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(OpcUaSessionManager.PublisherSite) ? "" : $":{OpcUaSessionManager.PublisherSite}");
-                    }
-                    if (telemetryConfiguration.MonitoredItem.DisplayName.Publish == true && monitoredItem.DisplayName != null)
-                    {
-                        // use the DisplayName as reported in the MonitoredItem
-                        messageData.DisplayName = monitoredItem.DisplayName;
-                    }
-                    if (telemetryConfiguration.Value.SourceTimestamp.Publish == true)
-                    {
-                        // use the SourceTimestamp as reported in the notification event argument in ISO8601 format
-                        messageData.SourceTimestamp = value.SourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
-                    }
-                    if (telemetryConfiguration.Value.StatusCode.Publish == true)
-                    {
-                        // use the StatusCode as reported in the notification event argument
-                        messageData.StatusCode = value.StatusCode.Code;
-                    }
-                    if (telemetryConfiguration.Value.Status.Publish == true)
-                    {
-                        // use the StatusCode as reported in the notification event argument to lookup the symbolic name
-                        messageData.Status = StatusCode.LookupSymbolicId(value.StatusCode.Code);
-                    }
-                    if (telemetryConfiguration.Value.Value.Publish == true && value.Value != null)
-                    {
-                        // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
-                        JsonEncoder encoder = new JsonEncoder(monitoredItem.Subscription.Session.MessageContext, false);
-                        value.ServerTimestamp = DateTime.MinValue;
-                        value.SourceTimestamp = DateTime.MinValue;
-                        value.StatusCode = StatusCodes.Good;
-                        encoder.WriteDataValue("Value", value);
-                        string valueString = encoder.CloseAndReturnText();
-                        // we only want the value string, search for everything till the real value starts
-                        // and get it
-                        string marker = "{\"Value\":{\"Value\":";
-                        int markerStart = valueString.IndexOf(marker, StringComparison.InvariantCulture);
-                        messageData.PreserveValueQuotes = true;
-                        if (markerStart >= 0)
-                        {
-                            // we either have a value in quotes or just a value
-                            int valueLength;
-                            int valueStart = marker.Length;
-                            if (valueString.IndexOf("\"", valueStart, StringComparison.InvariantCulture) >= 0)
-                            {
-                                // value is in quotes and two closing curly brackets at the end
-                                valueStart++;
-                                valueLength = valueString.Length - valueStart - 3;
-                            }
-                            else
-                            {
-                                // value is without quotes with two curly brackets at the end
-                                valueLength = valueString.Length - marker.Length - 2;
-                                messageData.PreserveValueQuotes = false;
-                            }
-                            messageData.Value = valueString.Substring(valueStart, valueLength);
-                        }
-                    }
-
-                    // currently the pattern processing is done here, which adds runtime to the notification processing.
-                    // In case of perf issues it can be also done in CreateJsonMessageAsync of IoTHubMessaging.cs.
-
-                    // apply patterns
-                    messageData.ApplyPatterns(telemetryConfiguration);
-
-                    Program.Instance.Logger.Debug($"   ApplicationUri: {messageData.ApplicationUri}");
-                    Program.Instance.Logger.Debug($"   EndpointUrl: {messageData.EndpointUrl}");
-                    Program.Instance.Logger.Debug($"   DisplayName: {messageData.DisplayName}");
-                    Program.Instance.Logger.Debug($"   Value: {messageData.Value}");
-                }
-
+                Program.Instance.Logger.Debug($"   ApplicationUri: {messageData.ApplicationUri}");
+                Program.Instance.Logger.Debug($"   EndpointUrl: {messageData.EndpointUrl}");
+                Program.Instance.Logger.Debug($"   DisplayName: {messageData.DisplayName}");
+                Program.Instance.Logger.Debug($"   Value: {messageData.Value}");
+                
                 // add message to fifo send queue
                 if (monitoredItem.Subscription == null)
                 {
@@ -412,7 +330,7 @@ namespace OpcPublisher
                     Program.Instance.Logger.Debug($" with publishing interval: {monitoredItem?.Subscription?.PublishingInterval} and sampling interval: {monitoredItem?.SamplingInterval}):");
                 }
 
-                // setupo heartbeat processing
+                // setup heartbeat processing
                 if (HeartbeatInterval > 0)
                 {
                     if (HeartbeatMessage != null)
@@ -455,7 +373,7 @@ namespace OpcPublisher
                 else
                 {
                     // enqueue the telemetry event
-                    Program.Instance._clientWrapper.Enqueue(messageData);
+                    HubClientWrapper.Enqueue(messageData);
                 }
             }
             catch (Exception ex)
@@ -481,9 +399,9 @@ namespace OpcPublisher
             RequestedSamplingInterval = samplingInterval ?? Configurations.OpcApplicationConfiguration.OpcSamplingInterval;
             RequestedSamplingIntervalFromConfiguration = samplingInterval != null ? true : false;
             SamplingInterval = RequestedSamplingInterval;
-            HeartbeatInterval = (int)(heartbeatInterval == null ? HeartbeatIntervalDefault : heartbeatInterval);
+            HeartbeatInterval = (int)(heartbeatInterval == null ? SettingsConfiguration.HeartbeatIntervalDefault : heartbeatInterval);
             HeartbeatIntervalFromConfiguration = heartbeatInterval != null ? true : false;
-            SkipFirst = skipFirst == null ? SkipFirstDefault : (bool)skipFirst;
+            SkipFirst = skipFirst == null ? SettingsConfiguration.SkipFirstDefault : (bool)skipFirst;
             SkipFirstFromConfiguration = skipFirst != null ? true : false;
         }
 
@@ -507,7 +425,7 @@ namespace OpcPublisher
                     }
 
                     // enqueue the message
-                    Program.Instance._clientWrapper.Enqueue(HeartbeatMessage);
+                    HubClientWrapper.Enqueue(HeartbeatMessage);
                     Program.Instance.Logger.Debug($"Message enqueued for heartbeat with sourceTimestamp '{HeartbeatMessage.SourceTimestamp}'.");
                 }
                 else

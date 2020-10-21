@@ -97,19 +97,6 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Close
-        /// </summary>
-        public void Close()
-        {
-            // wait for diagnostic task completion if it is enabled
-            _shutdownTokenSource?.Cancel();
-            _showDiagnosticsInfoTask?.Wait();
-            _showDiagnosticsInfoTask = null;
-            _shutdownTokenSource?.Dispose();
-            _shutdownTokenSource = null;
-        }
-
-        /// <summary>
         /// Fetch diagnostic data.
         /// </summary>
         public DiagnosticInfoMethodResponseModel GetDiagnosticInfo()

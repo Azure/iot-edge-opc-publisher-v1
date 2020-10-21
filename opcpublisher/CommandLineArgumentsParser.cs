@@ -20,19 +20,16 @@ namespace OpcPublisher.Configurations
 {
     public class CommandLineArgumentsParser
     {
-        private static bool shouldShowHelp = false;
-
         // command line options
-        private static Mono.Options.OptionSet options = new Mono.Options.OptionSet {
+        private Mono.Options.OptionSet options = new Mono.Options.OptionSet {
             // Publisher configuration options
             { "pf|publishfile=", $"the filename to configure the nodes to publish.\nDefault: '{SettingsConfiguration.PublisherNodeConfigurationFilename}'", (string p) => SettingsConfiguration.PublisherNodeConfigurationFilename = p },
-            { "tc|telemetryconfigfile=", $"the filename to configure the ingested telemetry\nDefault: '{PublisherTelemetryConfiguration.PublisherTelemetryConfigurationFilename}'", (string p) => PublisherTelemetryConfiguration.PublisherTelemetryConfigurationFilename = p },
             { "s|site=", $"the site OPC Publisher is working in. if specified this domain is appended (delimited by a ':' to the 'ApplicationURI' property when telemetry is sent to IoTHub.\n" +
                     "The value must follow the syntactical rules of a DNS hostname.\nDefault: not set", (string s) => {
                     Regex siteNameRegex = new Regex("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
                     if (siteNameRegex.IsMatch(s))
                     {
-                        OpcUaSessionManager.PublisherSite = s;
+                        SettingsConfiguration.PublisherSite = s;
                     }
                     else
                     {
@@ -40,11 +37,10 @@ namespace OpcPublisher.Configurations
                     }
                 }
                 },
-            { "ic|iotcentral", $"publisher will send OPC UA data in IoTCentral compatible format (DisplayName of a node is used as key, this key is the Field name in IoTCentral). you need to ensure that all DisplayName's are unique. (Auto enables fetch display name)\nDefault: {SettingsConfiguration.IotCentralMode}", b => SettingsConfiguration.IotCentralMode = OpcUaSessionManager.FetchOpcNodeDisplayName = b != null },
-            { "sw|sessionconnectwait=", $"specify the wait time in seconds publisher is trying to connect to disconnected endpoints and starts monitoring unmonitored items\nMin: 10\nDefault: {OpcUaSessionManager.SessionConnectWaitSec}", (int i) => {
+            { "sw|sessionconnectwait=", $"specify the wait time in seconds publisher is trying to connect to disconnected endpoints and starts monitoring unmonitored items\nMin: 10\nDefault: {SettingsConfiguration.SessionConnectWaitSec}", (int i) => {
                     if (i > 10)
                     {
-                        OpcUaSessionManager.SessionConnectWaitSec = i;
+                        SettingsConfiguration.SessionConnectWaitSec = i;
                     }
                     else
                     {
@@ -125,10 +121,10 @@ namespace OpcPublisher.Configurations
            
             { "hb|heartbeatinterval=", "the publisher is using this as default value in seconds for the heartbeat interval setting of nodes without\n" +
                 "a heartbeat interval setting.\n" +
-                $"Default: {OpcUaMonitoredItemManager.HeartbeatIntervalDefault}", (int i) => {
-                    if (i >= 0 && i <= OpcUaMonitoredItemManager.HeartbeatIntvervalMax)
+                $"Default: {SettingsConfiguration.HeartbeatIntervalDefault}", (int i) => {
+                    if (i >= 0 && i <= SettingsConfiguration.HeartbeatIntvervalMax)
                     {
-                        OpcUaMonitoredItemManager.HeartbeatIntervalDefault = i;
+                        SettingsConfiguration.HeartbeatIntervalDefault = i;
                     }
                     else
                     {
@@ -138,7 +134,7 @@ namespace OpcPublisher.Configurations
             },
             { "sf|skipfirstevent=", "the publisher is using this as default value for the skip first event setting of nodes without\n" +
                 "a skip first event setting.\n" +
-                $"Default: {OpcUaMonitoredItemManager.SkipFirstDefault}", (bool b) => { OpcUaMonitoredItemManager.SkipFirstDefault = b; }
+                $"Default: {SettingsConfiguration.SkipFirstDefault}", (bool b) => { SettingsConfiguration.SkipFirstDefault = b; }
             },
 
 
@@ -240,11 +236,11 @@ namespace OpcPublisher.Configurations
 
             { "aa|autoaccept", $"the publisher trusts all servers it is establishing a connection to.\nDefault: {OpcSecurityConfiguration.AutoAcceptCerts}", b => OpcSecurityConfiguration.AutoAcceptCerts = b != null },
 
-            { "fd|fetchdisplayname=", $"same as fetchname.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", (bool b) => OpcUaSessionManager.FetchOpcNodeDisplayName = SettingsConfiguration.IotCentralMode ? true : b },
-            { "fn|fetchname", $"enable to read the display name of a published node from the server. this will increase the runtime.\nDefault: {OpcUaSessionManager.FetchOpcNodeDisplayName}", b => OpcUaSessionManager.FetchOpcNodeDisplayName = SettingsConfiguration.IotCentralMode ? true : b != null },
+            { "fd|fetchdisplayname=", $"same as fetchname.\nDefault: {SettingsConfiguration.FetchOpcNodeDisplayName}", (bool b) => SettingsConfiguration.FetchOpcNodeDisplayName = b },
+            { "fn|fetchname", $"enable to read the display name of a published node from the server. this will increase the runtime.\nDefault: {SettingsConfiguration.FetchOpcNodeDisplayName}", b => SettingsConfiguration.FetchOpcNodeDisplayName = b != null },
 
             { "ss|suppressedopcstatuscodes=", $"specifies the OPC UA status codes for which no events should be generated.\n" +
-                $"Default: {OpcUaMonitoredItemManager.SuppressedOpcStatusCodesDefault}", (string s) => opcStatusCodesToSuppress = s },
+                $"Default: {SettingsConfiguration.SuppressedOpcStatusCodesDefault}", (string s) => opcStatusCodesToSuppress = s },
 
 
             // cert store options
@@ -371,7 +367,7 @@ namespace OpcPublisher.Configurations
                     Regex siteNameRegex = new Regex("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
                     if (siteNameRegex.IsMatch(s))
                     {
-                        OpcUaSessionManager.PublisherSite = s;
+                        SettingsConfiguration.PublisherSite = s;
                     }
                     else
                     {
@@ -387,7 +383,7 @@ namespace OpcPublisher.Configurations
 
         };
 
-        public static void Parse(string[] args)
+        public void Parse(string[] args)
         {
             // parse the command line
             try
@@ -427,14 +423,14 @@ namespace OpcPublisher.Configurations
                     {
                         // convert integers and prefixed hex values
                         statusCodeValue = (uint)new UInt32Converter().ConvertFromInvariantString(statusCodeValueOrName);
-                        OpcUaMonitoredItemManager.SuppressedOpcStatusCodes.Add(statusCodeValue);
+                        SettingsConfiguration.SuppressedOpcStatusCodes.Add(statusCodeValue);
                     }
                     catch
                     {
                         // convert non prefixed hex values
                         if (uint.TryParse(statusCodeValueOrName, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out statusCodeValue))
                         {
-                            OpcUaMonitoredItemManager.SuppressedOpcStatusCodes.Add(statusCodeValue);
+                            SettingsConfiguration.SuppressedOpcStatusCodes.Add(statusCodeValue);
                         }
                         else
                         {
@@ -442,7 +438,7 @@ namespace OpcPublisher.Configurations
                             statusCodeValue = StatusCodes.GetIdentifier(statusCodeValueOrName);
                             if (statusCodeValueOrName.Equals("Good", StringComparison.InvariantCulture) || statusCodeValue != 0)
                             {
-                                OpcUaMonitoredItemManager.SuppressedOpcStatusCodes.Add(statusCodeValue);
+                                SettingsConfiguration.SuppressedOpcStatusCodes.Add(statusCodeValue);
                             }
                             else
                             {
@@ -453,13 +449,13 @@ namespace OpcPublisher.Configurations
                 }
 
                 // filter out duplicate status codes
-                List<uint> distinctSuppressedOpcStatusCodes = OpcUaMonitoredItemManager.SuppressedOpcStatusCodes.Distinct().ToList();
-                OpcUaMonitoredItemManager.SuppressedOpcStatusCodes.Clear();
-                OpcUaMonitoredItemManager.SuppressedOpcStatusCodes.AddRange(distinctSuppressedOpcStatusCodes);
+                List<uint> distinctSuppressedOpcStatusCodes = SettingsConfiguration.SuppressedOpcStatusCodes.Distinct().ToList();
+                SettingsConfiguration.SuppressedOpcStatusCodes.Clear();
+                SettingsConfiguration.SuppressedOpcStatusCodes.AddRange(distinctSuppressedOpcStatusCodes);
 
                 // show suppressed status codes
-                Program.Instance.Logger.Information($"OPC UA monitored item notifications with one of the following {OpcUaMonitoredItemManager.SuppressedOpcStatusCodes.Count} status codes will not generate telemetry events:");
-                foreach (var suppressedOpcStatusCode in OpcUaMonitoredItemManager.SuppressedOpcStatusCodes)
+                Program.Instance.Logger.Information($"OPC UA monitored item notifications with one of the following {SettingsConfiguration.SuppressedOpcStatusCodes.Count} status codes will not generate telemetry events:");
+                foreach (var suppressedOpcStatusCode in SettingsConfiguration.SuppressedOpcStatusCodes)
                 {
                     string statusName = StatusCodes.GetBrowseName(suppressedOpcStatusCode);
                     Program.Instance.Logger.Information($"StatusCode: {(string.IsNullOrEmpty(statusName) ? "Unknown" : statusName)} (dec: {suppressedOpcStatusCode}, hex: {suppressedOpcStatusCode:X})");
@@ -572,7 +568,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Usage message.
         /// </summary>
-        public static void Usage(Mono.Options.OptionSet options)
+        public void Usage(Mono.Options.OptionSet options)
         {
             // show usage
             Program.Instance.Logger.Information("");
@@ -613,6 +609,7 @@ namespace OpcPublisher.Configurations
             }
         }
 
-        private static string opcStatusCodesToSuppress = OpcUaMonitoredItemManager.SuppressedOpcStatusCodesDefault;
+        private static bool shouldShowHelp = false;
+        private static string opcStatusCodesToSuppress = SettingsConfiguration.SuppressedOpcStatusCodesDefault;
     }
 }

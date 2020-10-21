@@ -31,17 +31,6 @@ namespace OpcPublisher
             Connected,
         }
 
-        /// <summary>
-        /// Command line option to flag to read the node display names from the server and use it in telemetry events.
-        /// </summary>
-        public static bool FetchOpcNodeDisplayName { get; set; } = false;
-
-        /// <summary>
-        /// Command line argument to set the site to be added to telemetry events, identifying the source of the event,
-        /// by prepending it to the ApplicationUri value of the event.
-        /// </summary>
-        public static string PublisherSite { get; set; }
-
 #pragma warning disable CA2211 // Non-constant fields should not be visible
         /// <summary>
         /// The version of the node configuration. Each change in the configuration
@@ -49,12 +38,6 @@ namespace OpcPublisher
         /// </summary>
         public static int NodeConfigVersion;
 #pragma warning restore CA2211 // Non-constant fields should not be visible
-
-        /// <summary>
-        /// Command line argument to control the time to wait till a new attempt is made
-        /// to establish a connection which is not yet connected again.
-        /// </summary>
-        public static int SessionConnectWaitSec { get; set; } = 10;
 
         /// <summary>
         /// The endpoint to connect to for the session.
@@ -247,7 +230,6 @@ namespace OpcPublisher
             _sessionCancelationToken = _sessionCancelationTokenSource.Token;
             _opcSessionSemaphore = new SemaphoreSlim(1);
             _namespaceTable = new NamespaceTable();
-            _telemetryConfiguration = Program.Instance._telemetryConfig.GetEndpointTelemetryConfiguration(endpointUrl);
             _connectAndMonitorAsync = Task.Run(ConnectAndMonitorAsync, _sessionCancelationToken);
             OpcAuthenticationMode= opcAuthenticationMode;
             EncryptedAuthCredential = encryptedAuthCredential;
@@ -280,38 +262,6 @@ namespace OpcPublisher
         }
 
         /// <summary>
-        /// Close
-        /// </summary>
-        public void Close()
-        {
-            // dispose managed resources
-            _sessionCancelationTokenSource?.Cancel();
-            DisconnectAsync().Wait();
-                
-            foreach (var opcSubscription in OpcSubscriptionManagers)
-            {
-                opcSubscription.Close();
-            }
-
-            OpcSubscriptionManagers?.Clear();
-            try
-            {
-                _connectAndMonitorAsync.Wait();
-            }
-            catch (Exception ex)
-            {
-                Program.Instance.Logger.Error(ex, "Error while wait OPC session to finished");
-            }
-
-            _sessionCancelationTokenSource?.Dispose();
-            _sessionCancelationTokenSource = null;
-            _opcSessionSemaphore?.Dispose();
-            _opcSessionSemaphore = null;
-            OpcUaClientSession?.Dispose();
-            OpcUaClientSession = null;
-        }
-
-        /// <summary>
         /// This task is started when a session is configured and is running till session shutdown and ensures:
         /// - disconnected sessions are reconnected.
         /// - monitored nodes are no longer monitored if requested to do so.
@@ -338,7 +288,7 @@ namespace OpcPublisher
                     // - timeout to try to reestablish any disconnected sessions
                     try
                     {
-                        WaitHandle.WaitAny(connectAndMonitorEvents, SessionConnectWaitSec * 1000);
+                        WaitHandle.WaitAny(connectAndMonitorEvents, SettingsConfiguration.SessionConnectWaitSec * 1000);
                         _sessionCancelationToken.ThrowIfCancellationRequested();
                     }
                     catch
@@ -625,7 +575,7 @@ namespace OpcPublisher
                             Node node;
                             if (string.IsNullOrEmpty(item.DisplayName))
                             {
-                                if (FetchOpcNodeDisplayName == true)
+                                if (SettingsConfiguration.FetchOpcNodeDisplayName == true)
                                 {
                                     node = OpcUaClientSession.ReadNode(currentNodeId);
                                     item.DisplayName = node.DisplayName.Text ?? currentNodeId.ToString();
@@ -1267,8 +1217,6 @@ namespace OpcPublisher
                     // cancel all threads waiting on the session semaphore
                     _sessionCancelationTokenSource.Cancel();
                     _opcSessionSemaphore.Release();
-                    _opcSessionSemaphore.Dispose();
-                    _opcSessionSemaphore = null;
                 }
             }
         }
@@ -1382,7 +1330,6 @@ namespace OpcPublisher
         private CancellationTokenSource _sessionCancelationTokenSource;
         private readonly CancellationToken _sessionCancelationToken;
         private readonly NamespaceTable _namespaceTable;
-        private readonly EndpointTelemetryConfigurationModel _telemetryConfiguration;
         private readonly Task _connectAndMonitorAsync;
     }
 }

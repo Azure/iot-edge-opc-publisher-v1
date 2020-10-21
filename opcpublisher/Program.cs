@@ -59,7 +59,9 @@ namespace OpcPublisher
                     Console.WriteLine("IoTEdge detected.");
                 }
 
-                CommandLineArgumentsParser.Parse(args);
+                // parse command line
+                CommandLineArgumentsParser parser = new CommandLineArgumentsParser();
+                parser.Parse(args);
                                 
                 // allow cancelling the application
                 var quitEvent = new ManualResetEvent(false);
@@ -80,9 +82,6 @@ namespace OpcPublisher
                 // init diagnostics
                 _diag.Init();
 
-                // init telemetry config
-                _telemetryConfig.Init();
-
                 // init node config
                 _nodeConfig.Init();
 
@@ -91,13 +90,13 @@ namespace OpcPublisher
                 await opcApplicationConfiguration.ConfigureAsync().ConfigureAwait(false);
 
                 // log shopfloor site setting
-                if (string.IsNullOrEmpty(OpcUaSessionManager.PublisherSite))
+                if (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite))
                 {
                     Logger.Information("There is no site configured.");
                 }
                 else
                 {
-                    Logger.Information($"Publisher is in site '{OpcUaSessionManager.PublisherSite}'.");
+                    Logger.Information($"Publisher is in site '{SettingsConfiguration.PublisherSite}'.");
                 }
 
                 // start our server interface
@@ -176,9 +175,6 @@ namespace OpcPublisher
                 }
                 Logger.Fatal("Publisher exiting... ");
             }
-
-            // shutdown diagnostics
-            _diag.Close();
         }
 
         /// <summary>
@@ -243,8 +239,8 @@ namespace OpcPublisher
                     Logger.Information($"There are still {sessionCount} sessions alive. Ignore and continue shutdown.");
                     return;
                 }
-                Logger.Information($"Publisher is shutting down. Wait {OpcUaSessionManager.SessionConnectWaitSec} seconds, since there are stil {sessionCount} sessions alive...");
-                await Task.Delay(OpcUaSessionManager.SessionConnectWaitSec * 1000).ConfigureAwait(false);
+                Logger.Information($"Publisher is shutting down. Wait {SettingsConfiguration.SessionConnectWaitSec} seconds, since there are stil {sessionCount} sessions alive...");
+                await Task.Delay(SettingsConfiguration.SessionConnectWaitSec * 1000).ConfigureAwait(false);
             }
         }
 
@@ -339,7 +335,6 @@ namespace OpcPublisher
 
         public HubClientWrapper _clientWrapper = new HubClientWrapper(); //TODO: make private
         public PublisherDiagnostics _diag = new PublisherDiagnostics(); //TODO: make private
-        public PublisherTelemetryConfiguration _telemetryConfig = new PublisherTelemetryConfiguration(); //TODO: make private
         public PublisherNodeConfiguration _nodeConfig = new PublisherNodeConfiguration(); //TODO: make private
     }
 }

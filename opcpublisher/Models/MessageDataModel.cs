@@ -77,47 +77,5 @@ namespace OpcPublisher
             Status = null;
             PreserveValueQuotes = false;
         }
-
-        /// <summary>
-        /// Apply the patterns specified in the telemetry configuration on the message data fields.
-        /// </summary>
-        public void ApplyPatterns(EndpointTelemetryConfigurationModel telemetryConfiguration)
-        {
-            if (telemetryConfiguration.EndpointUrl.Publish == true)
-            {
-                EndpointUrl = telemetryConfiguration.EndpointUrl.PatternMatch(EndpointUrl);
-            }
-            if (telemetryConfiguration.NodeId.Publish == true)
-            {
-                NodeId = telemetryConfiguration.NodeId.PatternMatch(NodeId);
-            }
-            if (telemetryConfiguration.MonitoredItem.ApplicationUri.Publish == true)
-            {
-                ApplicationUri = telemetryConfiguration.MonitoredItem.ApplicationUri.PatternMatch(ApplicationUri);
-            }
-            if (telemetryConfiguration.MonitoredItem.DisplayName.Publish == true)
-            {
-                DisplayName = telemetryConfiguration.MonitoredItem.DisplayName.PatternMatch(DisplayName);
-            }
-            if (telemetryConfiguration.Value.Value.Publish == true)
-            {
-                Value = telemetryConfiguration.Value.Value.PatternMatch(Value);
-            }
-            if (telemetryConfiguration.Value.SourceTimestamp.Publish == true)
-            {
-                SourceTimestamp = telemetryConfiguration.Value.SourceTimestamp.PatternMatch(SourceTimestamp);
-            }
-            if (telemetryConfiguration.Value.StatusCode.Publish == true && StatusCode != null)
-            {
-                if (!string.IsNullOrEmpty(telemetryConfiguration.Value.StatusCode.Pattern))
-                {
-                    Program.Instance.Logger.Information($"'Pattern' settngs for StatusCode are ignored.");
-                }
-            }
-            if (telemetryConfiguration.Value.Status.Publish == true)
-            {
-                Status = telemetryConfiguration.Value.Status.PatternMatch(Status);
-            }
-        }
     }
 }

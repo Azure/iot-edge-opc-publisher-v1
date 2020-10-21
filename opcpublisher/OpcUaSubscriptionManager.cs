@@ -52,20 +52,5 @@ namespace OpcPublisher
             RequestedPublishingIntervalFromConfiguration = publishingInterval != null ? true : false;
             PublishingInterval = RequestedPublishingInterval;
         }
-
-        /// <summary>
-        /// Close
-        /// </summary>
-        public void Close()
-        {
-            // dispose managed resources
-            foreach (var opcMonitoredItem in OpcMonitoredItems)
-            {
-                opcMonitoredItem?.HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-            }
-            OpcMonitoredItems?.Clear();
-            OpcUaClientSubscription?.Dispose();
-            OpcUaClientSubscription = null;
-        }
     }
 }

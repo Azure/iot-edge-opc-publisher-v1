@@ -30,7 +30,7 @@ namespace OpcPublisher
             }
             return iter < _maxIterations ? iter * _sleepMilliseconds / 1000 : -1;
         }
-        public static int WaitTilItemsAreMonitoredAndFirstEventReceived(PublisherNodeConfiguration nodeConfig, HubClientWrapper clientWrapper)
+        public static int WaitTilItemsAreMonitoredAndFirstEventReceived(PublisherNodeConfiguration nodeConfig)
         {
             // wait till monitoring starts
             int iter = 0;
@@ -50,8 +50,8 @@ namespace OpcPublisher
             OpcSecurityConfiguration.AutoAcceptCerts = true;
             SettingsConfiguration.DefaultSendIntervalSeconds = 0;
             SettingsConfiguration.HubMessageSize = 0;
-            OpcUaMonitoredItemManager.SkipFirstDefault = false;
-            OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
+            SettingsConfiguration.SkipFirstDefault = false;
+            SettingsConfiguration.HeartbeatIntervalDefault = 0;
         }
 
         private const int _maxTimeSeconds = 30;
