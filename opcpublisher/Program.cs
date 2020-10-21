@@ -6,7 +6,6 @@
 using Opc.Ua;
 using Opc.Ua.Server;
 using OpcPublisher.Configurations;
-using OpcPublisher.Interfaces;
 using Serilog;
 using System;
 using System.Diagnostics;
@@ -298,10 +297,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handler for server status changes.
         /// </summary>
-        private void ServerEventStatus(Session session, SessionEventReason reason)
-        {
-            PrintSessionStatus(session, reason.ToString());
-        }
+        private void ServerEventStatus(Session session, SessionEventReason reason) => PrintSessionStatus(session, reason.ToString());
 
         /// <summary>
         /// Shows the session status.
@@ -383,7 +379,6 @@ namespace OpcPublisher
             Logger.Information($"Current directory is: {System.IO.Directory.GetCurrentDirectory()}");
             Logger.Information($"Log file is: {LogFileName}");
             Logger.Information($"Log level is: {LogLevel}");
-            return;
         }
                
         private PublisherServer _publisherServer = new PublisherServer();

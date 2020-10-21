@@ -512,7 +512,7 @@ namespace OpcPublisher
                             if ((HubMessageSize > 0 && jsonMessageSize > HubMessageSize) || (HubMessageSize == 0 && jsonMessageSize > hubMessageBufferSize))
                             {
                                 Program.Instance.Logger.Error($"There is a telemetry message (size: {jsonMessageSize}), which will not fit into an hub message (max size: {hubMessageBufferSize}].");
-                                Program.Instance.Logger.Error($"Please check your hub message size settings. The telemetry message will be discarded silently. Sorry:(");
+                                Program.Instance.Logger.Error($"Please check your hub message size settings. The telemetry message will be discarded.");
                                 TooLargeCount++;
                                 continue;
                             }
@@ -689,7 +689,7 @@ namespace OpcPublisher
                 Interlocked.Increment(ref _enqueueFailureCount);
                 if (_enqueueFailureCount % 10000 == 0)
                 {
-                    Program.Instance.Logger.Information($"The internal monitored item message queue is above its capacity of {_monitoredItemsDataQueue.BoundedCapacity}. We have already lost {_enqueueFailureCount} monitored item notifications:(");
+                    Program.Instance.Logger.Information($"The internal monitored item message queue is above its capacity of {_monitoredItemsDataQueue.BoundedCapacity}. We have lost {_enqueueFailureCount} monitored item notifications so far. We try to hold the entire sky, but we never will...");
                 }
             }
         }
