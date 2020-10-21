@@ -51,7 +51,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Set the max string length the OPC stack supports.
         /// </summary>
-        public static int OpcMaxStringLength { get; set; } = HubMethodHandler.Instance.MaxResponsePayloadLength;
+        public static int OpcMaxStringLength { get; set; } = Program.Instance._clientWrapper._hubMethodHandler.MaxResponsePayloadLength;
 
         /// <summary>
         /// Mapping of the application logging levels to OPC stack logging levels.
@@ -112,7 +112,7 @@ namespace OpcPublisher.Configurations
             ApplicationConfiguration.TraceConfiguration.TraceMasks = OpcStackTraceMask;
             ApplicationConfiguration.TraceConfiguration.ApplySettings();
             Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(LoggerOpcUaTraceHandler);
-            Program.Logger.Information($"opcstacktracemask set to: 0x{OpcStackTraceMask:X}");
+            Program.Instance.Logger.Information($"opcstacktracemask set to: 0x{OpcStackTraceMask:X}");
 
             // configure transport settings
             ApplicationConfiguration.TransportQuotas = new TransportQuotas();
@@ -121,7 +121,7 @@ namespace OpcPublisher.Configurations
 
             // the OperationTimeout should be twice the minimum value for PublishingInterval * KeepAliveCount, so set to 120s
             ApplicationConfiguration.TransportQuotas.OperationTimeout = OpcOperationTimeout;
-            Program.Logger.Information($"OperationTimeout set to {ApplicationConfiguration.TransportQuotas.OperationTimeout}");
+            Program.Instance.Logger.Information($"OperationTimeout set to {ApplicationConfiguration.TransportQuotas.OperationTimeout}");
 
             // configure OPC UA server
             ApplicationConfiguration.ServerConfiguration = new ServerConfiguration();
@@ -134,7 +134,7 @@ namespace OpcPublisher.Configurations
             }
             foreach (var endpoint in ApplicationConfiguration.ServerConfiguration.BaseAddresses)
             {
-                Program.Logger.Information($"OPC UA server base address: {endpoint}");
+                Program.Instance.Logger.Information($"OPC UA server base address: {endpoint}");
             }
 
             // by default use high secure transport
@@ -144,7 +144,7 @@ namespace OpcPublisher.Configurations
                 SecurityPolicyUri = SecurityPolicies.Basic256Sha256
             };
             ApplicationConfiguration.ServerConfiguration.SecurityPolicies.Add(newPolicy);
-            Program.Logger.Information($"Security policy {newPolicy.SecurityPolicyUri} with mode {newPolicy.SecurityMode} added");
+            Program.Instance.Logger.Information($"Security policy {newPolicy.SecurityPolicyUri} with mode {newPolicy.SecurityMode} added");
 
             // add none secure transport on request
             if (EnableUnsecureTransport)
@@ -155,8 +155,8 @@ namespace OpcPublisher.Configurations
                     SecurityPolicyUri = SecurityPolicies.None
                 };
                 ApplicationConfiguration.ServerConfiguration.SecurityPolicies.Add(newPolicy);
-                Program.Logger.Information($"Unsecure security policy {newPolicy.SecurityPolicyUri} with mode {newPolicy.SecurityMode} added");
-                Program.Logger.Warning($"Note: This is a security risk and needs to be disabled for production use");
+                Program.Instance.Logger.Information($"Unsecure security policy {newPolicy.SecurityPolicyUri} with mode {newPolicy.SecurityMode} added");
+                Program.Instance.Logger.Warning($"Note: This is a security risk and needs to be disabled for production use");
             }
 
             // add default client configuration
@@ -167,7 +167,7 @@ namespace OpcPublisher.Configurations
 
             // set LDS registration interval
             ApplicationConfiguration.ServerConfiguration.MaxRegistrationInterval = LdsRegistrationInterval;
-            Program.Logger.Information($"LDS(-ME) registration intervall set to {LdsRegistrationInterval} ms (0 means no registration)");
+            Program.Instance.Logger.Information($"LDS(-ME) registration intervall set to {LdsRegistrationInterval} ms (0 means no registration)");
 
             // show certificate store information
             await OpcSecurityConfiguration.ShowCertificateStoreInformationAsync().ConfigureAwait(false);
@@ -176,7 +176,7 @@ namespace OpcPublisher.Configurations
         }
 
         /// <summary>
-        /// Event handler to log OPC UA stack trace messages into own Program.Logger.
+        /// Event handler to log OPC UA stack trace messages into own Program.Instance.Logger.
         /// </summary>
         private static void LoggerOpcUaTraceHandler(object sender, TraceEventArgs e)
         {
@@ -196,32 +196,32 @@ namespace OpcPublisher.Configurations
             // map logging level
             if ((e.TraceMask & OpcTraceToLoggerVerbose) != 0)
             {
-                Program.Logger.Verbose(message);
+                Program.Instance.Logger.Verbose(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerDebug) != 0)
             {
-                Program.Logger.Debug(message);
+                Program.Instance.Logger.Debug(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerInformation) != 0)
             {
-                Program.Logger.Information(message);
+                Program.Instance.Logger.Information(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerWarning) != 0)
             {
-                Program.Logger.Warning(message);
+                Program.Instance.Logger.Warning(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerError) != 0)
             {
-                Program.Logger.Error(message);
+                Program.Instance.Logger.Error(message);
                 return;
             }
             if ((e.TraceMask & OpcTraceToLoggerFatal) != 0)
             {
-                Program.Logger.Fatal(message);
+                Program.Instance.Logger.Fatal(message);
                 return;
             }
             return;

@@ -14,78 +14,43 @@ namespace OpcPublisher
     /// <summary>
     /// Class to enable output to the console.
     /// </summary>
-    public class PublisherDiagnostics : IDisposable
+    public class PublisherDiagnostics
     {
         /// <summary>
         /// Command line argument in which interval in seconds to show the diagnostic info.
         /// </summary>
-        public static int DiagnosticsInterval { get; set; } = 0;
-
-        /// <summary>
-        /// Get the singleton.
-        /// </summary>
-        public static PublisherDiagnostics Instance
-        {
-            get
-            {
-                if (_instance != null)
-                {
-                    return _instance;
-                }
-                else
-                {
-                    lock (_singletonLock)
-                    {
-                        if (_instance == null)
-                        {
-                            _instance = new PublisherDiagnostics();
-                        }
-                        return _instance;
-                    }
-                }
-            }
-        }
+        public int DiagnosticsInterval { get; set; } = 0;
 
         /// <summary>
         /// Initialize the diagnostic object.
         /// </summary>
-        private PublisherDiagnostics()
+        public PublisherDiagnostics()
         {
             // init data
             _showDiagnosticsInfoTask = null;
             _shutdownTokenSource = new CancellationTokenSource();
+        }
 
+        public void Init()
+        {
             // kick off the task to show diagnostic info
             if (DiagnosticsInterval > 0)
             {
-                _showDiagnosticsInfoTask = Task.Run(() => ShowDiagnosticsInfoAsync(Program.ShutdownTokenSource.Token).ConfigureAwait(false));
+                _showDiagnosticsInfoTask = Task.Run(() => ShowDiagnosticsInfoAsync(Program.Instance.ShutdownTokenSource.Token).ConfigureAwait(false));
             }
         }
 
         /// <summary>
-        /// Implement IDisposable.
+        /// Close
         /// </summary>
-        protected virtual void Dispose(bool disposing)
+        public void Close()
         {
-            if (disposing)
-            {
-                // wait for diagnostic task completion if it is enabled
-                _shutdownTokenSource?.Cancel();
-                _showDiagnosticsInfoTask?.Wait();
-                _showDiagnosticsInfoTask = null;
-                _shutdownTokenSource?.Dispose();
-                _shutdownTokenSource = null;
-            }
-        }
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        public void Dispose()
-        {
-            // do cleanup
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            // wait for diagnostic task completion if it is enabled
+            _shutdownTokenSource?.Cancel();
+            _showDiagnosticsInfoTask?.Wait();
+            _showDiagnosticsInfoTask = null;
+            _shutdownTokenSource?.Dispose();
+            _shutdownTokenSource = null;
         }
 
         /// <summary>
@@ -97,33 +62,33 @@ namespace OpcPublisher
 
             try
             {
-                diagnosticInfo.PublisherStartTime = Program.PublisherStartTime;
-                diagnosticInfo.NumberOfOpcSessionsConfigured = Program.NodeConfiguration.NumberOfOpcSessionsConfigured;
-                diagnosticInfo.NumberOfOpcSessionsConnected = Program.NodeConfiguration.NumberOfOpcSessionsConnected;
-                diagnosticInfo.NumberOfOpcSubscriptionsConfigured = Program.NodeConfiguration.NumberOfOpcSubscriptionsConfigured;
-                diagnosticInfo.NumberOfOpcSubscriptionsConnected = Program.NodeConfiguration.NumberOfOpcSubscriptionsConnected;
-                diagnosticInfo.NumberOfOpcMonitoredItemsConfigured = Program.NodeConfiguration.NumberOfOpcMonitoredItemsConfigured;
-                diagnosticInfo.NumberOfOpcMonitoredItemsMonitored = Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored;
-                diagnosticInfo.NumberOfOpcMonitoredItemsToRemove = Program.NodeConfiguration.NumberOfOpcMonitoredItemsToRemove;
-                diagnosticInfo.MonitoredItemsQueueCapacity = HubClientWrapper.Instance.MonitoredItemsQueueCapacity;
-                diagnosticInfo.MonitoredItemsQueueCount = HubClientWrapper.Instance.MonitoredItemsQueueCount;
-                diagnosticInfo.EnqueueCount = HubClientWrapper.Instance.EnqueueCount;
-                diagnosticInfo.EnqueueFailureCount = HubClientWrapper.Instance.EnqueueFailureCount;
-                diagnosticInfo.NumberOfEvents = HubClientWrapper.Instance.NumberOfEvents;
-                diagnosticInfo.SentMessages = HubClientWrapper.Instance.SentMessages;
-                diagnosticInfo.SentLastTime = HubClientWrapper.Instance.SentLastTime;
-                diagnosticInfo.SentBytes = HubClientWrapper.Instance.SentBytes;
-                diagnosticInfo.FailedMessages = HubClientWrapper.Instance.FailedMessages;
-                diagnosticInfo.TooLargeCount = HubClientWrapper.Instance.TooLargeCount;
-                diagnosticInfo.MissedSendIntervalCount = HubClientWrapper.Instance.MissedSendIntervalCount;
+                diagnosticInfo.PublisherStartTime = Program.Instance.PublisherStartTime;
+                diagnosticInfo.NumberOfOpcSessionsConfigured = Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured;
+                diagnosticInfo.NumberOfOpcSessionsConnected = Program.Instance._nodeConfig.NumberOfOpcSessionsConnected;
+                diagnosticInfo.NumberOfOpcSubscriptionsConfigured = Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured;
+                diagnosticInfo.NumberOfOpcSubscriptionsConnected = Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConnected;
+                diagnosticInfo.NumberOfOpcMonitoredItemsConfigured = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured;
+                diagnosticInfo.NumberOfOpcMonitoredItemsMonitored = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored;
+                diagnosticInfo.NumberOfOpcMonitoredItemsToRemove = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove;
+                diagnosticInfo.MonitoredItemsQueueCapacity = Program.Instance._clientWrapper.MonitoredItemsQueueCapacity;
+                diagnosticInfo.MonitoredItemsQueueCount = Program.Instance._clientWrapper.MonitoredItemsQueueCount;
+                diagnosticInfo.EnqueueCount = Program.Instance._clientWrapper.EnqueueCount;
+                diagnosticInfo.EnqueueFailureCount = Program.Instance._clientWrapper.EnqueueFailureCount;
+                diagnosticInfo.NumberOfEvents = Program.Instance._clientWrapper.NumberOfEvents;
+                diagnosticInfo.SentMessages = Program.Instance._clientWrapper.SentMessages;
+                diagnosticInfo.SentLastTime = Program.Instance._clientWrapper.SentLastTime;
+                diagnosticInfo.SentBytes = Program.Instance._clientWrapper.SentBytes;
+                diagnosticInfo.FailedMessages = Program.Instance._clientWrapper.FailedMessages;
+                diagnosticInfo.TooLargeCount = Program.Instance._clientWrapper.TooLargeCount;
+                diagnosticInfo.MissedSendIntervalCount = Program.Instance._clientWrapper.MissedSendIntervalCount;
                 diagnosticInfo.WorkingSetMB = Process.GetCurrentProcess().WorkingSet64 / (1024 * 1024);
-                diagnosticInfo.DefaultSendIntervalSeconds = HubClientWrapper.Instance.DefaultSendIntervalSeconds;
-                diagnosticInfo.HubMessageSize = HubClientWrapper.Instance.HubMessageSize;
+                diagnosticInfo.DefaultSendIntervalSeconds = Program.Instance._clientWrapper.DefaultSendIntervalSeconds;
+                diagnosticInfo.HubMessageSize = Program.Instance._clientWrapper.HubMessageSize;
             }
             catch (Exception ex)
             {
                 // startup might be not completed yet
-                Program.Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
+                Program.Instance.Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
             }
             return diagnosticInfo;
         }
@@ -139,7 +104,7 @@ namespace OpcPublisher
 
             if (DiagnosticsInterval >= 0)
             {
-                if (Program.StartupCompleted)
+                if (Program.Instance.StartupCompleted)
                 {
                     List<string> log = new List<string>();
                     await _logQueueSemaphore.WaitAsync().ConfigureAwait(false);
@@ -183,7 +148,7 @@ namespace OpcPublisher
 
             if (DiagnosticsInterval >= 0)
             {
-                if (Program.StartupCompleted)
+                if (Program.Instance.StartupCompleted)
                 {
                     diagnosticLogMethodResponseModel.Log.AddRange(_startupLog);
                 }
@@ -217,42 +182,42 @@ namespace OpcPublisher
                     await Task.Delay(DiagnosticsInterval * 1000, ct).ConfigureAwait(false);
 
                     // only show diag after startup is completed
-                    if (!Program.StartupCompleted)
+                    if (!Program.Instance.StartupCompleted)
                     {
                         continue;
                     }
 
                     DiagnosticInfoMethodResponseModel diagnosticInfo = GetDiagnosticInfo();
-                    Program.Logger.Information("==========================================================================");
-                    Program.Logger.Information($"OpcPublisher status @ {System.DateTime.UtcNow} (started @ {diagnosticInfo.PublisherStartTime})");
-                    Program.Logger.Information("---------------------------------");
-                    Program.Logger.Information($"OPC sessions (configured/connected): {diagnosticInfo.NumberOfOpcSessionsConfigured}/{diagnosticInfo.NumberOfOpcSessionsConnected}");
-                    Program.Logger.Information($"OPC subscriptions (configured/connected): {diagnosticInfo.NumberOfOpcSubscriptionsConfigured}/{diagnosticInfo.NumberOfOpcSubscriptionsConnected}");
-                    Program.Logger.Information($"OPC monitored items (configured/monitored/to remove): {diagnosticInfo.NumberOfOpcMonitoredItemsConfigured}/{diagnosticInfo.NumberOfOpcMonitoredItemsMonitored}/{diagnosticInfo.NumberOfOpcMonitoredItemsToRemove}");
-                    Program.Logger.Information("---------------------------------");
-                    Program.Logger.Information($"monitored items queue bounded capacity: {diagnosticInfo.MonitoredItemsQueueCapacity}");
-                    Program.Logger.Information($"monitored items queue current items: {diagnosticInfo.MonitoredItemsQueueCount}");
-                    Program.Logger.Information($"monitored item notifications enqueued: {diagnosticInfo.EnqueueCount}");
-                    Program.Logger.Information($"monitored item notifications enqueue failure: {diagnosticInfo.EnqueueFailureCount}");
-                    Program.Logger.Information("---------------------------------");
-                    Program.Logger.Information($"messages sent to IoTHub: {diagnosticInfo.SentMessages}");
-                    Program.Logger.Information($"last successful msg sent @: {diagnosticInfo.SentLastTime}");
-                    Program.Logger.Information($"bytes sent to IoTHub: {diagnosticInfo.SentBytes}");
-                    Program.Logger.Information($"avg msg size: {diagnosticInfo.SentBytes / (diagnosticInfo.SentMessages == 0 ? 1 : diagnosticInfo.SentMessages)}");
-                    Program.Logger.Information($"msg send failures: {diagnosticInfo.FailedMessages}");
-                    Program.Logger.Information($"messages too large to sent to IoTHub: {diagnosticInfo.TooLargeCount}");
-                    Program.Logger.Information($"times we missed send interval: {diagnosticInfo.MissedSendIntervalCount}");
-                    Program.Logger.Information($"number of events: {diagnosticInfo.NumberOfEvents}");
-                    Program.Logger.Information("---------------------------------");
-                    Program.Logger.Information($"current working set in MB: {diagnosticInfo.WorkingSetMB}");
-                    Program.Logger.Information($"--si setting: {diagnosticInfo.DefaultSendIntervalSeconds}");
-                    Program.Logger.Information($"--ms setting: {diagnosticInfo.HubMessageSize}");
-                    Program.Logger.Information($"--ih setting: {diagnosticInfo.HubProtocol}");
-                    Program.Logger.Information("==========================================================================");
+                    Program.Instance.Logger.Information("==========================================================================");
+                    Program.Instance.Logger.Information($"OpcPublisher status @ {System.DateTime.UtcNow} (started @ {diagnosticInfo.PublisherStartTime})");
+                    Program.Instance.Logger.Information("---------------------------------");
+                    Program.Instance.Logger.Information($"OPC sessions (configured/connected): {diagnosticInfo.NumberOfOpcSessionsConfigured}/{diagnosticInfo.NumberOfOpcSessionsConnected}");
+                    Program.Instance.Logger.Information($"OPC subscriptions (configured/connected): {diagnosticInfo.NumberOfOpcSubscriptionsConfigured}/{diagnosticInfo.NumberOfOpcSubscriptionsConnected}");
+                    Program.Instance.Logger.Information($"OPC monitored items (configured/monitored/to remove): {diagnosticInfo.NumberOfOpcMonitoredItemsConfigured}/{diagnosticInfo.NumberOfOpcMonitoredItemsMonitored}/{diagnosticInfo.NumberOfOpcMonitoredItemsToRemove}");
+                    Program.Instance.Logger.Information("---------------------------------");
+                    Program.Instance.Logger.Information($"monitored items queue bounded capacity: {diagnosticInfo.MonitoredItemsQueueCapacity}");
+                    Program.Instance.Logger.Information($"monitored items queue current items: {diagnosticInfo.MonitoredItemsQueueCount}");
+                    Program.Instance.Logger.Information($"monitored item notifications enqueued: {diagnosticInfo.EnqueueCount}");
+                    Program.Instance.Logger.Information($"monitored item notifications enqueue failure: {diagnosticInfo.EnqueueFailureCount}");
+                    Program.Instance.Logger.Information("---------------------------------");
+                    Program.Instance.Logger.Information($"messages sent to IoTHub: {diagnosticInfo.SentMessages}");
+                    Program.Instance.Logger.Information($"last successful msg sent @: {diagnosticInfo.SentLastTime}");
+                    Program.Instance.Logger.Information($"bytes sent to IoTHub: {diagnosticInfo.SentBytes}");
+                    Program.Instance.Logger.Information($"avg msg size: {diagnosticInfo.SentBytes / (diagnosticInfo.SentMessages == 0 ? 1 : diagnosticInfo.SentMessages)}");
+                    Program.Instance.Logger.Information($"msg send failures: {diagnosticInfo.FailedMessages}");
+                    Program.Instance.Logger.Information($"messages too large to sent to IoTHub: {diagnosticInfo.TooLargeCount}");
+                    Program.Instance.Logger.Information($"times we missed send interval: {diagnosticInfo.MissedSendIntervalCount}");
+                    Program.Instance.Logger.Information($"number of events: {diagnosticInfo.NumberOfEvents}");
+                    Program.Instance.Logger.Information("---------------------------------");
+                    Program.Instance.Logger.Information($"current working set in MB: {diagnosticInfo.WorkingSetMB}");
+                    Program.Instance.Logger.Information($"--si setting: {diagnosticInfo.DefaultSendIntervalSeconds}");
+                    Program.Instance.Logger.Information($"--ms setting: {diagnosticInfo.HubMessageSize}");
+                    Program.Instance.Logger.Information($"--ih setting: {diagnosticInfo.HubProtocol}");
+                    Program.Instance.Logger.Information("==========================================================================");
                 }
                 catch (Exception ex)
                 {
-                    Program.Logger.Error(ex, "writing diagnostics output causing error");
+                    Program.Instance.Logger.Error(ex, "writing diagnostics output causing error");
                 }
             }
         }
@@ -270,7 +235,7 @@ namespace OpcPublisher
             }
             catch (Exception ex)
             {
-                Program.Logger.Error(ex, "Dequeue log message causing error");
+                Program.Instance.Logger.Error(ex, "Dequeue log message causing error");
             }
             return message;
         }
@@ -280,7 +245,7 @@ namespace OpcPublisher
         /// </summary>
         public void WriteLog(string message)
         {
-            if (Program.StartupCompleted == false)
+            if (Program.Instance.StartupCompleted == false)
             {
                 _startupLog.Add(message);
                 return;
@@ -302,15 +267,12 @@ namespace OpcPublisher
             }
         }
 
-        private static readonly SemaphoreSlim _logQueueSemaphore = new SemaphoreSlim(1);
-        private static readonly int _logMessageCount = 100;
-        private static int _missedMessageCount;
-        private static readonly Queue<string> _logQueue = new Queue<string>();
-        private static CancellationTokenSource _shutdownTokenSource;
-        private static Task _showDiagnosticsInfoTask;
-        private static readonly List<string> _startupLog = new List<string>();
-
-        private static readonly object _singletonLock = new object();
-        private static PublisherDiagnostics _instance = null;
+        private readonly SemaphoreSlim _logQueueSemaphore = new SemaphoreSlim(1);
+        private readonly int _logMessageCount = 100;
+        private int _missedMessageCount;
+        private readonly Queue<string> _logQueue = new Queue<string>();
+        private CancellationTokenSource _shutdownTokenSource;
+        private Task _showDiagnosticsInfoTask;
+        private readonly List<string> _startupLog = new List<string>();
     }
 }

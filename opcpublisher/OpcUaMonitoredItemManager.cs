@@ -260,7 +260,7 @@ namespace OpcPublisher
                 // filter out configured suppression status codes
                 if (SuppressedOpcStatusCodes != null && SuppressedOpcStatusCodes.Contains(notification.Value.StatusCode.Code))
                 {
-                    Program.Logger.Debug($"Filtered notification with status code '{notification.Value.StatusCode.Code}'");
+                    Program.Instance.Logger.Debug($"Filtered notification with status code '{notification.Value.StatusCode.Code}'");
                     return;
                 }
 
@@ -268,7 +268,7 @@ namespace OpcPublisher
                 HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
                 MessageDataModel messageData = new MessageDataModel();
-                if (HubClientWrapper.Instance.IotCentralMode)
+                if (Program.Instance._clientWrapper.IotCentralMode)
                 {
                     // for IoTCentral we use the DisplayName as the key in the telemetry and the Value as the value.
                     if (monitoredItem.DisplayName != null)
@@ -309,14 +309,14 @@ namespace OpcPublisher
                             }
                             messageData.Value = valueString.Substring(valueStart, valueLength);
                         }
-                        Program.Logger.Debug($"   IoTCentral key: {messageData.DisplayName}");
-                        Program.Logger.Debug($"   IoTCentral values: {messageData.Value}");
+                        Program.Instance.Logger.Debug($"   IoTCentral key: {messageData.DisplayName}");
+                        Program.Instance.Logger.Debug($"   IoTCentral values: {messageData.Value}");
                     }
                 }
                 else
                 {
                     // update the required message data to pass only the required data to the hub communication
-                    EndpointTelemetryConfigurationModel telemetryConfiguration = Program.TelemetryConfiguration.GetEndpointTelemetryConfiguration(EndpointUrl);
+                    EndpointTelemetryConfigurationModel telemetryConfiguration = Program.Instance._telemetryConfig.GetEndpointTelemetryConfiguration(EndpointUrl);
 
                     // the endpoint URL is required to allow HubCommunication lookup the telemetry configuration
                     messageData.EndpointUrl = EndpointUrl;
@@ -394,21 +394,21 @@ namespace OpcPublisher
                     // apply patterns
                     messageData.ApplyPatterns(telemetryConfiguration);
 
-                    Program.Logger.Debug($"   ApplicationUri: {messageData.ApplicationUri}");
-                    Program.Logger.Debug($"   EndpointUrl: {messageData.EndpointUrl}");
-                    Program.Logger.Debug($"   DisplayName: {messageData.DisplayName}");
-                    Program.Logger.Debug($"   Value: {messageData.Value}");
+                    Program.Instance.Logger.Debug($"   ApplicationUri: {messageData.ApplicationUri}");
+                    Program.Instance.Logger.Debug($"   EndpointUrl: {messageData.EndpointUrl}");
+                    Program.Instance.Logger.Debug($"   DisplayName: {messageData.DisplayName}");
+                    Program.Instance.Logger.Debug($"   Value: {messageData.Value}");
                 }
 
                 // add message to fifo send queue
                 if (monitoredItem.Subscription == null)
                 {
-                    Program.Logger.Debug($"Subscription already removed. No more details available.");
+                    Program.Instance.Logger.Debug($"Subscription already removed. No more details available.");
                 }
                 else
                 {
-                    Program.Logger.Debug($"Enqueue a new message from subscription {(monitoredItem.Subscription == null ? "removed" : monitoredItem.Subscription.Id.ToString(CultureInfo.InvariantCulture))}");
-                    Program.Logger.Debug($" with publishing interval: {monitoredItem?.Subscription?.PublishingInterval} and sampling interval: {monitoredItem?.SamplingInterval}):");
+                    Program.Instance.Logger.Debug($"Enqueue a new message from subscription {(monitoredItem.Subscription == null ? "removed" : monitoredItem.Subscription.Id.ToString(CultureInfo.InvariantCulture))}");
+                    Program.Instance.Logger.Debug($" with publishing interval: {monitoredItem?.Subscription?.PublishingInterval} and sampling interval: {monitoredItem?.SamplingInterval}):");
                 }
 
                 // setupo heartbeat processing
@@ -425,7 +425,7 @@ namespace OpcPublisher
                             {
                                 if (heartbeatSourceTimestamp >= sourceTimestamp)
                                 {
-                                    Program.Logger.Warning($"HeartbeatMessage has larger or equal timestamp than message. Adjusting...");
+                                    Program.Instance.Logger.Warning($"HeartbeatMessage has larger or equal timestamp than message. Adjusting...");
                                     sourceTimestamp.AddMilliseconds(1);
                                 }
                                 messageData.SourceTimestamp = sourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
@@ -442,24 +442,24 @@ namespace OpcPublisher
 
                     // recharge the heartbeat timer
                     HeartbeatSendTimer.Change(HeartbeatInterval * 1000, HeartbeatInterval * 1000);
-                    Program.Logger.Debug($"Setting up {HeartbeatInterval} sec heartbeat for node '{DisplayName}'.");
+                    Program.Instance.Logger.Debug($"Setting up {HeartbeatInterval} sec heartbeat for node '{DisplayName}'.");
                 }
 
                 // skip event if needed
                 if (SkipNextEvent)
                 {
-                    Program.Logger.Debug($"Skipping first telemetry event for node '{DisplayName}'.");
+                    Program.Instance.Logger.Debug($"Skipping first telemetry event for node '{DisplayName}'.");
                     SkipNextEvent = false;
                 }
                 else
                 {
                     // enqueue the telemetry event
-                    HubClientWrapper.Instance.Enqueue(messageData);
+                    Program.Instance._clientWrapper.Enqueue(messageData);
                 }
             }
             catch (Exception ex)
             {
-                Program.Logger.Error(ex, "Error processing monitored item notification");
+                Program.Instance.Logger.Error(ex, "Error processing monitored item notification");
             }
         }
 
@@ -506,12 +506,12 @@ namespace OpcPublisher
                     }
 
                     // enqueue the message
-                    HubClientWrapper.Instance.Enqueue(HeartbeatMessage);
-                    Program.Logger.Debug($"Message enqueued for heartbeat with sourceTimestamp '{HeartbeatMessage.SourceTimestamp}'.");
+                    Program.Instance._clientWrapper.Enqueue(HeartbeatMessage);
+                    Program.Instance.Logger.Debug($"Message enqueued for heartbeat with sourceTimestamp '{HeartbeatMessage.SourceTimestamp}'.");
                 }
                 else
                 {
-                    Program.Logger.Warning($"No message is available for heartbeat.");
+                    Program.Instance.Logger.Warning($"No message is available for heartbeat.");
                 }
             }
         }

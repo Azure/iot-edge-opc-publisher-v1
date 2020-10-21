@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace OpcPublisher
 {
-    public sealed class PlcOpcUaServer : IDisposable
+    public sealed class PlcOpcUaServer
     {
         public PlcOpcUaServer()
         {
@@ -108,36 +108,6 @@ namespace OpcPublisher
             }
         }
 
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        void Dispose(bool disposing)
-        {
-            try
-            {
-                CleanupContainerAsync().Wait();
-            }
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-            catch
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-            {
-
-            }
-            if (disposing)
-            {
-                // dispose managed resources
-            }
-        }
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         private async Task CleanupContainerAsync()
         {
             IList<ContainerListResponse> containers = await _dockerClient.Containers.ListContainersAsync(
@@ -178,7 +148,7 @@ namespace OpcPublisher
         readonly string _plcContainerId = string.Empty;
     }
 
-    public sealed class PlcOpcUaServerFixture : IDisposable
+    public sealed class PlcOpcUaServerFixture
     {
         public PlcOpcUaServer Plc { get; private set; }
 
@@ -196,28 +166,6 @@ namespace OpcPublisher
             {
                 Plc = null;
             }
-        }
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                // dispose managed resources
-                Plc?.Dispose();
-                Plc = null;
-            }
-        }
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 
@@ -239,9 +187,9 @@ namespace OpcPublisher
             }
             try
             {
-                if (File.Exists(Program.LogFileName))
+                if (File.Exists(Program.Instance.LogFileName))
                 {
-                    File.Delete(Program.LogFileName);
+                    File.Delete(Program.Instance.LogFileName);
                 }
             }
             catch (Exception)
@@ -252,17 +200,17 @@ namespace OpcPublisher
 
     }
 
-    public sealed class OpcPublisherFixture : IDisposable
+    public sealed class OpcPublisherFixture
     {
 
         public OpcPublisherFixture()
         {
             // init publisher logging
             //LogLevel = "debug";
-            Program.LogLevel = "info";
-            if (Program.Logger == null)
+            Program.Instance.LogLevel = "info";
+            if (Program.Instance.Logger == null)
             {
-                Program.InitLogging();
+                Program.Instance.InitLogging();
             }
 
             // init publisher application configuration
@@ -280,29 +228,8 @@ namespace OpcPublisher
             }
 
             // configure hub communication
-            HubClientWrapper.Instance.DefaultSendIntervalSeconds = 0;
-            HubClientWrapper.Instance.HubMessageSize = 0;
-        }
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                // dispose managed resources
-                _opcApplicationConfiguration = null;
-            }
-        }
-
-        /// <summary>
-        /// Implement IDisposable.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            Program.Instance._clientWrapper.DefaultSendIntervalSeconds = 0;
+            Program.Instance._clientWrapper.HubMessageSize = 0;
         }
 
         private static OpcApplicationConfiguration _opcApplicationConfiguration = null;

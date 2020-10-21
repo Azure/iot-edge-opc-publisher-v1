@@ -456,7 +456,7 @@ namespace OpcPublisher
             string logPrefix = "OnPublishNodeCall:";
             if (string.IsNullOrEmpty(inputArguments[0] as string) || string.IsNullOrEmpty(inputArguments[1] as string))
             {
-                Program.Logger.Error($"{logPrefix} Invalid Arguments when trying to publish a node.");
+                Program.Instance.Logger.Error($"{logPrefix} Invalid Arguments when trying to publish a node.");
                 return ServiceResult.Create(StatusCodes.BadArgumentsMissing, "Please provide all arguments as strings!");
             }
 
@@ -482,12 +482,12 @@ namespace OpcPublisher
             }
             catch (UriFormatException)
             {
-                Program.Logger.Error($"{logPrefix} The EndpointUrl has an invalid format '{inputArguments[1] as string}'!");
+                Program.Instance.Logger.Error($"{logPrefix} The EndpointUrl has an invalid format '{inputArguments[1] as string}'!");
                 return ServiceResult.Create(StatusCodes.BadArgumentsMissing, "Please provide a valid OPC UA endpoint URL as second argument!");
             }
             catch (Exception e)
             {
-                Program.Logger.Error(e, $"{logPrefix} The NodeId has an invalid format '{inputArguments[0] as string}'!");
+                Program.Instance.Logger.Error(e, $"{logPrefix} The NodeId has an invalid format '{inputArguments[0] as string}'!");
                 return ServiceResult.Create(StatusCodes.BadArgumentsMissing, "Please provide a valid OPC UA NodeId in NodeId or ExpandedNodeId format as first argument!");
             }
 
@@ -495,46 +495,46 @@ namespace OpcPublisher
             try
             {
                 // lock the publishing configuration till we are done
-                Program.NodeConfiguration.OpcSessionsListSemaphore.Wait();
+                Program.Instance._nodeConfig.OpcSessionsListSemaphore.Wait();
 
-                if (Program.ShutdownTokenSource.IsCancellationRequested)
+                if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
                 {
                     return ServiceResult.Create(StatusCodes.BadUnexpectedError, $"Publisher shutdown in progress.");
                 }
 
                 // find the session we need to monitor the node
-                OpcUaSessionManager opcSession = Program.NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                OpcUaSessionManager opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
 
                 // add a new session.
                 if (opcSession == null)
                 {
                     // create new session info.
                     opcSession = new OpcUaSessionManager(endpointUri.OriginalString, true, OpcApplicationConfiguration.OpcSessionCreationTimeout, OpcAuthenticationMode.Anonymous, null);
-                    Program.NodeConfiguration.OpcSessions.Add(opcSession);
-                    Program.Logger.Information($"OnPublishNodeCall: No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
+                    Program.Instance._nodeConfig.OpcSessions.Add(opcSession);
+                    Program.Instance.Logger.Information($"OnPublishNodeCall: No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                 }
 
                 if (isNodeIdFormat)
                 {
                     // add the node info to the subscription with the default publishing interval, execute syncronously
-                    Program.Logger.Debug($"{logPrefix} Request to monitor item with NodeId '{nodeId.ToString()}' (with default PublishingInterval and SamplingInterval)");
-                    statusCode = opcSession.AddNodeForMonitoringAsync(nodeId, null, null, null, null, null, null, Program.ShutdownTokenSource.Token).Result;
+                    Program.Instance.Logger.Debug($"{logPrefix} Request to monitor item with NodeId '{nodeId.ToString()}' (with default PublishingInterval and SamplingInterval)");
+                    statusCode = opcSession.AddNodeForMonitoringAsync(nodeId, null, null, null, null, null, null, Program.Instance.ShutdownTokenSource.Token).Result;
                 }
                 else
                 {
                     // add the node info to the subscription with the default publishing interval, execute syncronously
-                    Program.Logger.Debug($"{logPrefix} Request to monitor item with ExpandedNodeId '{expandedNodeId.ToString()}' (with default PublishingInterval and SamplingInterval)");
-                    statusCode = opcSession.AddNodeForMonitoringAsync(null, expandedNodeId, null, null, null, null, null, Program.ShutdownTokenSource.Token).Result;
+                    Program.Instance.Logger.Debug($"{logPrefix} Request to monitor item with ExpandedNodeId '{expandedNodeId.ToString()}' (with default PublishingInterval and SamplingInterval)");
+                    statusCode = opcSession.AddNodeForMonitoringAsync(null, expandedNodeId, null, null, null, null, null, Program.Instance.ShutdownTokenSource.Token).Result;
                 }
             }
             catch (Exception e)
             {
-                Program.Logger.Error(e, $"{logPrefix} Exception while trying to configure publishing node '{(isNodeIdFormat ? nodeId.ToString() : expandedNodeId.ToString())}'");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception while trying to configure publishing node '{(isNodeIdFormat ? nodeId.ToString() : expandedNodeId.ToString())}'");
                 return ServiceResult.Create(e, StatusCodes.BadUnexpectedError, $"Unexpected error publishing node: {e.Message}");
             }
             finally
             {
-                Program.NodeConfiguration.OpcSessionsListSemaphore.Release();
+                Program.Instance._nodeConfig.OpcSessionsListSemaphore.Release();
             }
 
             if (statusCode == HttpStatusCode.OK || statusCode == HttpStatusCode.Accepted)
@@ -552,7 +552,7 @@ namespace OpcPublisher
             string logPrefix = "OnUnpublishNodeCall:";
             if (string.IsNullOrEmpty(inputArguments[0] as string) || string.IsNullOrEmpty(inputArguments[1] as string))
             {
-                Program.Logger.Error($"{logPrefix} Invalid arguments!");
+                Program.Instance.Logger.Error($"{logPrefix} Invalid arguments!");
                 return ServiceResult.Create(StatusCodes.BadArgumentsMissing, "Please provide all arguments!");
             }
 
@@ -578,20 +578,20 @@ namespace OpcPublisher
             }
             catch (UriFormatException)
             {
-                Program.Logger.Error($"{logPrefix} The endpointUrl is invalid '{inputArguments[1] as string}'!");
+                Program.Instance.Logger.Error($"{logPrefix} The endpointUrl is invalid '{inputArguments[1] as string}'!");
                 return ServiceResult.Create(StatusCodes.BadArgumentsMissing, "Please provide a valid OPC UA endpoint URL as second argument!");
             }
             catch (Exception e)
             {
-                Program.Logger.Error(e, $"{logPrefix} The NodeId has an invalid format '{inputArguments[0] as string}'!");
+                Program.Instance.Logger.Error(e, $"{logPrefix} The NodeId has an invalid format '{inputArguments[0] as string}'!");
                 return ServiceResult.Create(StatusCodes.BadArgumentsMissing, "Please provide a valid OPC UA NodeId in NodeId or ExpandedNodeId format as first argument!");
             }
 
             // find the session and stop monitoring the node.
             try
             {
-                Program.NodeConfiguration.OpcSessionsListSemaphore.Wait();
-                if (Program.ShutdownTokenSource.IsCancellationRequested)
+                Program.Instance._nodeConfig.OpcSessionsListSemaphore.Wait();
+                if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
                 {
                     return ServiceResult.Create(StatusCodes.BadUnexpectedError, $"Publisher shutdown in progress.");
                 }
@@ -600,7 +600,7 @@ namespace OpcPublisher
                 OpcUaSessionManager opcSession = null;
                 try
                 {
-                    opcSession = Program.NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                    opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
                 }
                 catch
                 {
@@ -610,7 +610,7 @@ namespace OpcPublisher
                 if (opcSession == null)
                 {
                     // do nothing if there is no session for this endpoint.
-                    Program.Logger.Error($"{logPrefix} Session for endpoint '{endpointUri.OriginalString}' not found.");
+                    Program.Instance.Logger.Error($"{logPrefix} Session for endpoint '{endpointUri.OriginalString}' not found.");
                     return ServiceResult.Create(StatusCodes.BadSessionIdInvalid, "Session for endpoint of node to unpublished not found!");
                 }
                 else
@@ -618,25 +618,25 @@ namespace OpcPublisher
                     if (isNodeIdFormat)
                     {
                         // stop monitoring the node, execute syncronously
-                        Program.Logger.Information($"{logPrefix} Request to stop monitoring item with NodeId '{nodeId.ToString()}')");
-                        statusCode = opcSession.RequestMonitorItemRemovalAsync(nodeId, null, Program.ShutdownTokenSource.Token).Result;
+                        Program.Instance.Logger.Information($"{logPrefix} Request to stop monitoring item with NodeId '{nodeId.ToString()}')");
+                        statusCode = opcSession.RequestMonitorItemRemovalAsync(nodeId, null, Program.Instance.ShutdownTokenSource.Token).Result;
                     }
                     else
                     {
                         // stop monitoring the node, execute syncronously
-                        Program.Logger.Information($"{logPrefix} Request to stop monitoring item with ExpandedNodeId '{expandedNodeId.ToString()}')");
-                        statusCode = opcSession.RequestMonitorItemRemovalAsync(null, expandedNodeId, Program.ShutdownTokenSource.Token).Result;
+                        Program.Instance.Logger.Information($"{logPrefix} Request to stop monitoring item with ExpandedNodeId '{expandedNodeId.ToString()}')");
+                        statusCode = opcSession.RequestMonitorItemRemovalAsync(null, expandedNodeId, Program.Instance.ShutdownTokenSource.Token).Result;
                     }
                 }
             }
             catch (Exception e)
             {
-                Program.Logger.Error(e, $"{logPrefix} Exception while trying to configure publishing node '{nodeId.ToString()}'");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception while trying to configure publishing node '{nodeId.ToString()}'");
                 return ServiceResult.Create(e, StatusCodes.BadUnexpectedError, $"Unexpected error unpublishing node: {e.Message}");
             }
             finally
             {
-                Program.NodeConfiguration.OpcSessionsListSemaphore.Release();
+                Program.Instance._nodeConfig.OpcSessionsListSemaphore.Release();
             }
             return statusCode == HttpStatusCode.OK || statusCode == HttpStatusCode.Accepted ? ServiceResult.Good : ServiceResult.Create(StatusCodes.Bad, "Can not stop monitoring node!");
         }
@@ -654,7 +654,7 @@ namespace OpcPublisher
 
             if (string.IsNullOrEmpty(inputArguments[0] as string))
             {
-                Program.Logger.Information($"{logPrefix} returning all nodes of all endpoints'!");
+                Program.Instance.Logger.Information($"{logPrefix} returning all nodes of all endpoints'!");
             }
             else
             {
@@ -664,15 +664,15 @@ namespace OpcPublisher
                 }
                 catch (UriFormatException)
                 {
-                    Program.Logger.Error($"{logPrefix} The endpointUrl is invalid '{inputArguments[0] as string}'!");
+                    Program.Instance.Logger.Error($"{logPrefix} The endpointUrl is invalid '{inputArguments[0] as string}'!");
                     return ServiceResult.Create(StatusCodes.BadArgumentsMissing, "Please provide a valid OPC UA endpoint URL as first argument!");
                 }
             }
 
             // get the list of published nodes in NodeId format
-            List<ConfigurationFileEntryLegacyModel> configFileEntries = Program.NodeConfiguration.GetPublisherConfigurationFileEntriesAsNodeIdsAsync(endpointUri.OriginalString).Result;
+            List<ConfigurationFileEntryLegacyModel> configFileEntries = Program.Instance._nodeConfig.GetPublisherConfigurationFileEntriesAsNodeIdsAsync(endpointUri.OriginalString).Result;
             outputArguments[0] = JsonConvert.SerializeObject(configFileEntries);
-            Program.Logger.Information($"{logPrefix} Success (number of entries: {configFileEntries.Count})");
+            Program.Instance.Logger.Information($"{logPrefix} Success (number of entries: {configFileEntries.Count})");
             return ServiceResult.Good;
         }
 
@@ -687,7 +687,7 @@ namespace OpcPublisher
                 if (string.IsNullOrEmpty(inputArguments[0] as string))
                 {
                     string errorMessage = "There is no direct method name specified.";
-                    Program.Logger.Error($"{logPrefix} {errorMessage}");
+                    Program.Instance.Logger.Error($"{logPrefix} {errorMessage}");
                     return ServiceResult.Create(StatusCodes.BadArgumentsMissing, errorMessage);
                 }
 
@@ -698,23 +698,23 @@ namespace OpcPublisher
                 }
 
                 string methodName = inputArguments[0] as string;
-                if (HubMethodHandler.Instance.IotHubDirectMethods.ContainsKey(inputArguments[0] as string))
+                if (Program.Instance._clientWrapper._hubMethodHandler.IotHubDirectMethods.ContainsKey(inputArguments[0] as string))
                 {
-                    var methodCallback = HubMethodHandler.Instance.IotHubDirectMethods.GetValueOrDefault(methodName);
+                    var methodCallback = Program.Instance._clientWrapper._hubMethodHandler.IotHubDirectMethods.GetValueOrDefault(methodName);
                     var methodResponse = methodCallback(new MethodRequest(methodName, Encoding.UTF8.GetBytes(methodRequest)), null).Result;
                     outputArguments[0] = methodResponse.ResultAsJson;
                 }
                 else
                 {
-                    var methodCallback = HubMethodHandler.Instance.IotHubDirectMethods.GetValueOrDefault(methodName);
-                    var methodResponse = HubMethodHandler.Instance.DefaultMethodHandlerAsync(new MethodRequest(methodName, Encoding.UTF8.GetBytes(methodRequest)), null).Result;
+                    var methodCallback = Program.Instance._clientWrapper._hubMethodHandler.IotHubDirectMethods.GetValueOrDefault(methodName);
+                    var methodResponse = Program.Instance._clientWrapper._hubMethodHandler.DefaultMethodHandlerAsync(new MethodRequest(methodName, Encoding.UTF8.GetBytes(methodRequest)), null).Result;
                     outputArguments[0] = methodResponse.ResultAsJson;
                     return ServiceResult.Create(StatusCodes.BadNotImplemented, "The IoTHub direct method is not implemented");
                 }
             }
             catch (Exception ex)
             {
-                Program.Logger.Error($"{logPrefix} The request is invalid!");
+                Program.Instance.Logger.Error($"{logPrefix} The request is invalid!");
                 return ServiceResult.Create(ex, null, StatusCodes.Bad);
             }
             return ServiceResult.Good;

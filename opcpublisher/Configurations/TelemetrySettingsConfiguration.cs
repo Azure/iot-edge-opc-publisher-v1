@@ -62,7 +62,7 @@ namespace OpcPublisher.Configurations
                     }
                     catch
                     {
-                        Program.Logger.Fatal($"The regular expression '{value}' used for the property 'Pattern' is not a valid regular expression. Please change.");
+                        Program.Instance.Logger.Fatal($"The regular expression '{value}' used for the property 'Pattern' is not a valid regular expression. Please change.");
                         throw new Exception($"The regular expression '{value}' used for the property 'Pattern' is not a valid regular expression. Please change.");
                     }
                 }

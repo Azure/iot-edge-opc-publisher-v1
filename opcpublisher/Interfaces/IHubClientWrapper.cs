@@ -20,9 +20,14 @@ namespace OpcPublisher.Interfaces
         string ProductInfo { get; set; }
 
         /// <summary>
-        /// Initializes the hub communication.
+        /// Initializes the hub communication
         /// </summary>
         void InitHubCommunication(bool runningInIoTEdgeContext, string connectionString);
+
+        /// <summary>
+        /// Initializes message processing
+        /// </summary>
+        void InitMessageProcessing();
 
         /// <summary>
         /// Close the client instance
@@ -43,7 +48,7 @@ namespace OpcPublisher.Interfaces
         /// <summary>
         /// Sends an event to device hub
         /// </summary>
-        Task SendEventAsync(Message message);
+        void SendEvent(Message message);
 
         /// <summary>
         /// Enqueue a message for sending to IoTHub.

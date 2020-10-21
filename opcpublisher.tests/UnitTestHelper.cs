@@ -22,8 +22,8 @@ namespace OpcPublisher
         {
             // wait till monitoring starts
             int iter = 0;
-            int startNum = Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored;
-            while (Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
+            int startNum = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored;
+            while (Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
@@ -34,8 +34,8 @@ namespace OpcPublisher
         {
             // wait till monitoring starts
             int iter = 0;
-            long numberOfEventsStart = HubClientWrapper.Instance.NumberOfEvents;
-            while ((Program.NodeConfiguration.NumberOfOpcMonitoredItemsMonitored == 0 || (HubClientWrapper.Instance.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
+            long numberOfEventsStart = Program.Instance._clientWrapper.NumberOfEvents;
+            while ((Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored == 0 || (Program.Instance._clientWrapper.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
@@ -48,8 +48,8 @@ namespace OpcPublisher
             OpcApplicationConfiguration.OpcSamplingInterval = 1000;
             OpcApplicationConfiguration.OpcPublishingInterval = 0;
             OpcSecurityConfiguration.AutoAcceptCerts = true;
-            HubClientWrapper.Instance.DefaultSendIntervalSeconds = 0;
-            HubClientWrapper.Instance.HubMessageSize = 0;
+            Program.Instance._clientWrapper.DefaultSendIntervalSeconds = 0;
+            Program.Instance._clientWrapper.HubMessageSize = 0;
             OpcUaMonitoredItemManager.SkipFirstDefault = false;
             OpcUaMonitoredItemManager.HeartbeatIntervalDefault = 0;
         }

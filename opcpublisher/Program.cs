@@ -6,7 +6,6 @@
 using Opc.Ua;
 using Opc.Ua.Server;
 using OpcPublisher.Configurations;
-using OpcPublisher.Interfaces;
 using Serilog;
 using System;
 using System.Diagnostics;
@@ -23,111 +22,81 @@ namespace OpcPublisher
         /// <summary>
         /// run foroever flag
         /// </summary>
-        public static bool NoShutdown = false;
+        public bool NoShutdown = false;
 
         /// <summary>
         /// interval for flushing log file
         /// </summary>
-        public static TimeSpan LogFileFlushTimeSpanSec = TimeSpan.FromSeconds(30);
+        public TimeSpan LogFileFlushTimeSpanSec = TimeSpan.FromSeconds(30);
 
-        public static string DeviceConnectionString { get; set; } = null;
-
-        /// <summary>
-        /// Telemetry configuration object.
-        /// </summary>
-        public static PublisherTelemetryConfiguration TelemetryConfiguration { get; set; }
-
-        /// <summary>
-        /// Node configuration object.
-        /// </summary>
-        public static IPublisherNodeConfiguration NodeConfiguration { get; set; }
-
-        /// <summary>
-        /// Diagnostics object.
-        /// </summary>
-        public static PublisherDiagnostics Diag { get; set; }
+        public string DeviceConnectionString { get; set; } = null;
 
         /// <summary>
         /// Shutdown token source.
         /// </summary>
-        public static CancellationTokenSource ShutdownTokenSource { get; set; } = new CancellationTokenSource();
+        public CancellationTokenSource ShutdownTokenSource { get; set; } = new CancellationTokenSource();
 
         /// <summary>
         /// Used as delay in sec when shutting down the application.
         /// </summary>
-        public static uint PublisherShutdownWaitPeriod { get; } = 10;
+        public uint PublisherShutdownWaitPeriod { get; } = 10;
 
         /// <summary>
         /// Stores startup time.
         /// </summary>
-        public static DateTime PublisherStartTime { get; set; } = DateTime.UtcNow;
+        public DateTime PublisherStartTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Logging object.
         /// </summary>
-        public static Serilog.Core.Logger Logger { get; set; } = null;
+        public Serilog.Core.Logger Logger { get; set; } = null;
 
         /// <summary>
         /// Signal for completed startup.
         /// </summary>
-        public static bool StartupCompleted { get; set; } = false;
+        public bool StartupCompleted { get; set; } = false;
 
         /// <summary>
         /// Name of the log file.
         /// </summary>
-        public static string LogFileName { get; set; } = $"{Utils.GetHostName()}-publisher.log";
+        public string LogFileName { get; set; } = $"{Utils.GetHostName()}-publisher.log";
 
         /// <summary>
         /// Log level.
         /// </summary>
-        public static string LogLevel { get; set; } = "info";
+        public string LogLevel { get; set; } = "info";
 
         /// <summary>
         /// Flag indicating if we are running in an IoT Edge context
         /// </summary>
-        public static bool RunningInIoTEdgeContext = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_IOTHUBHOSTNAME")) &&
+        public bool RunningInIoTEdgeContext = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_IOTHUBHOSTNAME")) &&
                                                      !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_MODULEGENERATIONID")) &&
                                                      !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_WORKLOADURI")) &&
                                                      !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_DEVICEID")) &&
                                                      !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_MODULEID"));
+        
+        /// <summary>
+        /// App instance
+        /// </summary>
+        public static Program Instance = new Program();
 
         /// <summary>
-        /// Synchronous main method of the app.
+        /// App entry point
         /// </summary>
-        public static void Main(string[] args)
-        {
-            if (RunningInIoTEdgeContext)
-            {
-                var waitForDebugger = args.Any(a => a.ToLower().Contains("wfd") || a.ToLower().Contains("waitfordebugger"));
-
-                if (waitForDebugger)
-                {
-                    Console.WriteLine("Waiting for debugger to attach...");
-
-                    while (!Debugger.IsAttached)
-                    {
-                        Thread.Sleep(1000);
-                    }
-
-                    Console.WriteLine("Debugger attached.");
-                }
-            }
-
-            MainAsync(args).Wait();
-        }
+        public static void Main(string[] args) => Instance.MainAsync(args).Wait();
 
         /// <summary>
         /// Asynchronous part of the main method of the app.
         /// </summary>
-        public static async Task MainAsync(string[] args)
+        public async Task MainAsync(string[] args)
         {
             try
             {
-                // initialize logging
+                // init logging
                 InitLogging();
 
                 // show version
-                Program.Logger.Information($"OPC Publisher V{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion} starting up...");
+                Logger.Information($"OPC Publisher V{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion} starting up...");
                 
                 // detect the runtime environment. either we run standalone (native or containerized) or as IoT Edge module (containerized)
                 // check if we have an environment variable containing an IoT Edge connectionstring, we run as IoT Edge module
@@ -138,7 +107,7 @@ namespace OpcPublisher
 
                 CommandLineArgumentsConfiguration.Parse(args);
                                 
-                // allow canceling the application
+                // allow cancelling the application
                 var quitEvent = new ManualResetEvent(false);
                 try
                 {
@@ -146,13 +115,22 @@ namespace OpcPublisher
                     {
                         quitEvent.Set();
                         eArgs.Cancel = true;
-                        Program.ShutdownTokenSource.Cancel();
+                        ShutdownTokenSource.Cancel();
                     };
                 }
                 catch (Exception ex)
                 {
-                    Program.Logger.Error(ex, "waiting for cancel key pressed causing error");
+                    Logger.Error(ex, "waiting for cancel key pressed causing error");
                 }
+
+                // init diagnostics
+                _diag.Init();
+
+                // init telemetry config
+                _telemetryConfig.Init();
+
+                // init node config
+                _nodeConfig.Init();
 
                 // init OPC configuration and tracing
                 OpcApplicationConfiguration opcApplicationConfiguration = new OpcApplicationConfiguration();
@@ -161,38 +139,33 @@ namespace OpcPublisher
                 // log shopfloor site setting
                 if (string.IsNullOrEmpty(OpcUaSessionManager.PublisherSite))
                 {
-                    Program.Logger.Information("There is no site configured.");
+                    Logger.Information("There is no site configured.");
                 }
                 else
                 {
-                    Program.Logger.Information($"Publisher is in site '{OpcUaSessionManager.PublisherSite}'.");
+                    Logger.Information($"Publisher is in site '{OpcUaSessionManager.PublisherSite}'.");
                 }
 
                 // start our server interface
                 try
                 {
-                    Program.Logger.Information($"Starting server on endpoint {OpcApplicationConfiguration.ApplicationConfiguration.ServerConfiguration.BaseAddresses[0].ToString(CultureInfo.InvariantCulture)} ...");
-                    _publisherServer = new PublisherServer();
+                    Logger.Information($"Starting server on endpoint {OpcApplicationConfiguration.ApplicationConfiguration.ServerConfiguration.BaseAddresses[0].ToString(CultureInfo.InvariantCulture)} ...");
                     _publisherServer.Start(OpcApplicationConfiguration.ApplicationConfiguration);
-                    Program.Logger.Information("Server started.");
+                    Logger.Information("Server started.");
                 }
                 catch (Exception e)
                 {
-                    Program.Logger.Fatal(e, "Failed to start Publisher OPC UA server.");
-                    Program.Logger.Fatal("exiting...");
+                    Logger.Fatal(e, "Failed to start Publisher OPC UA server.");
+                    Logger.Fatal("exiting...");
                     return;
                 }
 
-                // initialize the telemetry configuration
-                TelemetryConfiguration = PublisherTelemetryConfiguration.Instance;
-
-                // initialize the node configuration
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
-
-                
                 // initialize and start EdgeHub communication
-                HubClientWrapper.Instance.InitHubCommunication(RunningInIoTEdgeContext, DeviceConnectionString);
-      
+                _clientWrapper.InitHubCommunication(RunningInIoTEdgeContext, DeviceConnectionString);
+                
+                // initialize message processing
+                _clientWrapper.InitMessageProcessing();
+
                 // kick off OPC session creation and node monitoring
                 await SessionStartAsync().ConfigureAwait(false);
 
@@ -205,26 +178,26 @@ namespace OpcPublisher
                 StartupCompleted = true;
 
                 // stop on user request
-                Program.Logger.Information("");
-                Program.Logger.Information("");
+                Logger.Information("");
+                Logger.Information("");
                 if (NoShutdown)
                 {
                     // wait forever if asked to do so
-                    Program.Logger.Information("Publisher is running infinite...");
+                    Logger.Information("Publisher is running infinite...");
                     await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
                 }
                 else
                 {
-                    Program.Logger.Information("Publisher is running. Press CTRL-C to quit.");
+                    Logger.Information("Publisher is running. Press CTRL-C to quit.");
 
                     // wait for Ctrl-C
-                    await Task.Delay(Timeout.Infinite, Program.ShutdownTokenSource.Token).ConfigureAwait(false);
+                    await Task.Delay(Timeout.Infinite, ShutdownTokenSource.Token).ConfigureAwait(false);
                 }
 
-                Program.Logger.Information("");
-                Program.Logger.Information("");
-                Program.ShutdownTokenSource.Cancel();
-                Program.Logger.Information("Publisher is shutting down...");
+                Logger.Information("");
+                Logger.Information("");
+                ShutdownTokenSource.Cancel();
+                Logger.Information("Publisher is shutting down...");
 
                 // stop the server
                 _publisherServer.Stop();
@@ -233,91 +206,90 @@ namespace OpcPublisher
                 await SessionShutdownAsync().ConfigureAwait(false);
 
                 // shutdown the IoTHub messaging
-                HubClientWrapper.Instance.Close();
+                _clientWrapper.Close();
 
                 // free resources
                 ShutdownTokenSource = null;
             }
             catch (Exception e)
             {
-                Program.Logger.Fatal(e, e.StackTrace);
+                Logger.Fatal(e, e.StackTrace);
                 e = e.InnerException ?? null;
                 while (e != null)
                 {
-                    Program.Logger.Fatal(e, e.StackTrace);
+                    Logger.Fatal(e, e.StackTrace);
                     e = e.InnerException ?? null;
                 }
-                Program.Logger.Fatal("Publisher exiting... ");
+                Logger.Fatal("Publisher exiting... ");
             }
 
             // shutdown diagnostics
-            Program.Diag.Dispose();
-            Diag = null;
+            _diag.Close();
         }
 
         /// <summary>
         /// Start all sessions.
         /// </summary>
-        public static async Task SessionStartAsync()
+        public async Task SessionStartAsync()
         {
             try
             {
-                await Program.NodeConfiguration.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
-                Program.NodeConfiguration.OpcSessions.ForEach(s => s.ConnectAndMonitorSession.Set());
+                await _nodeConfig.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
+                _nodeConfig.OpcSessions.ForEach(s => s.ConnectAndMonitorSession.Set());
             }
             catch (Exception e)
             {
-                Program.Logger.Fatal(e, "Failed to start all sessions.");
+                Logger.Fatal(e, "Failed to start all sessions.");
             }
             finally
             {
-                Program.NodeConfiguration.OpcSessionsListSemaphore.Release();
+                _nodeConfig.OpcSessionsListSemaphore.Release();
             }
         }
 
         /// <summary>
         /// Shutdown all sessions.
         /// </summary>
-        public static async Task SessionShutdownAsync()
+        public async Task SessionShutdownAsync()
         {
             try
             {
-                while (Program.NodeConfiguration.OpcSessions.Count > 0)
+                while (_nodeConfig.OpcSessions.Count > 0)
                 {
                     OpcUaSessionManager opcSession = null;
                     try
                     {
-                        await Program.NodeConfiguration.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
-                        opcSession = Program.NodeConfiguration.OpcSessions.ElementAt(0);
-                        Program.NodeConfiguration.OpcSessions.RemoveAt(0);
+                        await _nodeConfig.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
+                        opcSession = _nodeConfig.OpcSessions.ElementAt(0);
+                        _nodeConfig.OpcSessions.RemoveAt(0);
                     }
                     finally
                     {
-                        Program.NodeConfiguration.OpcSessionsListSemaphore.Release();
+                        _nodeConfig.OpcSessionsListSemaphore.Release();
                     }
                     await (opcSession?.ShutdownAsync()).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
             {
-                Program.Logger.Fatal(e, "Failed to shutdown all sessions.");
+                Logger.Fatal(e, "Failed to shutdown all sessions.");
             }
 
             // Wait and continue after a while.
             uint maxTries = PublisherShutdownWaitPeriod;
             while (true)
             {
-                int sessionCount = Program.NodeConfiguration.OpcSessions.Count;
+                int sessionCount = _nodeConfig.OpcSessions.Count;
                 if (sessionCount == 0)
                 {
                     return;
                 }
                 if (maxTries-- == 0)
                 {
-                    Program.Logger.Information($"There are still {sessionCount} sessions alive. Ignore and continue shutdown.");
+                    Logger.Information($"There are still {sessionCount} sessions alive. Ignore and continue shutdown.");
                     return;
                 }
-                Program.Logger.Information($"Publisher is shutting down. Wait {OpcUaSessionManager.SessionConnectWaitSec} seconds, since there are stil {sessionCount} sessions alive...");
+                Logger.Information($"Publisher is shutting down. Wait {OpcUaSessionManager.SessionConnectWaitSec} seconds, since there are stil {sessionCount} sessions alive...");
                 await Task.Delay(OpcUaSessionManager.SessionConnectWaitSec * 1000).ConfigureAwait(false);
             }
         }
@@ -325,15 +297,12 @@ namespace OpcPublisher
         /// <summary>
         /// Handler for server status changes.
         /// </summary>
-        private static void ServerEventStatus(Session session, SessionEventReason reason)
-        {
-            PrintSessionStatus(session, reason.ToString());
-        }
+        private void ServerEventStatus(Session session, SessionEventReason reason) => PrintSessionStatus(session, reason.ToString());
 
         /// <summary>
         /// Shows the session status.
         /// </summary>
-        private static void PrintSessionStatus(Session session, string reason)
+        private void PrintSessionStatus(Session session, string reason)
         {
             lock (session.DiagnosticsLock)
             {
@@ -343,14 +312,14 @@ namespace OpcPublisher
                     item += string.Format(CultureInfo.InvariantCulture, ":{0,20}", session.Identity.DisplayName);
                 }
                 item += string.Format(CultureInfo.InvariantCulture, ":{0}", session.Id);
-                Program.Logger.Information(item);
+                Logger.Information(item);
             }
         }
 
         /// <summary>
         /// Initialize logging.
         /// </summary>
-        public static void InitLogging()
+        public void InitLogging()
         {
             LoggerConfiguration loggerConfiguration = new LoggerConfiguration();
 
@@ -387,8 +356,8 @@ namespace OpcPublisher
             // set logging sinks
             loggerConfiguration.WriteTo.Console();
 
-            // enable remote logging not in any case for perf reasons
-            if (PublisherDiagnostics.DiagnosticsInterval >= 0)
+            // enable remote logging
+            if (_diag.DiagnosticsInterval >= 0)
             {
                 loggerConfiguration.WriteTo.DiagnosticLogSink();
             }
@@ -406,16 +375,17 @@ namespace OpcPublisher
                 loggerConfiguration.WriteTo.File(LogFileName, fileSizeLimitBytes: MAX_LOGFILE_SIZE, flushToDiskInterval: LogFileFlushTimeSpanSec, rollOnFileSizeLimit: true, retainedFileCountLimit: MAX_RETAINED_LOGFILES);
             }
 
-            // initialize publisher diagnostics
-            Diag = PublisherDiagnostics.Instance;
-
             Logger = loggerConfiguration.CreateLogger();
-            Program.Logger.Information($"Current directory is: {System.IO.Directory.GetCurrentDirectory()}");
-            Program.Logger.Information($"Log file is: {LogFileName}");
-            Program.Logger.Information($"Log level is: {LogLevel}");
-            return;
+            Logger.Information($"Current directory is: {System.IO.Directory.GetCurrentDirectory()}");
+            Logger.Information($"Log file is: {LogFileName}");
+            Logger.Information($"Log level is: {LogLevel}");
         }
                
-        private static PublisherServer _publisherServer;
+        private PublisherServer _publisherServer = new PublisherServer();
+
+        public HubClientWrapper _clientWrapper = new HubClientWrapper(); //TODO: make private
+        public PublisherDiagnostics _diag = new PublisherDiagnostics(); //TODO: make private
+        public PublisherTelemetryConfiguration _telemetryConfig = new PublisherTelemetryConfiguration(); //TODO: make private
+        public PublisherNodeConfiguration _nodeConfig = new PublisherNodeConfiguration(); //TODO: make private
     }
 }
