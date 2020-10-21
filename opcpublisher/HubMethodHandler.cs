@@ -53,7 +53,7 @@ namespace OpcPublisher
         public async void RegisterMethodHandlers(DeviceClient client)
         {
             // init twin properties and method callbacks
-            Program.Logger.Debug($"Register desired properties and method callbacks");
+            Program.Instance.Logger.Debug($"Register desired properties and method callbacks");
 
             // register method handlers
             foreach (var iotHubMethod in IotHubDirectMethods)
@@ -66,7 +66,7 @@ namespace OpcPublisher
         public async void RegisterMethodHandlers(ModuleClient client)
         {
             // init twin properties and method callbacks
-            Program.Logger.Debug($"Register desired properties and method callbacks");
+            Program.Instance.Logger.Debug($"Register desired properties and method callbacks");
 
             // register method handlers
             foreach (var iotHubMethod in IotHubDirectMethods)
@@ -95,7 +95,7 @@ namespace OpcPublisher
             string statusMessage = string.Empty;
             try
             {
-                Program.Logger.Debug($"{logPrefix} called");
+                Program.Instance.Logger.Debug($"{logPrefix} called");
                 publishNodesMethodData = JsonConvert.DeserializeObject<PublishNodesMethodRequestModel>(methodRequest.DataAsJson);
                 endpointUri = new Uri(publishNodesMethodData.EndpointUrl);
                 useSecurity = publishNodesMethodData.UseSecurity;
@@ -114,14 +114,14 @@ namespace OpcPublisher
             catch (UriFormatException e)
             {
                 statusMessage = $"Exception ({e.Message}) while parsing EndpointUrl '{publishNodesMethodData.EndpointUrl}'";
-                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.NotAcceptable;
             }
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while deserializing message payload";
-                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -132,19 +132,19 @@ namespace OpcPublisher
                 try
                 {
                     // lock the publishing configuration till we are done
-                    await Program.NodeConfiguration.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
+                    await Program.Instance._nodeConfig.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
 
-                    if (Program.ShutdownTokenSource.IsCancellationRequested)
+                    if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
                     {
                         statusMessage = $"Publisher is in shutdown";
-                        Program.Logger.Warning($"{logPrefix} {statusMessage}");
+                        Program.Instance.Logger.Warning($"{logPrefix} {statusMessage}");
                         statusResponse.Add(statusMessage);
                         statusCode = HttpStatusCode.Gone;
                     }
                     else
                     {
                         // find the session we need to monitor the node
-                        OpcUaSessionManager opcSession = Program.NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                        OpcUaSessionManager opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
 
                         // add a new session.
                         if (opcSession == null)
@@ -157,8 +157,8 @@ namespace OpcPublisher
 
                             // create new session info.
                             opcSession = new OpcUaSessionManager(endpointUri.OriginalString, useSecurity, Configurations.OpcApplicationConfiguration.OpcSessionCreationTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
-                            Program.NodeConfiguration.OpcSessions.Add(opcSession);
-                            Program.Logger.Information($"{logPrefix} No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
+                            Program.Instance._nodeConfig.OpcSessions.Add(opcSession);
+                            Program.Instance.Logger.Information($"{logPrefix} No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                         }
                         else
                         {
@@ -214,7 +214,7 @@ namespace OpcPublisher
                             catch (Exception e)
                             {
                                 statusMessage = $"Exception ({e.Message}) while formatting node '{node.Id}'!";
-                                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                                 statusResponse.Add(statusMessage);
                                 statusCode = HttpStatusCode.NotAcceptable;
                                 continue;
@@ -225,20 +225,20 @@ namespace OpcPublisher
                                 if (isNodeIdFormat)
                                 {
                                     // add the node info to the subscription with the default publishing interval, execute syncronously
-                                    Program.Logger.Debug($"{logPrefix} Request to monitor item with NodeId '{node.Id}' (PublishingInterval: {node.OpcPublishingInterval.ToString() ?? "--"}, SamplingInterval: {node.OpcSamplingInterval.ToString() ?? "--"})");
+                                    Program.Instance.Logger.Debug($"{logPrefix} Request to monitor item with NodeId '{node.Id}' (PublishingInterval: {node.OpcPublishingInterval.ToString() ?? "--"}, SamplingInterval: {node.OpcSamplingInterval.ToString() ?? "--"})");
                                     nodeStatusCode = await opcSession.AddNodeForMonitoringAsync(nodeId, null,
                                         node.OpcPublishingInterval, node.OpcSamplingInterval, node.DisplayName,
                                         node.HeartbeatInterval, node.SkipFirst,
-                                        Program.ShutdownTokenSource.Token).ConfigureAwait(false);
+                                        Program.Instance.ShutdownTokenSource.Token).ConfigureAwait(false);
                                 }
                                 else
                                 {
                                     // add the node info to the subscription with the default publishing interval, execute syncronously
-                                    Program.Logger.Debug($"{logPrefix} Request to monitor item with ExpandedNodeId '{node.Id}' (PublishingInterval: {node.OpcPublishingInterval.ToString() ?? "--"}, SamplingInterval: {node.OpcSamplingInterval.ToString() ?? "--"})");
+                                    Program.Instance.Logger.Debug($"{logPrefix} Request to monitor item with ExpandedNodeId '{node.Id}' (PublishingInterval: {node.OpcPublishingInterval.ToString() ?? "--"}, SamplingInterval: {node.OpcSamplingInterval.ToString() ?? "--"})");
                                     nodeStatusCode = await opcSession.AddNodeForMonitoringAsync(null, expandedNodeId,
                                         node.OpcPublishingInterval, node.OpcSamplingInterval, node.DisplayName,
                                         node.HeartbeatInterval, node.SkipFirst,
-                                        Program.ShutdownTokenSource.Token).ConfigureAwait(false);
+                                        Program.Instance.ShutdownTokenSource.Token).ConfigureAwait(false);
                                 }
 
                                 // check and store a result message in case of an error
@@ -246,26 +246,26 @@ namespace OpcPublisher
                                 {
                                     case HttpStatusCode.OK:
                                         statusMessage = $"'{node.Id}': already monitored";
-                                        Program.Logger.Debug($"{logPrefix} {statusMessage}");
+                                        Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
                                         statusResponse.Add(statusMessage);
                                         break;
 
                                     case HttpStatusCode.Accepted:
                                         statusMessage = $"'{node.Id}': added";
-                                        Program.Logger.Debug($"{logPrefix} {statusMessage}");
+                                        Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
                                         statusResponse.Add(statusMessage);
                                         break;
 
                                     case HttpStatusCode.Gone:
                                         statusMessage = $"'{node.Id}': session to endpoint does not exist anymore";
-                                        Program.Logger.Debug($"{logPrefix} {statusMessage}");
+                                        Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
                                         statusResponse.Add(statusMessage);
                                         statusCode = HttpStatusCode.Gone;
                                         break;
 
                                     case HttpStatusCode.InternalServerError:
                                         statusMessage = $"'{node.Id}': error while trying to configure";
-                                        Program.Logger.Debug($"{logPrefix} {statusMessage}");
+                                        Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
                                         statusResponse.Add(statusMessage);
                                         statusCode = HttpStatusCode.InternalServerError;
                                         break;
@@ -274,7 +274,7 @@ namespace OpcPublisher
                             catch (Exception e)
                             {
                                 statusMessage = $"Exception ({e.Message}) while trying to configure publishing node '{node.Id}'";
-                                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                                 statusResponse.Add(statusMessage);
                                 statusCode = HttpStatusCode.InternalServerError;
                             }
@@ -285,23 +285,23 @@ namespace OpcPublisher
                 {
                     foreach (Exception ex in e.InnerExceptions)
                     {
-                        Program.Logger.Error(ex, $"{logPrefix} Exception");
+                        Program.Instance.Logger.Error(ex, $"{logPrefix} Exception");
                     }
                     statusMessage = $"EndpointUrl: '{publishNodesMethodData.EndpointUrl}': exception ({e.Message}) while trying to publish";
-                    Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                    Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                     statusResponse.Add(statusMessage);
                     statusCode = HttpStatusCode.InternalServerError;
                 }
                 catch (Exception e)
                 {
                     statusMessage = $"EndpointUrl: '{publishNodesMethodData.EndpointUrl}': exception ({e.Message}) while trying to publish";
-                    Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                    Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                     statusResponse.Add(statusMessage);
                     statusCode = HttpStatusCode.InternalServerError;
                 }
                 finally
                 {
-                    Program.NodeConfiguration.OpcSessionsListSemaphore.Release();
+                    Program.Instance._nodeConfig.OpcSessionsListSemaphore.Release();
                 }
             }
 
@@ -313,11 +313,11 @@ namespace OpcPublisher
             byte[] result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return methodResponse;
         }
 
@@ -338,21 +338,21 @@ namespace OpcPublisher
             string statusMessage = string.Empty;
             try
             {
-                Program.Logger.Debug($"{logPrefix} called");
+                Program.Instance.Logger.Debug($"{logPrefix} called");
                 unpublishNodesMethodData = JsonConvert.DeserializeObject<UnpublishNodesMethodRequestModel>(methodRequest.DataAsJson);
                 endpointUri = new Uri(unpublishNodesMethodData.EndpointUrl);
             }
             catch (UriFormatException e)
             {
                 statusMessage = $"Exception ({e.Message}) while parsing EndpointUrl '{unpublishNodesMethodData.EndpointUrl}'";
-                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while deserializing message payload";
-                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -361,11 +361,11 @@ namespace OpcPublisher
             {
                 try
                 {
-                    await Program.NodeConfiguration.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
-                    if (Program.ShutdownTokenSource.IsCancellationRequested)
+                    await Program.Instance._nodeConfig.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
+                    if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
                     {
                         statusMessage = $"Publisher is in shutdown";
-                        Program.Logger.Error($"{logPrefix} {statusMessage}");
+                        Program.Instance.Logger.Error($"{logPrefix} {statusMessage}");
                         statusResponse.Add(statusMessage);
                         statusCode = HttpStatusCode.Gone;
                     }
@@ -375,7 +375,7 @@ namespace OpcPublisher
                         OpcUaSessionManager opcSession = null;
                         try
                         {
-                            opcSession = Program.NodeConfiguration.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                            opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
                         }
                         catch
                         {
@@ -386,7 +386,7 @@ namespace OpcPublisher
                         {
                             // do nothing if there is no session for this endpoint.
                             statusMessage = $"Session for endpoint '{endpointUri.OriginalString}' not found.";
-                            Program.Logger.Error($"{logPrefix} {statusMessage}");
+                            Program.Instance.Logger.Error($"{logPrefix} {statusMessage}");
                             statusResponse.Add(statusMessage);
                             statusCode = HttpStatusCode.Gone;
                         }
@@ -403,18 +403,18 @@ namespace OpcPublisher
                                     {
                                         if (monitoredItem.ConfigType == OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.NodeId)
                                         {
-                                            await opcSession.RequestMonitorItemRemovalAsync(monitoredItem.ConfigNodeId, null, Program.ShutdownTokenSource.Token, false).ConfigureAwait(false);
+                                            await opcSession.RequestMonitorItemRemovalAsync(monitoredItem.ConfigNodeId, null, Program.Instance.ShutdownTokenSource.Token, false).ConfigureAwait(false);
                                         }
                                         else
                                         {
-                                            await opcSession.RequestMonitorItemRemovalAsync(null, monitoredItem.ConfigExpandedNodeId, Program.ShutdownTokenSource.Token, false).ConfigureAwait(false);
+                                            await opcSession.RequestMonitorItemRemovalAsync(null, monitoredItem.ConfigExpandedNodeId, Program.Instance.ShutdownTokenSource.Token, false).ConfigureAwait(false);
                                         }
                                     }
                                 }
                                 // build response
                                 statusMessage = $"All monitored items{(endpointUri != null ? $" on endpoint '{endpointUri.OriginalString}'" : " ")} tagged for removal";
                                 statusResponse.Add(statusMessage);
-                                Program.Logger.Information($"{logPrefix} {statusMessage}");
+                                Program.Instance.Logger.Information($"{logPrefix} {statusMessage}");
                             }
                             else
                             {
@@ -442,7 +442,7 @@ namespace OpcPublisher
                                     catch (Exception e)
                                     {
                                         statusMessage = $"Exception ({e.Message}) while formatting node '{node.Id}'!";
-                                        Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                                        Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                                         statusResponse.Add(statusMessage);
                                         statusCode = HttpStatusCode.NotAcceptable;
                                         continue;
@@ -453,14 +453,14 @@ namespace OpcPublisher
                                         if (isNodeIdFormat)
                                         {
                                             // stop monitoring the node, execute synchronously
-                                            Program.Logger.Information($"{logPrefix} Request to stop monitoring item with NodeId '{nodeId.ToString()}')");
-                                            nodeStatusCode = await opcSession.RequestMonitorItemRemovalAsync(nodeId, null, Program.ShutdownTokenSource.Token).ConfigureAwait(false);
+                                            Program.Instance.Logger.Information($"{logPrefix} Request to stop monitoring item with NodeId '{nodeId.ToString()}')");
+                                            nodeStatusCode = await opcSession.RequestMonitorItemRemovalAsync(nodeId, null, Program.Instance.ShutdownTokenSource.Token).ConfigureAwait(false);
                                         }
                                         else
                                         {
                                             // stop monitoring the node, execute synchronously
-                                            Program.Logger.Information($"{logPrefix} Request to stop monitoring item with ExpandedNodeId '{expandedNodeId.ToString()}')");
-                                            nodeStatusCode = await opcSession.RequestMonitorItemRemovalAsync(null, expandedNodeId, Program.ShutdownTokenSource.Token).ConfigureAwait(false);
+                                            Program.Instance.Logger.Information($"{logPrefix} Request to stop monitoring item with ExpandedNodeId '{expandedNodeId.ToString()}')");
+                                            nodeStatusCode = await opcSession.RequestMonitorItemRemovalAsync(null, expandedNodeId, Program.Instance.ShutdownTokenSource.Token).ConfigureAwait(false);
                                         }
 
                                         // check and store a result message in case of an error
@@ -468,26 +468,26 @@ namespace OpcPublisher
                                         {
                                             case HttpStatusCode.OK:
                                                 statusMessage = $"Id '{node.Id}': was not configured";
-                                                Program.Logger.Debug($"{logPrefix} {statusMessage}");
+                                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
                                                 statusResponse.Add(statusMessage);
                                                 break;
 
                                             case HttpStatusCode.Accepted:
                                                 statusMessage = $"Id '{node.Id}': tagged for removal";
-                                                Program.Logger.Debug($"{logPrefix} {statusMessage}");
+                                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
                                                 statusResponse.Add(statusMessage);
                                                 break;
 
                                             case HttpStatusCode.Gone:
                                                 statusMessage = $"Id '{node.Id}': session to endpoint does not exist anymore";
-                                                Program.Logger.Debug($"{logPrefix} {statusMessage}");
+                                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
                                                 statusResponse.Add(statusMessage);
                                                 statusCode = HttpStatusCode.Gone;
                                                 break;
 
                                             case HttpStatusCode.InternalServerError:
                                                 statusMessage = $"Id '{node.Id}': error while trying to remove";
-                                                Program.Logger.Debug($"{logPrefix} {statusMessage}");
+                                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
                                                 statusResponse.Add(statusMessage);
                                                 statusCode = HttpStatusCode.InternalServerError;
                                                 break;
@@ -496,7 +496,7 @@ namespace OpcPublisher
                                     catch (Exception e)
                                     {
                                         statusMessage = $"Exception ({e.Message}) while trying to tag node '{node.Id}' for removal";
-                                        Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                                        Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                                         statusResponse.Add(statusMessage);
                                         statusCode = HttpStatusCode.InternalServerError;
                                     }
@@ -509,23 +509,23 @@ namespace OpcPublisher
                 {
                     foreach (Exception ex in e.InnerExceptions)
                     {
-                        Program.Logger.Error(ex, $"{logPrefix} Exception");
+                        Program.Instance.Logger.Error(ex, $"{logPrefix} Exception");
                     }
                     statusMessage = $"EndpointUrl: '{unpublishNodesMethodData.EndpointUrl}': exception while trying to unpublish";
-                    Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                    Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                     statusResponse.Add(statusMessage);
                     statusCode = HttpStatusCode.InternalServerError;
                 }
                 catch (Exception e)
                 {
                     statusMessage = $"EndpointUrl: '{unpublishNodesMethodData.EndpointUrl}': exception ({e.Message}) while trying to unpublish";
-                    Program.Logger.Error($"e, {logPrefix} {statusMessage}");
+                    Program.Instance.Logger.Error($"e, {logPrefix} {statusMessage}");
                     statusResponse.Add(statusMessage);
                     statusCode = HttpStatusCode.InternalServerError;
                 }
                 finally
                 {
-                    Program.NodeConfiguration.OpcSessionsListSemaphore.Release();
+                    Program.Instance._nodeConfig.OpcSessionsListSemaphore.Release();
                 }
             }
 
@@ -537,11 +537,11 @@ namespace OpcPublisher
             byte[] result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return methodResponse;
         }
 
@@ -559,7 +559,7 @@ namespace OpcPublisher
 
             try
             {
-                Program.Logger.Debug($"{logPrefix} called");
+                Program.Instance.Logger.Debug($"{logPrefix} called");
                 if (!string.IsNullOrEmpty(methodRequest.DataAsJson))
                 {
                     unpublishAllNodesMethodData = JsonConvert.DeserializeObject<UnpublishAllNodesMethodRequestModel>(methodRequest.DataAsJson);
@@ -572,14 +572,14 @@ namespace OpcPublisher
             catch (UriFormatException e)
             {
                 statusMessage = $"Exception ({e.Message}) while parsing EndpointUrl '{unpublishAllNodesMethodData.EndpointUrl}'";
-                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while deserializing message payload";
-                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -589,18 +589,18 @@ namespace OpcPublisher
                 // schedule to remove all nodes on all sessions
                 try
                 {
-                    await Program.NodeConfiguration.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
-                    if (Program.ShutdownTokenSource.IsCancellationRequested)
+                    await Program.Instance._nodeConfig.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
+                    if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
                     {
                         statusMessage = $"Publisher is in shutdown";
-                        Program.Logger.Error($"{logPrefix} {statusMessage}");
+                        Program.Instance.Logger.Error($"{logPrefix} {statusMessage}");
                         statusResponse.Add(statusMessage);
                         statusCode = HttpStatusCode.Gone;
                     }
                     else
                     {
                         // loop through all sessions
-                        foreach (var session in Program.NodeConfiguration.OpcSessions)
+                        foreach (var session in Program.Instance._nodeConfig.OpcSessions)
                         {
                             bool sessionLocked = false;
                             try
@@ -612,7 +612,7 @@ namespace OpcPublisher
                                 }
 
                                 sessionLocked = await session.LockSessionAsync().ConfigureAwait(false);
-                                if (!sessionLocked || Program.ShutdownTokenSource.IsCancellationRequested)
+                                if (!sessionLocked || Program.Instance.ShutdownTokenSource.IsCancellationRequested)
                                 {
                                     break;
                                 }
@@ -625,11 +625,11 @@ namespace OpcPublisher
                                     {
                                         if (monitoredItem.ConfigType == OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.NodeId)
                                         {
-                                            await session.RequestMonitorItemRemovalAsync(monitoredItem.ConfigNodeId, null, Program.ShutdownTokenSource.Token, false).ConfigureAwait(false);
+                                            await session.RequestMonitorItemRemovalAsync(monitoredItem.ConfigNodeId, null, Program.Instance.ShutdownTokenSource.Token, false).ConfigureAwait(false);
                                         }
                                         else
                                         {
-                                            await session.RequestMonitorItemRemovalAsync(null, monitoredItem.ConfigExpandedNodeId, Program.ShutdownTokenSource.Token, false).ConfigureAwait(false);
+                                            await session.RequestMonitorItemRemovalAsync(null, monitoredItem.ConfigExpandedNodeId, Program.Instance.ShutdownTokenSource.Token, false).ConfigureAwait(false);
                                         }
                                     }
                                 }
@@ -645,19 +645,19 @@ namespace OpcPublisher
                         // build response
                         statusMessage = $"All monitored items in all subscriptions{(endpointUri != null ? $" on endpoint '{endpointUri.OriginalString}'" : " ")} tagged for removal";
                         statusResponse.Add(statusMessage);
-                        Program.Logger.Information($"{logPrefix} {statusMessage}");
+                        Program.Instance.Logger.Information($"{logPrefix} {statusMessage}");
                     }
                 }
                 catch (Exception e)
                 {
                     statusMessage = $"EndpointUrl: '{unpublishAllNodesMethodData?.EndpointUrl}': exception ({e.Message}) while trying to unpublish";
-                    Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                    Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                     statusResponse.Add(statusMessage);
                     statusCode = HttpStatusCode.InternalServerError;
                 }
                 finally
                 {
-                    Program.NodeConfiguration.OpcSessionsListSemaphore.Release();
+                    Program.Instance._nodeConfig.OpcSessionsListSemaphore.Release();
                 }
             }
 
@@ -690,11 +690,11 @@ namespace OpcPublisher
             result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return methodResponse;
         }
 
@@ -717,7 +717,7 @@ namespace OpcPublisher
 
             try
             {
-                Program.Logger.Debug($"{logPrefix} called");
+                Program.Instance.Logger.Debug($"{logPrefix} called");
                 if (!string.IsNullOrEmpty(methodRequest.DataAsJson))
                 {
                     getConfiguredEndpointsMethodRequest = JsonConvert.DeserializeObject<GetConfiguredEndpointsMethodRequestModel>(methodRequest.DataAsJson);
@@ -726,7 +726,7 @@ namespace OpcPublisher
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while deserializing message payload";
-                Program.Logger.Error(e, $"{logPrefix} Exception");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -734,7 +734,7 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of all endpoints
-                endpointUrls = Program.NodeConfiguration.GetPublisherConfigurationFileEntries(null, false, out nodeConfigVersion).Select(e => e.EndpointUrl.OriginalString).ToList();
+                endpointUrls = Program.Instance._nodeConfig.GetPublisherConfigurationFileEntries(null, false, out nodeConfigVersion).Select(e => e.EndpointUrl.OriginalString).ToList();
                 uint endpointsCount = (uint)endpointUrls.Count;
 
                 // validate version
@@ -744,7 +744,7 @@ namespace OpcPublisher
                     if (nodeConfigVersion != requestedNodeConfigVersion)
                     {
                         statusMessage = $"The node configuration has changed between calls. Requested version: {requestedNodeConfigVersion:X8}, Current version '{nodeConfigVersion:X8}'";
-                        Program.Logger.Information($"{logPrefix} {statusMessage}");
+                        Program.Instance.Logger.Information($"{logPrefix} {statusMessage}");
                         statusResponse.Add(statusMessage);
                         statusCode = HttpStatusCode.Gone;
                     }
@@ -791,7 +791,7 @@ namespace OpcPublisher
                 getConfiguredEndpointsMethodResponse.Endpoints.AddRange(endpointUrls.GetRange((int)startIndex, (int)actualEndpointsCount).Select(e => new ConfiguredEndpointModel(e)).ToList());
                 resultString = JsonConvert.SerializeObject(getConfiguredEndpointsMethodResponse);
                 result = Encoding.UTF8.GetBytes(resultString);
-                Program.Logger.Information($"{logPrefix} returning {actualEndpointsCount} endpoint(s) (node config version: {nodeConfigVersion:X8})!");
+                Program.Instance.Logger.Information($"{logPrefix} returning {actualEndpointsCount} endpoint(s) (node config version: {nodeConfigVersion:X8})!");
             }
             else
             {
@@ -801,11 +801,11 @@ namespace OpcPublisher
             result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return Task.FromResult(methodResponse);
         }
 
@@ -830,21 +830,21 @@ namespace OpcPublisher
 
             try
             {
-                Program.Logger.Debug($"{logPrefix} called");
+                Program.Instance.Logger.Debug($"{logPrefix} called");
                 getConfiguredNodesOnEndpointMethodRequest = JsonConvert.DeserializeObject<GetConfiguredNodesOnEndpointMethodRequestModel>(methodRequest.DataAsJson);
                 endpointUri = new Uri(getConfiguredNodesOnEndpointMethodRequest.EndpointUrl);
             }
             catch (UriFormatException e)
             {
                 statusMessage = $"Exception ({e.Message}) while parsing EndpointUrl '{getConfiguredNodesOnEndpointMethodRequest.EndpointUrl}'";
-                Program.Logger.Error(e, $"{logPrefix} {statusMessage}");
+                Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while deserializing message payload";
-                Program.Logger.Error(e, $"{logPrefix} Exception");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -852,13 +852,13 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of published nodes for the endpoint
-                List<ConfigurationFileEntryModel> configFileEntries = Program.NodeConfiguration.GetPublisherConfigurationFileEntries(endpointUri.OriginalString, false, out nodeConfigVersion);
+                List<ConfigurationFileEntryModel> configFileEntries = Program.Instance._nodeConfig.GetPublisherConfigurationFileEntries(endpointUri.OriginalString, false, out nodeConfigVersion);
 
                 // return if there are no nodes configured for this endpoint
                 if (configFileEntries.Count == 0)
                 {
                     statusMessage = $"There are no nodes configured for endpoint '{endpointUri.OriginalString}'";
-                    Program.Logger.Information($"{logPrefix} {statusMessage}");
+                    Program.Instance.Logger.Information($"{logPrefix} {statusMessage}");
                     statusResponse.Add(statusMessage);
                     statusCode = HttpStatusCode.OK;
                 }
@@ -878,7 +878,7 @@ namespace OpcPublisher
                         if (nodeConfigVersion != requestedNodeConfigVersion)
                         {
                             statusMessage = $"The node configuration has changed between calls. Requested version: {requestedNodeConfigVersion:X8}, Current version '{nodeConfigVersion:X8}'!";
-                            Program.Logger.Information($"{logPrefix} {statusMessage}");
+                            Program.Instance.Logger.Information($"{logPrefix} {statusMessage}");
                             statusResponse.Add(statusMessage);
                             statusCode = HttpStatusCode.Gone;
                         }
@@ -931,7 +931,7 @@ namespace OpcPublisher
                 }).ToList());
                 getConfiguredNodesOnEndpointMethodResponse.EndpointUrl = endpointUri.OriginalString;
                 resultString = JsonConvert.SerializeObject(getConfiguredNodesOnEndpointMethodResponse);
-                Program.Logger.Information($"{logPrefix} Success returning {actualNodeCount} node(s) of {availableNodeCount} (start: {startIndex}) (node config version: {nodeConfigVersion:X8})!");
+                Program.Instance.Logger.Information($"{logPrefix} Success returning {actualNodeCount} node(s) of {availableNodeCount} (start: {startIndex}) (node config version: {nodeConfigVersion:X8})!");
             }
             else
             {
@@ -940,11 +940,11 @@ namespace OpcPublisher
             result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return Task.FromResult(methodResponse);
         }
 
@@ -962,12 +962,12 @@ namespace OpcPublisher
             DiagnosticInfoMethodResponseModel diagnosticInfo = new DiagnosticInfoMethodResponseModel();
             try
             {
-                diagnosticInfo = Program.Diag.GetDiagnosticInfo();
+                diagnosticInfo = Program.Instance._diag.GetDiagnosticInfo();
             }
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while reading diagnostic info";
-                Program.Logger.Error(e, $"{logPrefix} Exception");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -986,11 +986,11 @@ namespace OpcPublisher
             result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return Task.FromResult(methodResponse);
         }
 
@@ -1008,12 +1008,12 @@ namespace OpcPublisher
             DiagnosticLogMethodResponseModel diagnosticLogMethodResponseModel = new DiagnosticLogMethodResponseModel();
             try
             {
-                diagnosticLogMethodResponseModel = await Program.Diag.GetDiagnosticLogAsync().ConfigureAwait(false);
+                diagnosticLogMethodResponseModel = await Program.Instance._diag.GetDiagnosticLogAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while reading diagnostic log";
-                Program.Logger.Error(e, $"{logPrefix} Exception");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -1032,11 +1032,11 @@ namespace OpcPublisher
             result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return methodResponse;
         }
 
@@ -1054,12 +1054,12 @@ namespace OpcPublisher
             DiagnosticLogMethodResponseModel diagnosticLogMethodResponseModel = new DiagnosticLogMethodResponseModel();
             try
             {
-                diagnosticLogMethodResponseModel = await Program.Diag.GetDiagnosticStartupLogAsync().ConfigureAwait(false);
+                diagnosticLogMethodResponseModel = await Program.Instance._diag.GetDiagnosticStartupLogAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while reading diagnostic startup log";
-                Program.Logger.Error(e, $"{logPrefix} Exception");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -1078,11 +1078,11 @@ namespace OpcPublisher
             result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return methodResponse;
         }
 
@@ -1107,7 +1107,7 @@ namespace OpcPublisher
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while deserializing message payload";
-                Program.Logger.Error(e, $"{logPrefix} Exception");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -1124,13 +1124,13 @@ namespace OpcPublisher
                     Task.Run(() => ExitApplicationAsync(secondsTillExit).ConfigureAwait(false));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                     statusMessage = $"Module will exit now...";
-                    Program.Logger.Information($"{logPrefix} {statusMessage}");
+                    Program.Instance.Logger.Information($"{logPrefix} {statusMessage}");
                     statusResponse.Add(statusMessage);
                 }
                 catch (Exception e)
                 {
                     statusMessage = $"Exception ({e.Message}) while scheduling application exit";
-                    Program.Logger.Error(e, $"{logPrefix} Exception");
+                    Program.Instance.Logger.Error(e, $"{logPrefix} Exception");
                     statusResponse.Add(statusMessage);
                     statusCode = HttpStatusCode.InternalServerError;
                 }
@@ -1143,11 +1143,11 @@ namespace OpcPublisher
             result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return Task.FromResult(methodResponse);
         }
 
@@ -1177,7 +1177,7 @@ namespace OpcPublisher
             catch (Exception e)
             {
                 statusMessage = $"Exception ({e.Message}) while retrieving info";
-                Program.Logger.Error(e, $"{logPrefix} Exception");
+                Program.Instance.Logger.Error(e, $"{logPrefix} Exception");
                 statusResponse.Add(statusMessage);
                 statusCode = HttpStatusCode.InternalServerError;
             }
@@ -1196,11 +1196,11 @@ namespace OpcPublisher
             result = Encoding.UTF8.GetBytes(resultString);
             if (result.Length > MaxResponsePayloadLength)
             {
-                Program.Logger.Error($"{logPrefix} Response size is too long");
+                Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
                 Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
-            Program.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
+            Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
             return Task.FromResult(methodResponse);
         }
 
@@ -1211,7 +1211,7 @@ namespace OpcPublisher
         {
             string logPrefix = "DefaultMethodHandlerAsync:";
             string errorMessage = $"Method '{methodRequest.Name}' successfully received, but this method is not implemented";
-            Program.Logger.Information($"{logPrefix} {errorMessage}");
+            Program.Instance.Logger.Information($"{logPrefix} {errorMessage}");
 
             string resultString = JsonConvert.SerializeObject(errorMessage);
             byte[] result = Encoding.UTF8.GetBytes(resultString);
@@ -1258,14 +1258,14 @@ namespace OpcPublisher
             // sanity check parameter
             if (secondsTillExit <= 0)
             {
-                Program.Logger.Information($"{logPrefix} Time to exit adjusted to {secondsTillExit} seconds...");
+                Program.Instance.Logger.Information($"{logPrefix} Time to exit adjusted to {secondsTillExit} seconds...");
                 secondsTillExit = 5;
             }
 
             // wait and exit
             while (secondsTillExit > 0)
             {
-                Program.Logger.Information($"{logPrefix} Exiting in {secondsTillExit} seconds...");
+                Program.Instance.Logger.Information($"{logPrefix} Exiting in {secondsTillExit} seconds...");
                 secondsTillExit--;
                 await Task.Delay(1000).ConfigureAwait(false);
             }

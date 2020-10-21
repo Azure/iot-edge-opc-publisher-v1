@@ -72,7 +72,7 @@ namespace OpcPublisher.Interfaces
         /// Initialize the node configuration.
         /// </summary>
         /// <returns></returns>
-        Task InitAsync();
+        void Init();
 
         /// <summary>
         /// Read and parse the publisher node configuration file.

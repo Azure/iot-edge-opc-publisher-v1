@@ -95,7 +95,7 @@ namespace OpcPublisher
                     ServerInternal.Status.Variable.State.Value = ServerState.Shutdown;
                     ServerInternal.Status.Variable.ClearChangeMasks(ServerInternal.DefaultSystemContext, true);
 
-                    for (uint timeTillShutdown = Program.PublisherShutdownWaitPeriod; timeTillShutdown > 0; timeTillShutdown--)
+                    for (uint timeTillShutdown = Program.Instance.PublisherShutdownWaitPeriod; timeTillShutdown > 0; timeTillShutdown--)
                     {
                         ServerInternal.Status.Value.SecondsTillShutdown = timeTillShutdown;
                         ServerInternal.Status.Variable.SecondsTillShutdown.Value = timeTillShutdown;

@@ -23,7 +23,7 @@ namespace OpcPublisher
         public void Emit(LogEvent logEvent)
         {
             string message = FormatMessage(logEvent);
-            Program.Diag.WriteLog(message);
+            Program.Instance._diag.WriteLog(message);
             // enable below for testing
             //Console.ForegroundColor = ConsoleColor.Red;
             //Console.WriteLine(message);
@@ -35,7 +35,7 @@ namespace OpcPublisher
                 List<string> exceptionLog = FormatException(logEvent);
                 foreach (var log in exceptionLog)
                 {
-                    Program.Diag.WriteLog(log);
+                    Program.Instance._diag.WriteLog(log);
                 }
             }
         }

@@ -27,40 +27,21 @@ namespace OpcPublisher.Configurations
         public static string PublisherTelemetryConfigurationFilename { get; set; } = null;
 
         /// <summary>
-        /// Get the singleton.
-        /// </summary>
-        public static PublisherTelemetryConfiguration Instance
-        {
-            get
-            {
-                if (_instance != null)
-                {
-                    return _instance;
-                }
-                else
-                {
-                    lock (_singletonLock)
-                    {
-                        if (_instance == null)
-                        {
-                            _instance = new PublisherTelemetryConfiguration();
-                        }
-                        return _instance;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Ctor to initialize resources for the telemetry configuration.
         /// </summary>
-        private PublisherTelemetryConfiguration()
+        public PublisherTelemetryConfiguration()
         {
             _telemetryConfiguration = null;
             _endpointTelemetryConfigurations = new List<EndpointTelemetryConfigurationModel>();
             _defaultEndpointTelemetryConfiguration = null;
             _endpointTelemetryConfigurationCache = new Dictionary<string, EndpointTelemetryConfigurationModel>();
+        }
 
+        /// <summary>
+        /// Init
+        /// </summary>
+        public void Init()
+        { 
             // initialize with the default server telemetry configuration
             InitializePublisherDefaultEndpointTelemetryConfiguration();
 
@@ -68,7 +49,7 @@ namespace OpcPublisher.Configurations
             if (!ReadConfigAsync().Result)
             {
                 string errorMessage = $"Error while reading the telemetry configuration file '{PublisherTelemetryConfigurationFilename}'";
-                Program.Logger.Error(errorMessage);
+                Program.Instance.Logger.Error(errorMessage);
                 throw new Exception(errorMessage);
             }
         }
@@ -93,25 +74,25 @@ namespace OpcPublisher.Configurations
         {
             if (config.ForEndpointUrl == null)
             {
-                Program.Logger.Fatal("Each object in the 'EndpointSpecific' array must have a property 'ForEndpointUrl'. Please change.");
+                Program.Instance.Logger.Fatal("Each object in the 'EndpointSpecific' array must have a property 'ForEndpointUrl'. Please change.");
                 return false;
 
             }
             if (_telemetryConfiguration.EndpointSpecific.Count(c => !string.IsNullOrEmpty(c.ForEndpointUrl) && c.ForEndpointUrl.Equals(config?.ForEndpointUrl, StringComparison.OrdinalIgnoreCase)) > 1)
             {
-                Program.Logger.Fatal($"The value '{config.ForEndpointUrl}' for property 'ForEndpointUrl' is only allowed to used once in the 'EndpointSpecific' array. Please change.");
+                Program.Instance.Logger.Fatal($"The value '{config.ForEndpointUrl}' for property 'ForEndpointUrl' is only allowed to used once in the 'EndpointSpecific' array. Please change.");
                 return false;
             }
             if (config.EndpointUrl.Name != null || config.NodeId.Name != null ||
                 config.MonitoredItem.ApplicationUri.Name != null || config.MonitoredItem.DisplayName.Name != null ||
                 config.Value.Value.Name != null || config.Value.SourceTimestamp.Name != null || config.Value.StatusCode.Name != null || config.Value.Status.Name != null)
             {
-                Program.Logger.Fatal("The property 'Name' is not allowed in any object in the 'EndpointSpecific' array. Please change.");
+                Program.Instance.Logger.Fatal("The property 'Name' is not allowed in any object in the 'EndpointSpecific' array. Please change.");
                 return false;
             }
             if (config.MonitoredItem.Flat != null || config.Value.Flat != null)
             {
-                Program.Logger.Fatal("The property 'Flat' is not allowed in any object in the 'EndpointSpecific' array. Please change.");
+                Program.Instance.Logger.Fatal("The property 'Flat' is not allowed in any object in the 'EndpointSpecific' array. Please change.");
                 return false;
             }
             return true;
@@ -164,7 +145,7 @@ namespace OpcPublisher.Configurations
             {
                 if (_telemetryConfiguration.Defaults.ForEndpointUrl != null)
                 {
-                    Program.Logger.Fatal("The property 'ForEndpointUrl' is not allowed in 'Defaults'. Please change.");
+                    Program.Instance.Logger.Fatal("The property 'ForEndpointUrl' is not allowed in 'Defaults'. Please change.");
                     return false;
                 }
 
@@ -234,14 +215,14 @@ namespace OpcPublisher.Configurations
             // return if there is no configuration file specified
             if (string.IsNullOrEmpty(PublisherTelemetryConfigurationFilename))
             {
-                Program.Logger.Information("Using default telemetry configuration.");
+                Program.Instance.Logger.Information("Using default telemetry configuration.");
                 return true;
             }
 
             // get information on the telemetry configuration
             try
             {
-                Program.Logger.Information($"Attempting to load telemetry configuration file from: {PublisherTelemetryConfigurationFilename}");
+                Program.Instance.Logger.Information($"Attempting to load telemetry configuration file from: {PublisherTelemetryConfigurationFilename}");
                 _telemetryConfiguration = JsonConvert.DeserializeObject<TelemetryConfigurationFileModel>(await File.ReadAllTextAsync(PublisherTelemetryConfigurationFilename).ConfigureAwait(false));
 
                 // update the default configuration with the 'Defaults' settings from the configuration file
@@ -268,7 +249,7 @@ namespace OpcPublisher.Configurations
             }
             catch (Exception e)
             {
-                Program.Logger.Fatal(e, "Loading of the telemetry configuration file failed. Does the file exist and has correct syntax? Exiting...");
+                Program.Instance.Logger.Fatal(e, "Loading of the telemetry configuration file failed. Does the file exist and has correct syntax? Exiting...");
                 return false;
             }
             return true;
@@ -278,8 +259,5 @@ namespace OpcPublisher.Configurations
         private readonly List<EndpointTelemetryConfigurationModel> _endpointTelemetryConfigurations;
         private EndpointTelemetryConfigurationModel _defaultEndpointTelemetryConfiguration;
         private readonly Dictionary<string, EndpointTelemetryConfigurationModel> _endpointTelemetryConfigurationCache;
-
-        private static readonly object _singletonLock = new object();
-        private static PublisherTelemetryConfiguration _instance = null;
     }
 }

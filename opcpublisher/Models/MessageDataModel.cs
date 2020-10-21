@@ -111,7 +111,7 @@ namespace OpcPublisher
             {
                 if (!string.IsNullOrEmpty(telemetryConfiguration.Value.StatusCode.Pattern))
                 {
-                    Program.Logger.Information($"'Pattern' settngs for StatusCode are ignored.");
+                    Program.Instance.Logger.Information($"'Pattern' settngs for StatusCode are ignored.");
                 }
             }
             if (telemetryConfiguration.Value.Status.Publish == true)
