@@ -144,9 +144,6 @@ namespace OpcPublisher.Configurations
             OpcApplicationConfiguration.ApplicationConfiguration.CertificateValidator = new Opc.Ua.CertificateValidator();
             OpcApplicationConfiguration.ApplicationConfiguration.CertificateValidator.CertificateValidation += new Opc.Ua.CertificateValidationEventHandler(CertificateValidator_CertificateValidation);
 
-            // update security information
-            await OpcApplicationConfiguration.ApplicationConfiguration.CertificateValidator.Update(OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration).ConfigureAwait(false);
-
             // remove issuer and trusted certificates with the given thumbprints
             if (ThumbprintsToRemove?.Count > 0)
             {
@@ -193,8 +190,13 @@ namespace OpcPublisher.Configurations
                 }
             }
 
-            // use existing certificate, if it is there
-            certificate = await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.Find(true).ConfigureAwait(false);
+            // reload the application certificate with private key, if it is there
+            // note: do not change this sequence, or the private key is not properly loaded on some platforms
+            if (await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false) != null)
+            {
+                // update certificate with private key
+                certificate = await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.Find(true).ConfigureAwait(false);
+            }
 
             // create a self signed certificate if there is none
             if (certificate == null)
@@ -219,9 +221,17 @@ namespace OpcPublisher.Configurations
                     );
                 Program.Logger.Information($"Application certificate with thumbprint '{certificate.Thumbprint}' created.");
 
-                // update security information
-                OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.Certificate = certificate ?? throw new Exception("OPC UA application certificate can not be created! Cannot continue without it!");
-                await OpcApplicationConfiguration.ApplicationConfiguration.CertificateValidator.UpdateCertificate(OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration).ConfigureAwait(false);
+                // reload the certificate from disk.
+                certificate = await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
+                if (certificate == null)
+                {
+                    throw new Exception("OPC UA application certificate can not be loaded from disk! Cannot continue without it!");
+                }
+                else
+                {
+                    // update certificate with private key
+                    certificate = await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.Find(true).ConfigureAwait(false);
+                }
             }
             else
             {
@@ -229,6 +239,9 @@ namespace OpcPublisher.Configurations
             }
             OpcApplicationConfiguration.ApplicationConfiguration.ApplicationUri = Utils.GetApplicationUriFromCertificate(certificate);
             Program.Logger.Information($"Application certificate is for ApplicationUri '{OpcApplicationConfiguration.ApplicationConfiguration.ApplicationUri}', ApplicationName '{OpcApplicationConfiguration.ApplicationConfiguration.ApplicationName}' and Subject is '{OpcApplicationConfiguration.ApplicationConfiguration.ApplicationName}'");
+
+            // update security information
+            await OpcApplicationConfiguration.ApplicationConfiguration.CertificateValidator.Update(OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration).ConfigureAwait(false);
 
             // we make the default reference stack behavior configurable to put our own certificate into the trusted peer store, but only for self-signed certs
             // note: SecurityConfiguration.AddAppCertToTrustedStore only works for Application instance objects, which we do not have
