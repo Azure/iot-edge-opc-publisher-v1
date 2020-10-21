@@ -6,6 +6,7 @@
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using Opc.Ua;
+using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,11 +23,6 @@ namespace OpcPublisher
     /// </summary>
     public class HubMethodHandler
     {
-        /// <summary>
-        /// Max allowed payload of an IoTHub direct method call response.
-        /// </summary>
-        public int MaxResponsePayloadLength { get; } = (128 * 1024) - 256;
-
         /// <summary>
         /// Dictionary of available IoTHub direct methods.
         /// </summary>
@@ -310,10 +306,10 @@ namespace OpcPublisher
             // build response
             string resultString = JsonConvert.SerializeObject(statusResponse);
             byte[] result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -534,10 +530,10 @@ namespace OpcPublisher
             // build response
             string resultString = JsonConvert.SerializeObject(statusResponse);
             byte[] result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -668,7 +664,7 @@ namespace OpcPublisher
             {
                 resultString = JsonConvert.SerializeObject(statusResponse.GetRange(0, maxIndex));
                 result = Encoding.UTF8.GetBytes(resultString);
-                if (result.Length > MaxResponsePayloadLength)
+                if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
                 {
                     maxIndex /= 2;
                     continue;
@@ -687,10 +683,10 @@ namespace OpcPublisher
             // build response
             resultString = JsonConvert.SerializeObject(statusResponse);
             result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -764,7 +760,7 @@ namespace OpcPublisher
                     {
                         endpointsString = JsonConvert.SerializeObject(endpointUrls.GetRange((int)startIndex, (int)actualEndpointsCount));
                         endpointsByteArray = Encoding.UTF8.GetBytes(endpointsString);
-                        if (endpointsByteArray.Length > MaxResponsePayloadLength)
+                        if (endpointsByteArray.Length > SettingsConfiguration.MaxResponsePayloadLength)
                         {
                             actualEndpointsCount /= 2;
                             continue;
@@ -798,10 +794,10 @@ namespace OpcPublisher
             }
 
             result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -898,7 +894,7 @@ namespace OpcPublisher
                         {
                             publishedNodesString = JsonConvert.SerializeObject(opcNodes.GetRange((int)startIndex, (int)actualNodeCount));
                             publishedNodesByteArray = Encoding.UTF8.GetBytes(publishedNodesString);
-                            if (publishedNodesByteArray.Length > MaxResponsePayloadLength)
+                            if (publishedNodesByteArray.Length > SettingsConfiguration.MaxResponsePayloadLength)
                             {
                                 actualNodeCount /= 2;
                                 continue;
@@ -937,10 +933,10 @@ namespace OpcPublisher
                 resultString = JsonConvert.SerializeObject(statusResponse);
             }
             result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -983,10 +979,10 @@ namespace OpcPublisher
                 resultString = JsonConvert.SerializeObject(statusResponse);
             }
             result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -1029,10 +1025,10 @@ namespace OpcPublisher
                 resultString = JsonConvert.SerializeObject(statusResponse);
             }
             result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -1075,10 +1071,10 @@ namespace OpcPublisher
                 resultString = JsonConvert.SerializeObject(statusResponse);
             }
             result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -1140,10 +1136,10 @@ namespace OpcPublisher
             string resultString = null;
             resultString = JsonConvert.SerializeObject(statusResponse);
             result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -1193,10 +1189,10 @@ namespace OpcPublisher
                 resultString = JsonConvert.SerializeObject(statusResponse);
             }
             result = Encoding.UTF8.GetBytes(resultString);
-            if (result.Length > MaxResponsePayloadLength)
+            if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
             {
                 Program.Instance.Logger.Error($"{logPrefix} Response size is too long");
-                Array.Resize(ref result, result.Length > MaxResponsePayloadLength ? MaxResponsePayloadLength : result.Length);
+                Array.Resize(ref result, result.Length > SettingsConfiguration.MaxResponsePayloadLength ? SettingsConfiguration.MaxResponsePayloadLength : result.Length);
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
@@ -1230,7 +1226,7 @@ namespace OpcPublisher
             {
                 resultString = JsonConvert.SerializeObject(statusResponse.GetRange(0, maxIndex));
                 result = Encoding.UTF8.GetBytes(resultString);
-                if (result.Length > MaxResponsePayloadLength)
+                if (result.Length > SettingsConfiguration.MaxResponsePayloadLength)
                 {
                     maxIndex /= 2;
                     continue;

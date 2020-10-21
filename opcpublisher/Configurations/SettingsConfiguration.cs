@@ -86,5 +86,10 @@ namespace OpcPublisher.Configurations
         /// Command line argument in which interval in seconds to show the diagnostic info.
         /// </summary>
         public static int DiagnosticsInterval { get; set; } = 0;
+
+        /// <summary>
+        /// Max allowed payload of an IoTHub direct method call response.
+        /// </summary>
+        public const int MaxResponsePayloadLength = (128 * 1024) - 256;
     }
 }
