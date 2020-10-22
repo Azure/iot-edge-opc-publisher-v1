@@ -22,7 +22,7 @@ namespace OpcPublisher
         {
             EncryptedNetworkCredential result = new EncryptedNetworkCredential();
 
-            X509Certificate2 cert = await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
+            X509Certificate2 cert = await Program.Instance._application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
 
             if (networkCredential.UserName != null)
             {
@@ -41,7 +41,7 @@ namespace OpcPublisher
         {
             NetworkCredential result = new NetworkCredential();
 
-            X509Certificate2 cert = await OpcApplicationConfiguration.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
+            X509Certificate2 cert = await Program.Instance._application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
 
             if (UserName != null)
             {

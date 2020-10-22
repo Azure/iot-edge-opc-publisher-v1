@@ -26,9 +26,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="8d638a7b8750-publisher.log" />
+    <None Remove="Opc.Publisher.Config.xml" />
     <None Remove="publishednodes.json" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Opc.Publisher.Config.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="publishednodes.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

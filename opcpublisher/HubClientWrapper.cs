@@ -106,7 +106,7 @@ namespace OpcPublisher
             Program.Instance.Logger.Debug($"Open hub communication");
             if (runningInIoTEdgeContext)
             {
-                Program.Instance.Logger.Information($"Create module client using '{SettingsConfiguration.EdgeHubProtocol}' for communication.");
+                Program.Instance.Logger.Information($"Creating IoT Edge module client using '{SettingsConfiguration.EdgeHubProtocol}' for communication.");
 
                 if (string.IsNullOrEmpty(connectionString))
                 {
@@ -128,7 +128,7 @@ namespace OpcPublisher
                     throw new ArgumentException(errorMessage);
                 }
 
-                Program.Instance.Logger.Information($"Create device client using '{SettingsConfiguration.IotHubProtocol}' for communication.");
+                Program.Instance.Logger.Information($"Creating IoT Hub device client using '{SettingsConfiguration.IotHubProtocol}' for communication.");
 
                 if (connectionString.Contains(";GatewayHostName="))
                 {

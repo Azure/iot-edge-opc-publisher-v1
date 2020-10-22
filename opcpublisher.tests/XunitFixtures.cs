@@ -6,6 +6,7 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Opc.Ua;
+using Opc.Ua.Configuration;
 using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
@@ -202,6 +203,11 @@ namespace OpcPublisher
 
     public sealed class OpcPublisherFixture
     {
+        public ApplicationInstance _application = new ApplicationInstance {
+            ApplicationName = "OpcPublisherUnitTest",
+            ApplicationType = ApplicationType.Client,
+            ConfigSectionName = "Opc.Publisher"
+        };
 
         public OpcPublisherFixture()
         {
@@ -213,25 +219,18 @@ namespace OpcPublisher
                 Program.Instance.InitLogging();
             }
 
-            // init publisher application configuration
-            OpcSecurityConfiguration.AutoAcceptCerts = true;
-            // mitigation for bug in .NET Core 2.1
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
             {
-                OpcSecurityConfiguration.OpcOwnCertStoreType = CertificateStoreType.X509Store;
-                OpcSecurityConfiguration.OpcOwnCertStorePath = OpcSecurityConfiguration.OpcOwnCertX509StorePathDefault;
-            }
-            if (_opcApplicationConfiguration == null)
-            {
-                _opcApplicationConfiguration = new OpcApplicationConfiguration();
-                _opcApplicationConfiguration.ConfigureAsync().Wait();
+                throw new Exception("Application instance certificate invalid!");
             }
 
             // configure hub communication
             SettingsConfiguration.DefaultSendIntervalSeconds = 0;
             SettingsConfiguration.HubMessageSize = 0;
         }
-
-        private static OpcApplicationConfiguration _opcApplicationConfiguration = null;
     }
 }

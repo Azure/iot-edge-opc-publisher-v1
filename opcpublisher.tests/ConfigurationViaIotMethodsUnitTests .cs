@@ -80,7 +80,7 @@ namespace OpcPublisher
                 await Task.Yield();
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1);
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
-                Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == OpcApplicationConfiguration.OpcPublishingInterval);
+                Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == SettingsConfiguration.DefaultOpcPublishingInterval);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -125,7 +125,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcApplicationConfiguration.OpcPublishingInterval = 3000;
+            SettingsConfiguration.DefaultOpcPublishingInterval = 3000;
 
             try
             {
@@ -190,7 +190,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcApplicationConfiguration.OpcPublishingInterval = 2000;
+            SettingsConfiguration.DefaultOpcPublishingInterval = 2000;
 
             try
             {
@@ -274,7 +274,7 @@ namespace OpcPublisher
                 await Task.Yield();
                 Assert.True(Program.Instance._nodeConfig.OpcSessions.Count == 1);
                 Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers.Count == 1);
-                Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == OpcApplicationConfiguration.OpcSamplingInterval);
+                Assert.True(Program.Instance._nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == SettingsConfiguration.DefaultOpcSamplingInterval);
                 await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
                 _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -318,7 +318,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcApplicationConfiguration.OpcSamplingInterval = 3000;
+            SettingsConfiguration.DefaultOpcSamplingInterval = 3000;
 
             try
             {
@@ -383,7 +383,7 @@ namespace OpcPublisher
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             UnitTestHelper.SetPublisherDefaults();
-            OpcApplicationConfiguration.OpcSamplingInterval = 2000;
+            SettingsConfiguration.DefaultOpcSamplingInterval = 2000;
 
             try
             {

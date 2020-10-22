@@ -113,7 +113,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// HeartbeatIntervalDefault
         /// </summary>
-        public static int? HeartbeatIntervalDefault { get; set; } = 0;
+        public static int? HeartbeatIntervalDefault { get; set; } = 1;
 
         /// <summary>
         /// SkipFirstDefault
@@ -129,5 +129,25 @@ namespace OpcPublisher.Configurations
         /// SuppressedOpcStatusCodes
         /// </summary>
         public static List<uint> SuppressedOpcStatusCodes { get; } = new List<uint>();
+
+        /// <summary>
+        /// OpcSessionCreationBackoffMax
+        /// </summary>
+        public static uint OpcSessionCreationBackoffMax { get; set; } = 5;
+
+        /// <summary>
+        /// AutoAcceptCerts
+        /// </summary>
+        public static bool AutoAcceptCerts = false;
+
+        /// <summary>
+        /// DefaultOpcSamplingInterval
+        /// </summary>
+        public static int DefaultOpcSamplingInterval = 1000;
+
+        /// <summary>
+        /// DefaultOpcPublishingInternal
+        /// </summary>
+        public static int DefaultOpcPublishingInterval = 1000;
     }
 }

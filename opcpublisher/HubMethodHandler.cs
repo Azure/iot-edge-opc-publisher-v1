@@ -151,7 +151,7 @@ namespace OpcPublisher
                             }
 
                             // create new session info.
-                            opcSession = new OpcUaSessionManager(endpointUri.OriginalString, useSecurity, Configurations.OpcApplicationConfiguration.OpcSessionCreationTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
+                            opcSession = new OpcUaSessionManager(endpointUri.OriginalString, useSecurity, (uint) Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
                             Program.Instance._nodeConfig.OpcSessions.Add(opcSession);
                             Program.Instance.Logger.Information($"{logPrefix} No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                         }

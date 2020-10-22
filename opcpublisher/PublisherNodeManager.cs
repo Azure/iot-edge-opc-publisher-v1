@@ -509,7 +509,7 @@ namespace OpcPublisher
                 if (opcSession == null)
                 {
                     // create new session info.
-                    opcSession = new OpcUaSessionManager(endpointUri.OriginalString, true, OpcApplicationConfiguration.OpcSessionCreationTimeout, OpcAuthenticationMode.Anonymous, null);
+                    opcSession = new OpcUaSessionManager(endpointUri.OriginalString, true, (uint)Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, OpcAuthenticationMode.Anonymous, null);
                     Program.Instance._nodeConfig.OpcSessions.Add(opcSession);
                     Program.Instance.Logger.Information($"OnPublishNodeCall: No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                 }

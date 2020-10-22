@@ -219,11 +219,11 @@ namespace OpcPublisher
         {
             State = SessionState.Disconnected;
             EndpointUrl = endpointUrl;
-            SessionTimeout = sessionTimeout * 1000;
+            SessionTimeout = sessionTimeout;
             OpcSubscriptionManagers = new List<OpcUaSubscriptionManager>();
             UnsuccessfulConnectionCount = 0;
             MissedKeepAlives = 0;
-            PublishingInterval = OpcApplicationConfiguration.OpcPublishingInterval;
+            PublishingInterval = SettingsConfiguration.DefaultOpcPublishingInterval;
             UseSecurity = useSecurity;
             ConnectAndMonitorSession = new AutoResetEvent(false);
             _sessionCancelationTokenSource = new CancellationTokenSource();
@@ -365,8 +365,8 @@ namespace OpcPublisher
 
                     // start connecting
                     selectedEndpoint = CoreClientUtils.SelectEndpoint(EndpointUrl, UseSecurity);
-                    configuredEndpoint = new ConfiguredEndpoint(null, selectedEndpoint, EndpointConfiguration.Create(OpcApplicationConfiguration.ApplicationConfiguration));
-                    uint timeout = SessionTimeout * ((UnsuccessfulConnectionCount >= OpcApplicationConfiguration.OpcSessionCreationBackoffMax) ? OpcApplicationConfiguration.OpcSessionCreationBackoffMax : UnsuccessfulConnectionCount + 1);
+                    configuredEndpoint = new ConfiguredEndpoint(null, selectedEndpoint, EndpointConfiguration.Create(Program.Instance._application.ApplicationConfiguration));
+                    uint timeout = SessionTimeout * ((UnsuccessfulConnectionCount >= SettingsConfiguration.OpcSessionCreationBackoffMax) ? SettingsConfiguration.OpcSessionCreationBackoffMax : UnsuccessfulConnectionCount + 1);
                     Program.Instance.Logger.Information($"Create {(UseSecurity ? "secured" : "unsecured")} session for endpoint URI '{EndpointUrl}' with timeout of {timeout} ms.");
 
                     UserIdentity userIdentity = null;
@@ -391,11 +391,11 @@ namespace OpcPublisher
                     }
 
                     OpcUaClientSession = Session.Create(
-                            OpcApplicationConfiguration.ApplicationConfiguration,
+                            Program.Instance._application.ApplicationConfiguration,
                             configuredEndpoint,
                             true,
                             false,
-                            OpcApplicationConfiguration.ApplicationConfiguration.ApplicationName,
+                            Program.Instance._application.ApplicationConfiguration.ApplicationName,
                             timeout,
                             userIdentity,
                             null).Result;
@@ -422,7 +422,6 @@ namespace OpcPublisher
 
                             // init object state and install keep alive
                             UnsuccessfulConnectionCount = 0;
-                            OpcUaClientSession.KeepAliveInterval = OpcApplicationConfiguration.OpcKeepAliveIntervalInSec * 1000;
                             OpcUaClientSession.KeepAlive += StandardClient_KeepAlive;
 
                             // fetch the namespace array and cache it. it will not change as long the session exists.
@@ -932,7 +931,7 @@ namespace OpcPublisher
                 }
 
                 // check if there is already a subscription with the same publishing interval, which can be used to monitor the node
-                int opcPublishingIntervalForNode = opcPublishingInterval ?? OpcApplicationConfiguration.OpcPublishingIntervalDefault;
+                int opcPublishingIntervalForNode = opcPublishingInterval ?? SettingsConfiguration.DefaultOpcPublishingInterval;
                 OpcUaSubscriptionManager opcSubscription = OpcSubscriptionManagers.FirstOrDefault(s => s.RequestedPublishingInterval == opcPublishingIntervalForNode);
 
                 // if there was none found, create one
@@ -1269,12 +1268,6 @@ namespace OpcPublisher
                         {
                             MissedKeepAlives++;
                             Program.Instance.Logger.Information($"Missed KeepAlives: {MissedKeepAlives}");
-                            if (MissedKeepAlives >= OpcApplicationConfiguration.OpcKeepAliveDisconnectThreshold)
-                            {
-                                Program.Instance.Logger.Warning($"Hit configured missed keep alive threshold of {OpcApplicationConfiguration.OpcKeepAliveDisconnectThreshold}. Disconnecting the session to endpoint {session.ConfiguredEndpoint.EndpointUrl}.");
-                                session.KeepAlive -= StandardClient_KeepAlive;
-                                Task t = Task.Run(() => DisconnectAsync().ConfigureAwait(false));
-                            }
                         }
                     }
                     else

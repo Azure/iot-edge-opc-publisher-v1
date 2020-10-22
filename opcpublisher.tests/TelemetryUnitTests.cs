@@ -49,7 +49,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
             
             UnitTestHelper.SetPublisherDefaults();
@@ -99,7 +99,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
             UnitTestHelper.SetPublisherDefaults();
@@ -150,7 +150,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
             UnitTestHelper.SetPublisherDefaults();
@@ -201,7 +201,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
             UnitTestHelper.SetPublisherDefaults();
@@ -252,7 +252,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
             UnitTestHelper.SetPublisherDefaults();
@@ -303,7 +303,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
             UnitTestHelper.SetPublisherDefaults();

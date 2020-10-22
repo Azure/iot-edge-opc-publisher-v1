@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 using Opc.Ua;
+using Opc.Ua.Configuration;
 using Opc.Ua.Server;
 using OpcPublisher.Configurations;
 using Serilog;
@@ -62,32 +63,56 @@ namespace OpcPublisher
                 // parse command line
                 CommandLineArgumentsParser parser = new CommandLineArgumentsParser();
                 parser.Parse(args);
-                                
-                // allow cancelling the application
-                var quitEvent = new ManualResetEvent(false);
-                try
+
+                _application.LoadApplicationConfiguration(false).Wait();
+
+                Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(LoggerOpcUaTraceHandler);
+                Logger.Information($"opcstacktracemask set to: 0x{_application.ApplicationConfiguration.TraceConfiguration.TraceMasks:X}");
+
+                foreach (var endpoint in _application.ApplicationConfiguration.ServerConfiguration.BaseAddresses)
                 {
-                    Console.CancelKeyPress += (sender, eArgs) =>
-                    {
-                        quitEvent.Set();
-                        eArgs.Cancel = true;
-                        ShutdownTokenSource.Cancel();
-                    };
+                    Logger.Information($"OPC UA server base address: {endpoint}");
                 }
-                catch (Exception ex)
+
+                // check the application certificate.
+                bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+                if (!certOK)
                 {
-                    Logger.Error(ex, "waiting for cancel key pressed causing error");
+                    throw new Exception("Application instance certificate invalid!");
                 }
+
+                Logger.Information($"Trusted Issuer store type is: {_application.ApplicationConfiguration.SecurityConfiguration.TrustedIssuerCertificates.StoreType}");
+                Logger.Information($"Trusted Issuer Certificate store path is: {_application.ApplicationConfiguration.SecurityConfiguration.TrustedIssuerCertificates.StorePath}");
+
+                Logger.Information($"Trusted Peer Certificate store type is: {_application.ApplicationConfiguration.SecurityConfiguration.TrustedPeerCertificates.StoreType}");
+                Logger.Information($"Trusted Peer Certificate store path is: {_application.ApplicationConfiguration.SecurityConfiguration.TrustedPeerCertificates.StorePath}");
+
+                Logger.Information($"Rejected certificate store type is: {_application.ApplicationConfiguration.SecurityConfiguration.RejectedCertificateStore.StoreType}");
+                Logger.Information($"Rejected Certificate store path is: {_application.ApplicationConfiguration.SecurityConfiguration.RejectedCertificateStore.StorePath}");
+
+                Logger.Information($"Rejection of SHA1 signed certificates is {(_application.ApplicationConfiguration.SecurityConfiguration.RejectSHA1SignedCertificates ? "enabled" : "disabled")}");
+                Logger.Information($"Minimum certificate key size set to {_application.ApplicationConfiguration.SecurityConfiguration.MinimumCertificateKeySize}");
+
+                Logger.Information($"Application Certificate store type is: {_application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.StoreType}");
+                Logger.Information($"Application Certificate store path is: {_application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.StorePath}");
+                Logger.Information($"Application Certificate subject name is: {_application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.SubjectName}");
+
+                // handle cert validation
+                if (SettingsConfiguration.AutoAcceptCerts)
+                {
+                    Logger.Warning("WARNING: Automatically accepting certificates. This is a security risk.");
+                    _application.ApplicationConfiguration.SecurityConfiguration.AutoAcceptUntrustedCertificates = true;
+                }
+                
+                // create cert validator
+                _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+                _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(CertificateValidator_CertificateValidation);
 
                 // init diagnostics
                 _diag.Init();
 
                 // init node config
                 _nodeConfig.Init();
-
-                // init OPC configuration and tracing
-                OpcApplicationConfiguration opcApplicationConfiguration = new OpcApplicationConfiguration();
-                await opcApplicationConfiguration.ConfigureAsync().ConfigureAwait(false);
 
                 // log shopfloor site setting
                 if (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite))
@@ -102,13 +127,13 @@ namespace OpcPublisher
                 // start our server interface
                 try
                 {
-                    Logger.Information($"Starting server on endpoint {OpcApplicationConfiguration.ApplicationConfiguration.ServerConfiguration.BaseAddresses[0].ToString(CultureInfo.InvariantCulture)} ...");
-                    _publisherServer.Start(OpcApplicationConfiguration.ApplicationConfiguration);
+                    Logger.Information($"Starting server on endpoint {_application.ApplicationConfiguration.ServerConfiguration.BaseAddresses[0].ToString(CultureInfo.InvariantCulture)} ...");
+                    _publisherServer.Start(_application.ApplicationConfiguration);
                     Logger.Information("Server started.");
                 }
                 catch (Exception e)
                 {
-                    Logger.Fatal(e, "Failed to start Publisher OPC UA server.");
+                    Logger.Fatal(e, "Failed to start OPC Publisher OPC UA server.");
                     Logger.Fatal("exiting...");
                     return;
                 }
@@ -131,12 +156,10 @@ namespace OpcPublisher
                 PublisherDiagnostics.StartupCompleted = true;
 
                 // stop on user request
-                Logger.Information("");
-                Logger.Information("");
                 if (SettingsConfiguration.NoShutdown)
                 {
                     // wait forever if asked to do so
-                    Logger.Information("Publisher is running infinite...");
+                    Logger.Information("Publisher is running forever...");
                     await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
                 }
                 else
@@ -174,6 +197,19 @@ namespace OpcPublisher
                     e = e.InnerException ?? null;
                 }
                 Logger.Fatal("Publisher exiting... ");
+            }
+        }
+
+        /// <summary>
+        /// Event handler to validate certificates.
+        /// </summary>
+        private static void CertificateValidator_CertificateValidation(Opc.Ua.CertificateValidator validator, Opc.Ua.CertificateValidationEventArgs e)
+        {
+            if (e.Error.StatusCode == StatusCodes.BadCertificateUntrusted)
+            {
+                // always accept all OPC UA server certificates for our OPC UA client
+                Program.Instance.Logger.Information("Automatically trusting server certificate " + e.Certificate.Subject);
+                e.Accept = true;
             }
         }
 
@@ -265,6 +301,24 @@ namespace OpcPublisher
                 Logger.Information(item);
             }
         }
+        
+        /// <summary>
+        /// Event handler to log OPC UA stack trace messages into own Program.Instance.Logger.
+        /// </summary>
+        private void LoggerOpcUaTraceHandler(object sender, TraceEventArgs e)
+        {
+            if ((e.TraceMask & _application.ApplicationConfiguration.TraceConfiguration.TraceMasks) != 0)
+            {
+                if (e.Arguments != null)
+                {
+                    Logger.Information("OPC UA Stack: " + string.Format(CultureInfo.InvariantCulture, e.Format, e.Arguments).Trim());
+                }
+                else
+                {
+                    Logger.Information("OPC UA Stack: " + e.Format.Trim());
+                }
+            }
+        }
 
         /// <summary>
         /// Initialize logging.
@@ -278,28 +332,21 @@ namespace OpcPublisher
             {
                 case "fatal":
                     loggerConfiguration.MinimumLevel.Fatal();
-                    OpcApplicationConfiguration.OpcTraceToLoggerFatal = 0;
                     break;
                 case "error":
                     loggerConfiguration.MinimumLevel.Error();
-                    OpcApplicationConfiguration.OpcStackTraceMask = OpcApplicationConfiguration.OpcTraceToLoggerError = Utils.TraceMasks.Error;
                     break;
                 case "warn":
                     loggerConfiguration.MinimumLevel.Warning();
-                    OpcApplicationConfiguration.OpcTraceToLoggerWarning = 0;
                     break;
                 case "info":
                     loggerConfiguration.MinimumLevel.Information();
-                    OpcApplicationConfiguration.OpcStackTraceMask = OpcApplicationConfiguration.OpcTraceToLoggerInformation = 0;
                     break;
                 case "debug":
                     loggerConfiguration.MinimumLevel.Debug();
-                    OpcApplicationConfiguration.OpcStackTraceMask = OpcApplicationConfiguration.OpcTraceToLoggerDebug = Utils.TraceMasks.StackTrace | Utils.TraceMasks.Operation |
-                        Utils.TraceMasks.StartStop | Utils.TraceMasks.ExternalSystem | Utils.TraceMasks.Security;
                     break;
                 case "verbose":
                     loggerConfiguration.MinimumLevel.Verbose();
-                    OpcApplicationConfiguration.OpcStackTraceMask = OpcApplicationConfiguration.OpcTraceToLoggerVerbose = Utils.TraceMasks.All;
                     break;
             }
 
@@ -333,8 +380,14 @@ namespace OpcPublisher
                
         private PublisherServer _publisherServer = new PublisherServer();
 
+        public ApplicationInstance _application = new ApplicationInstance {
+            ApplicationName = "OpcPublisher",
+            ApplicationType = ApplicationType.ClientAndServer,
+            ConfigSectionName = "Opc.Publisher"
+        }; //TODO: make private
+
         public HubClientWrapper _clientWrapper = new HubClientWrapper(); //TODO: make private
         public PublisherDiagnostics _diag = new PublisherDiagnostics(); //TODO: make private
-        public PublisherNodeConfiguration _nodeConfig = new PublisherNodeConfiguration(); //TODO: make private
+        public PublishedNodesConfiguration _nodeConfig = new PublishedNodesConfiguration(); //TODO: make private
     }
 }

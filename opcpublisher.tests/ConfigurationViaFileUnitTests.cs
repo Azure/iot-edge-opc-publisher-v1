@@ -52,7 +52,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
@@ -92,11 +92,11 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
-            OpcApplicationConfiguration.OpcPublishingInterval = 2000;
+            SettingsConfiguration.DefaultOpcPublishingInterval = 2000;
 
             nodeConfig.Init();
 
@@ -107,7 +107,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == OpcApplicationConfiguration.OpcPublishingInterval);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == SettingsConfiguration.DefaultOpcPublishingInterval);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -138,11 +138,11 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
-            OpcApplicationConfiguration.OpcPublishingInterval = 3000;
+            SettingsConfiguration.DefaultOpcPublishingInterval = 3000;
 
             nodeConfig.Init();
             
@@ -184,11 +184,11 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
-            OpcApplicationConfiguration.OpcPublishingInterval = 2000;
+            SettingsConfiguration.DefaultOpcPublishingInterval = 2000;
 
             nodeConfig.Init();
             
@@ -230,11 +230,11 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
-            OpcApplicationConfiguration.OpcSamplingInterval = 3000;
+            SettingsConfiguration.DefaultOpcSamplingInterval = 3000;
 
             nodeConfig.Init();
 
@@ -276,14 +276,14 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
 
-            OpcApplicationConfiguration.OpcSamplingInterval = 3000;
+            SettingsConfiguration.DefaultOpcSamplingInterval = 3000;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -322,14 +322,14 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
 
-            OpcApplicationConfiguration.OpcSamplingInterval = 2000;
+            SettingsConfiguration.DefaultOpcSamplingInterval = 2000;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -369,7 +369,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
@@ -414,7 +414,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
@@ -460,7 +460,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
@@ -506,7 +506,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
@@ -552,7 +552,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
@@ -599,7 +599,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
@@ -644,7 +644,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
@@ -690,7 +690,7 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublisherNodeConfiguration nodeConfig = new PublisherNodeConfiguration();
+            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;

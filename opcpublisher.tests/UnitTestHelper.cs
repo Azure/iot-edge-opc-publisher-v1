@@ -18,7 +18,7 @@ namespace OpcPublisher
             return memberName;
         }
 
-        public static int WaitTilItemsAreMonitored(PublisherNodeConfiguration nodeConfig)
+        public static int WaitTilItemsAreMonitored(PublishedNodesConfiguration nodeConfig)
         {
             // wait till monitoring starts
             int iter = 0;
@@ -30,7 +30,7 @@ namespace OpcPublisher
             }
             return iter < _maxIterations ? iter * _sleepMilliseconds / 1000 : -1;
         }
-        public static int WaitTilItemsAreMonitoredAndFirstEventReceived(PublisherNodeConfiguration nodeConfig)
+        public static int WaitTilItemsAreMonitoredAndFirstEventReceived(PublishedNodesConfiguration nodeConfig)
         {
             // wait till monitoring starts
             int iter = 0;
@@ -45,9 +45,8 @@ namespace OpcPublisher
 
         public static void SetPublisherDefaults()
         {
-            OpcApplicationConfiguration.OpcSamplingInterval = 1000;
-            OpcApplicationConfiguration.OpcPublishingInterval = 0;
-            OpcSecurityConfiguration.AutoAcceptCerts = true;
+            SettingsConfiguration.DefaultOpcSamplingInterval = 1000;
+            SettingsConfiguration.DefaultOpcPublishingInterval = 0;
             SettingsConfiguration.DefaultSendIntervalSeconds = 0;
             SettingsConfiguration.HubMessageSize = 0;
             SettingsConfiguration.SkipFirstDefault = false;

@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace OpcPublisher.Configurations
 {
-    public class PublisherNodeConfiguration
+    public class PublishedNodesConfiguration
     {
         /// <summary>
         /// Keeps the version of the node configuration that has lastly been persisted
@@ -211,7 +211,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Ctor to initialize resources for the telemetry configuration.
         /// </summary>
-        public PublisherNodeConfiguration()
+        public PublishedNodesConfiguration()
         {
             OpcSessionsListSemaphore = new SemaphoreSlim(1);
             PublisherNodeConfigurationSemaphore = new SemaphoreSlim(1);
@@ -349,7 +349,7 @@ namespace OpcPublisher.Configurations
 
         public OpcUaSessionManager CreateOpcSession(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
-            return new OpcUaSessionManager(endpointUrl, _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl).UseSecurity, OpcApplicationConfiguration.OpcSessionCreationTimeout, opcAuthenticationMode, encryptedAuthCredential);
+            return new OpcUaSessionManager(endpointUrl, _nodePublishingConfiguration.First(n => n.EndpointUrl == endpointUrl).UseSecurity, (uint)Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, opcAuthenticationMode, encryptedAuthCredential);
         }
 
         /// <summary>
@@ -382,7 +382,7 @@ namespace OpcPublisher.Configurations
                     }
 
                     // create new session info.
-                    OpcUaSessionManager opcSession = new OpcUaSessionManager(endpointUrl, currentNodePublishingConfiguration.UseSecurity, OpcApplicationConfiguration.OpcSessionCreationTimeout, currentNodePublishingConfiguration.OpcAuthenticationMode, encryptedAuthCredential);
+                    OpcUaSessionManager opcSession = new OpcUaSessionManager(endpointUrl, currentNodePublishingConfiguration.UseSecurity, (uint)Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, currentNodePublishingConfiguration.OpcAuthenticationMode, encryptedAuthCredential);
 
                     // create a subscription for each distinct publishing inverval
                     var nodesDistinctPublishingInterval = _nodePublishingConfiguration.Where(n => n.EndpointUrl.Equals(endpointUrl, StringComparison.OrdinalIgnoreCase)).Select(c => c.OpcPublishingInterval).Distinct();
