@@ -3,7 +3,6 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using OpcPublisher.Configurations;
 using System;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
