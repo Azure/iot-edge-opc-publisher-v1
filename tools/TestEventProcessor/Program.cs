@@ -99,7 +99,7 @@ namespace TestEventProcessor
 
             Log.Information("Starting monitoring of events...");
             await client.StartProcessingAsync(cts.Token);
-            CheckForGapsAndMissingValueChangesAsync(cts.Token).Start();
+            CheckForMissingValueChangesAsync(cts.Token).Start();
             CheckForMissingTimestampsAsync(cts.Token).Start();
             await Task.Delay(-1, cts.Token);
 
@@ -107,11 +107,11 @@ namespace TestEventProcessor
         }
 
         /// <summary>
-        /// Running a thread that analyze the value changes per timestamp and identifying gaps
+        /// Running a thread that analyze the value changes per timestamp 
         /// </summary>
         /// <param name="token">Token to cancel the thread</param>
         /// <returns>Task that run until token is canceled</returns>
-        private static Task CheckForGapsAndMissingValueChangesAsync(CancellationToken token)
+        private static Task CheckForMissingValueChangesAsync(CancellationToken token)
         {
             return new Task(() =>
             {
@@ -130,24 +130,27 @@ namespace TestEventProcessor
                                     "Received {NumberOfValueChanges} value changes for timestamp {Timestamp}",
                                     numberOfValueChanges, missingSequence.Key);
 
-                                // Analyze gaps in sequence number of value changes
-                                var orderedSequences = missingSequence.Value.Distinct().OrderBy(i => i).ToList();
+                                // don't check for gaps of sequence numbers because they reflect the for number of messages  
+                                // send from OPC server to OPC publisher, it should be internally handled in OPCF stack
 
-                                for (int i = 0, j = 1; i < (orderedSequences.Count - 1); i++, j++)
-                                {
-                                    var nextSequence = orderedSequences[i] + 1;
-                                    if (orderedSequences[i] != orderedSequences[j]
-                                        && nextSequence != orderedSequences[j])
-                                    {
-                                        Log.Warning(
-                                            "Gap in sequence number for timestamp {Timestamp} expected {expected1} or {expected2} but was {actual} (Missing {MissingValueChanges})",
-                                            missingSequence.Key,
-                                            orderedSequences[i],
-                                            nextSequence,
-                                            orderedSequences[j],
-                                            orderedSequences[j] - nextSequence);
-                                    }
-                                }
+                                //// Analyze gaps in sequence number of value changes
+                                //var orderedSequences = missingSequence.Value.Distinct().OrderBy(i => i).ToList();
+
+                                //for (int i = 0, j = 1; i < (orderedSequences.Count - 1); i++, j++)
+                                //{
+                                //    var nextSequence = orderedSequences[i] + 1;
+                                //    if (orderedSequences[i] != orderedSequences[j]
+                                //        && nextSequence != orderedSequences[j])
+                                //    {
+                                //        Log.Warning(
+                                //            "Gap in sequence number for timestamp {Timestamp} expected {expected1} or {expected2} but was {actual} (Missing {MissingValueChanges})",
+                                //            missingSequence.Key,
+                                //            orderedSequences[i],
+                                //            nextSequence,
+                                //            orderedSequences[j],
+                                //            orderedSequences[j] - nextSequence);
+                                //    }
+                                //}
 
                                 entriesToDelete.Add(missingSequence.Key);
                             }
