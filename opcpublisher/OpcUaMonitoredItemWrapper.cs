@@ -7,7 +7,6 @@ using Opc.Ua;
 using Opc.Ua.Client;
 using OpcPublisher.Configurations;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -15,9 +14,9 @@ using System.Threading;
 namespace OpcPublisher
 {
     /// <summary>
-    /// Class to manage the OPC monitored items, which are the nodes we need to publish.
+    /// Wrapper for the OPC UA monitored item, which monitored a nodes we need to publish.
     /// </summary>
-    public class OpcUaMonitoredItemManager
+    public class OpcUaMonitoredItemWrapper
     {
         /// <summary>
         /// The state of the monitored item.
@@ -145,7 +144,7 @@ namespace OpcPublisher
         /// <summary>
         /// Ctor using NodeId (ns syntax for namespace).
         /// </summary>
-        public OpcUaMonitoredItemManager(NodeId nodeId, string sessionEndpointUrl, int? samplingInterval,
+        public OpcUaMonitoredItemWrapper(NodeId nodeId, string sessionEndpointUrl, int? samplingInterval,
             string displayName, int? heartbeatInterval, bool? skipFirst)
         {
             ConfigNodeId = nodeId;
@@ -159,7 +158,7 @@ namespace OpcPublisher
         /// <summary>
         /// Ctor using ExpandedNodeId ("nsu=") syntax.
         /// </summary>
-        public OpcUaMonitoredItemManager(ExpandedNodeId expandedNodeId, string sessionEndpointUrl, int? samplingInterval,
+        public OpcUaMonitoredItemWrapper(ExpandedNodeId expandedNodeId, string sessionEndpointUrl, int? samplingInterval,
             string displayName, int? heartbeatInterval, bool? skipFirst)
         {
             ConfigNodeId = null;
@@ -319,7 +318,6 @@ namespace OpcPublisher
                 Program.Instance.Logger.Debug($"   DisplayName: {messageData.DisplayName}");
                 Program.Instance.Logger.Debug($"   Value: {messageData.Value}");
                 
-                // add message to fifo send queue
                 if (monitoredItem.Subscription == null)
                 {
                     Program.Instance.Logger.Debug($"Subscription already removed. No more details available.");

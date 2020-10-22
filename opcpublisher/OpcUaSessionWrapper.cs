@@ -17,9 +17,24 @@ using System.Threading.Tasks;
 namespace OpcPublisher
 {
     /// <summary>
-    /// Class to manage OPC sessions.
+    /// Enum that defines the authentication method to connect to OPC UA
     /// </summary>
-    public class OpcUaSessionManager
+    public enum OpcUserSessionAuthenticationMode
+    {
+        /// <summary>
+        /// Anonymous authentication
+        /// </summary>
+        Anonymous,
+        /// <summary>
+        /// Username/Password authentication
+        /// </summary>
+        UsernamePassword
+    }
+
+    /// <summary>
+    /// Wrapper of an OPC session
+    /// </summary>
+    public class OpcUaSessionWrapper
     {
         /// <summary>
         /// The state of the session object.
@@ -57,7 +72,7 @@ namespace OpcPublisher
         /// <summary>
         /// The subscriptions on this session.
         /// </summary>
-        public List<OpcUaSubscriptionManager> OpcSubscriptionManagers { get; }
+        public List<OpcUaSubscriptionWrapper> OpcSubscriptionWrappers { get; }
 
         /// <summary>
         /// Counts session connection attempts which were unsuccessful.
@@ -97,7 +112,7 @@ namespace OpcPublisher
         /// <summary>
         /// The authentication mode to use for authentication against the OPC UA Server.
         /// </summary>
-        public OpcAuthenticationMode OpcAuthenticationMode { get; set; }
+        public OpcUserSessionAuthenticationMode OpcAuthenticationMode { get; set; }
 
         /// <summary>
         /// Number of subscirptoins on this session.
@@ -112,7 +127,7 @@ namespace OpcPublisher
                 sessionLocked = LockSessionAsync().Result;
                 if (sessionLocked)
                 {
-                    result = OpcSubscriptionManagers.Count();
+                    result = OpcSubscriptionWrappers.Count();
                 }
             }
             finally
@@ -138,7 +153,7 @@ namespace OpcPublisher
                 sessionLocked = LockSessionAsync().Result;
                 if (sessionLocked)
                 {
-                    foreach (var subscription in OpcSubscriptionManagers)
+                    foreach (var subscription in OpcSubscriptionWrappers)
                     {
                         result += subscription.OpcMonitoredItems.Count();
                     }
@@ -167,9 +182,9 @@ namespace OpcPublisher
                 sessionLocked = LockSessionAsync().Result;
                 if (sessionLocked)
                 {
-                    foreach (var subscription in OpcSubscriptionManagers)
+                    foreach (var subscription in OpcSubscriptionWrappers)
                     {
-                        result += subscription.OpcMonitoredItems.Count(i => i.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.Monitored);
+                        result += subscription.OpcMonitoredItems.Count(i => i.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Monitored);
                     }
                 }
             }
@@ -196,9 +211,9 @@ namespace OpcPublisher
                 sessionLocked = LockSessionAsync().Result;
                 if (sessionLocked)
                 {
-                    foreach (var subscription in OpcSubscriptionManagers)
+                    foreach (var subscription in OpcSubscriptionWrappers)
                     {
-                        result += subscription.OpcMonitoredItems.Count(i => i.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.RemovalRequested);
+                        result += subscription.OpcMonitoredItems.Count(i => i.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.RemovalRequested);
                     }
                 }
             }
@@ -215,12 +230,12 @@ namespace OpcPublisher
         /// <summary>
         /// Ctor for the session.
         /// </summary>
-        public OpcUaSessionManager(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
+        public OpcUaSessionWrapper(string endpointUrl, bool useSecurity, uint sessionTimeout, OpcUserSessionAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
             State = SessionState.Disconnected;
             EndpointUrl = endpointUrl;
             SessionTimeout = sessionTimeout;
-            OpcSubscriptionManagers = new List<OpcUaSubscriptionManager>();
+            OpcSubscriptionWrappers = new List<OpcUaSubscriptionWrapper>();
             UnsuccessfulConnectionCount = 0;
             MissedKeepAlives = 0;
             PublishingInterval = SettingsConfiguration.DefaultOpcPublishingInterval;
@@ -373,10 +388,10 @@ namespace OpcPublisher
 
                     switch (OpcAuthenticationMode)
                     {
-                        case OpcAuthenticationMode.Anonymous:
+                        case OpcUserSessionAuthenticationMode.Anonymous:
                             userIdentity = new UserIdentity(new AnonymousIdentityToken());
                             break;
-                        case OpcAuthenticationMode.UsernamePassword:
+                        case OpcUserSessionAuthenticationMode.UsernamePassword:
                             if (EncryptedAuthCredential == null)
                             {
                                 throw new NullReferenceException("Please specity user credential to authentication with mode 'UsernamePassword'");
@@ -481,24 +496,24 @@ namespace OpcPublisher
                 }
 
                 // ensure all nodes in all subscriptions of this session are monitored.
-                foreach (var opcSubscription in OpcSubscriptionManagers)
+                foreach (var opcSubscription in OpcSubscriptionWrappers)
                 {
                     // create the subscription, if it is not yet there.
                     if (opcSubscription.OpcUaClientSubscription == null)
                     {
-                        opcSubscription.OpcUaClientSubscription = CreateSubscription(opcSubscription.RequestedPublishingInterval, out int revisedPublishingInterval);
+                        opcSubscription.OpcUaClientSubscription = CreateSubscription(opcSubscription.PublishingInterval, out int revisedPublishingInterval);
+                        Program.Instance.Logger.Information($"Create subscription on endpoint '{EndpointUrl}' requested OPC publishing interval is {opcSubscription.PublishingInterval} ms. (revised: {revisedPublishingInterval} ms)");
                         opcSubscription.PublishingInterval = revisedPublishingInterval;
-                        Program.Instance.Logger.Information($"Create subscription on endpoint '{EndpointUrl}' requested OPC publishing interval is {opcSubscription.RequestedPublishingInterval} ms. (revised: {revisedPublishingInterval} ms)");
                     }
 
                     // process all unmonitored items.
-                    var unmonitoredItems = opcSubscription.OpcMonitoredItems.Where(i => (i.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.Unmonitored || i.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested)).ToArray();
+                    var unmonitoredItems = opcSubscription.OpcMonitoredItems.Where(i => (i.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Unmonitored || i.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested)).ToArray();
                     int monitoredItemsCount = 0;
                     bool haveUnmonitoredItems = false;
                     if (unmonitoredItems.Any())
                     {
                         haveUnmonitoredItems = true;
-                        monitoredItemsCount = opcSubscription.OpcMonitoredItems.Count(i => (i.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.Monitored));
+                        monitoredItemsCount = opcSubscription.OpcMonitoredItems.Count(i => (i.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Monitored));
                         Program.Instance.Logger.Information($"Start monitoring items on endpoint '{EndpointUrl}'. Currently monitoring {monitoredItemsCount} items.");
                     }
 
@@ -522,9 +537,9 @@ namespace OpcPublisher
                             //    the NodeId format is converted into an ExpandedNodeId format
                             // 2) ExpandedNodeId configuration file entries do not have at parsing time a session to get
                             //    the namespace index. this is set now.
-                            if (item.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested)
+                            if (item.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested)
                             {
-                                if (item.ConfigType == OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.ExpandedNodeId)
+                                if (item.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.ExpandedNodeId)
                                 {
                                     int namespaceIndex = _namespaceTable.GetIndex(item.ConfigExpandedNodeId?.NamespaceUri);
                                     if (namespaceIndex < 0)
@@ -536,7 +551,7 @@ namespace OpcPublisher
                                         item.ConfigExpandedNodeId = new ExpandedNodeId(item.ConfigExpandedNodeId.Identifier, (ushort)namespaceIndex, item.ConfigExpandedNodeId?.NamespaceUri, 0);
                                     }
                                 }
-                                if (item.ConfigType == OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.NodeId)
+                                if (item.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.NodeId)
                                 {
                                     string namespaceUri = _namespaceTable.ToArray().ElementAtOrDefault(item.ConfigNodeId.NamespaceIndex);
                                     if (string.IsNullOrEmpty(namespaceUri))
@@ -546,14 +561,14 @@ namespace OpcPublisher
                                     else
                                     {
                                         item.ConfigExpandedNodeId = new ExpandedNodeId(item.ConfigNodeId.Identifier, item.ConfigNodeId.NamespaceIndex, namespaceUri, 0);
-                                        item.ConfigType = OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.ExpandedNodeId;
+                                        item.ConfigType = OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.ExpandedNodeId;
                                     }
                                 }
-                                item.State = OpcUaMonitoredItemManager.OpcMonitoredItemState.Unmonitored;
+                                item.State = OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Unmonitored;
                             }
 
                             // lookup namespace index if ExpandedNodeId format has been used and build NodeId identifier.
-                            if (item.ConfigType == OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.ExpandedNodeId)
+                            if (item.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.ExpandedNodeId)
                             {
                                 int namespaceIndex = _namespaceTable.GetIndex(item.ConfigExpandedNodeId?.NamespaceUri);
                                 if (namespaceIndex < 0)
@@ -614,7 +629,7 @@ namespace OpcPublisher
                                 opcSubscription.OpcUaClientSubscription.ApplyChanges();
                             }
                             item.OpcUaClientMonitoredItem = monitoredItem;
-                            item.State = OpcUaMonitoredItemManager.OpcMonitoredItemState.Monitored;
+                            item.State = OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Monitored;
                             item.EndpointUrl = EndpointUrl;
                             Program.Instance.Logger.Verbose($"Created monitored item for node '{currentNodeId.ToString()}' in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}' on endpoint '{EndpointUrl}' (version: {NodeConfigVersion:X8})");
                             if (item.RequestedSamplingInterval != monitoredItem.SamplingInterval)
@@ -668,7 +683,7 @@ namespace OpcPublisher
                     stopWatch.Stop();
                     if (haveUnmonitoredItems == true)
                     {
-                        monitoredItemsCount = opcSubscription.OpcMonitoredItems.Count(i => (i.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.Monitored));
+                        monitoredItemsCount = opcSubscription.OpcMonitoredItems.Count(i => (i.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Monitored));
                         Program.Instance.Logger.Information($"Done processing unmonitored items on endpoint '{EndpointUrl}' took {stopWatch.ElapsedMilliseconds} msec. Now monitoring {monitoredItemsCount} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'.");
                     }
                 }
@@ -709,10 +724,10 @@ namespace OpcPublisher
                     throw;
                 }
 
-                foreach (var opcSubscription in OpcSubscriptionManagers)
+                foreach (var opcSubscription in OpcSubscriptionWrappers)
                 {
                     // remove items tagged to stop in the stack
-                    var itemsToRemove = opcSubscription.OpcMonitoredItems.Where(i => i.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.RemovalRequested).ToArray();
+                    var itemsToRemove = opcSubscription.OpcMonitoredItems.Where(i => i.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.RemovalRequested).ToArray();
                     if (itemsToRemove.Any())
                     {
                         try
@@ -732,7 +747,7 @@ namespace OpcPublisher
                             itemToRemove.HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
                         }
                         // remove them in our data structure
-                        opcSubscription.OpcMonitoredItems.RemoveAll(i => i.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.RemovalRequested);
+                        opcSubscription.OpcMonitoredItems.RemoveAll(i => i.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.RemovalRequested);
                         Interlocked.Increment(ref NodeConfigVersion);
                         Program.Instance.Logger.Information($"There are now {opcSubscription.OpcMonitoredItems.Count} items managed by publisher for this subscription. (version: {NodeConfigVersion:X8})");
                     }
@@ -764,7 +779,7 @@ namespace OpcPublisher
                 }
 
                 // remove the subscriptions in the stack
-                var subscriptionsToRemove = OpcSubscriptionManagers.Where(i => i.OpcMonitoredItems.Count == 0).ToArray();
+                var subscriptionsToRemove = OpcSubscriptionWrappers.Where(i => i.OpcMonitoredItems.Count == 0).ToArray();
                 if (subscriptionsToRemove.Any())
                 {
                     try
@@ -780,7 +795,7 @@ namespace OpcPublisher
                     }
                 }
                 // remove them in our data structures
-                OpcSubscriptionManagers.RemoveAll(s => s.OpcMonitoredItems.Count == 0);
+                OpcSubscriptionWrappers.RemoveAll(s => s.OpcMonitoredItems.Count == 0);
             }
             finally
             {
@@ -815,14 +830,14 @@ namespace OpcPublisher
                 }
 
                 // remove sessions in the stack
-                var sessionsToRemove = Program.Instance._nodeConfig.OpcSessions.Where(s => s.OpcSubscriptionManagers.Count == 0);
+                var sessionsToRemove = Program.Instance._nodeConfig.OpcSessions.Where(s => s.OpcSubscriptionWrappers.Count == 0);
                 foreach (var sessionToRemove in sessionsToRemove)
                 {
                     Program.Instance.Logger.Information($"Remove unused session on endpoint '{EndpointUrl}'.");
                     await sessionToRemove.ShutdownAsync().ConfigureAwait(false);
                 }
                 // remove then in our data structures
-                Program.Instance._nodeConfig.OpcSessions.RemoveAll(s => s.OpcSubscriptionManagers.Count == 0);
+                Program.Instance._nodeConfig.OpcSessions.RemoveAll(s => s.OpcSubscriptionWrappers.Count == 0);
             }
             finally
             {
@@ -866,7 +881,7 @@ namespace OpcPublisher
         {
             try
             {
-                foreach (var opcSubscription in OpcSubscriptionManagers)
+                foreach (var opcSubscription in OpcSubscriptionWrappers)
                 {
                     try
                     {
@@ -887,9 +902,9 @@ namespace OpcPublisher
                     foreach (var opcMonitoredItem in opcSubscription.OpcMonitoredItems)
                     {
                         // tag all monitored items as unmonitored
-                        if (opcMonitoredItem.State == OpcUaMonitoredItemManager.OpcMonitoredItemState.Monitored)
+                        if (opcMonitoredItem.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Monitored)
                         {
-                            opcMonitoredItem.State = OpcUaMonitoredItemManager.OpcMonitoredItemState.Unmonitored;
+                            opcMonitoredItem.State = OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Unmonitored;
                         }
                     }
                 }
@@ -932,7 +947,7 @@ namespace OpcPublisher
 
                 // check if there is already a subscription with the same publishing interval, which can be used to monitor the node
                 int opcPublishingIntervalForNode = opcPublishingInterval ?? SettingsConfiguration.DefaultOpcPublishingInterval;
-                OpcUaSubscriptionManager opcSubscription = OpcSubscriptionManagers.FirstOrDefault(s => s.RequestedPublishingInterval == opcPublishingIntervalForNode);
+                OpcUaSubscriptionWrapper opcSubscription = OpcSubscriptionWrappers.FirstOrDefault(s => s.PublishingInterval == opcPublishingIntervalForNode);
 
                 // if there was none found, create one
                 if (opcSubscription == null)
@@ -947,8 +962,8 @@ namespace OpcPublisher
                         Program.Instance.Logger.Information($"{logPrefix} No matching subscription with publishing interval of {opcPublishingInterval} found.");
                         Program.Instance.Logger.Information($"Create a new subscription with a publishing interval of {opcPublishingInterval}.");
                     }
-                    opcSubscription = new OpcUaSubscriptionManager(opcPublishingInterval);
-                    OpcSubscriptionManagers.Add(opcSubscription);
+                    opcSubscription = new OpcUaSubscriptionWrapper(opcPublishingInterval);
+                    OpcSubscriptionWrappers.Add(opcSubscription);
                 }
 
                 // create objects for publish check
@@ -971,15 +986,15 @@ namespace OpcPublisher
                 // todo check properties and update
                 if (!IsNodePublishedInSessionInternal(nodeIdCheck, expandedNodeIdCheck))
                 {
-                    OpcUaMonitoredItemManager opcMonitoredItem = null;
+                    OpcUaMonitoredItemWrapper opcMonitoredItem = null;
                     // add a new item to monitor
                     if (expandedNodeId == null)
                     {
-                        opcMonitoredItem = new OpcUaMonitoredItemManager(nodeId, EndpointUrl, opcSamplingInterval, displayName, heartbeatInterval, skipFirst);
+                        opcMonitoredItem = new OpcUaMonitoredItemWrapper(nodeId, EndpointUrl, opcSamplingInterval, displayName, heartbeatInterval, skipFirst);
                     }
                     else
                     {
-                        opcMonitoredItem = new OpcUaMonitoredItemManager(expandedNodeId, EndpointUrl, opcSamplingInterval, displayName, heartbeatInterval, skipFirst);
+                        opcMonitoredItem = new OpcUaMonitoredItemWrapper(expandedNodeId, EndpointUrl, opcSamplingInterval, displayName, heartbeatInterval, skipFirst);
                     }
                     opcSubscription.OpcMonitoredItems.Add(opcMonitoredItem);
                     Interlocked.Increment(ref NodeConfigVersion);
@@ -1054,13 +1069,13 @@ namespace OpcPublisher
 
                 // tag all monitored items with nodeId to stop monitoring.
                 // if the node to tag is specified as NodeId, it will also tag nodes configured in ExpandedNodeId format.
-                foreach (var opcSubscription in OpcSubscriptionManagers)
+                foreach (var opcSubscription in OpcSubscriptionWrappers)
                 {
                     var opcMonitoredItems = opcSubscription.OpcMonitoredItems.Where(m => { return m.IsMonitoringThisNode(nodeIdCheck, expandedNodeIdCheck, _namespaceTable); });
                     foreach (var opcMonitoredItem in opcMonitoredItems)
                     {
                         // tag it for removal.
-                        opcMonitoredItem.State = OpcUaMonitoredItemManager.OpcMonitoredItemState.RemovalRequested;
+                        opcMonitoredItem.State = OpcUaMonitoredItemWrapper.OpcMonitoredItemState.RemovalRequested;
                         Program.Instance.Logger.Information($"RequestMonitorItemRemoval: Node with id '{(expandedNodeId == null ? nodeId.ToString() : expandedNodeId.ToString())}' tagged to stop monitoring.");
                         result = HttpStatusCode.Accepted;
                     }
@@ -1091,7 +1106,7 @@ namespace OpcPublisher
         {
             try
             {
-                foreach (var opcSubscription in OpcSubscriptionManagers)
+                foreach (var opcSubscription in OpcSubscriptionWrappers)
                 {
                     if (opcSubscription.OpcMonitoredItems.Any(m => { return m.IsMonitoringThisNode(nodeId, expandedNodeId, _namespaceTable); }))
                     {
@@ -1183,16 +1198,16 @@ namespace OpcPublisher
                 {
                     try
                     {
-                        foreach (var opcSubscription in OpcSubscriptionManagers)
+                        foreach (var opcSubscription in OpcSubscriptionWrappers)
                         {
                             Program.Instance.Logger.Information($"Removing {opcSubscription.OpcUaClientSubscription.MonitoredItemCount} monitored items from subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'.");
                             opcSubscription.OpcUaClientSubscription.RemoveItems(opcSubscription.OpcUaClientSubscription.MonitoredItems);
                         }
                         Program.Instance.Logger.Information($"Removing {OpcUaClientSession.SubscriptionCount} subscriptions from session.");
-                        while (OpcSubscriptionManagers.Count > 0)
+                        while (OpcSubscriptionWrappers.Count > 0)
                         {
-                            OpcUaSubscriptionManager opcSubscription = OpcSubscriptionManagers.ElementAt(0);
-                            OpcSubscriptionManagers.RemoveAt(0);
+                            OpcUaSubscriptionWrapper opcSubscription = OpcSubscriptionWrappers.ElementAt(0);
+                            OpcSubscriptionWrappers.RemoveAt(0);
                             Subscription opcUaClientSubscription = opcSubscription.OpcUaClientSubscription;
                             opcUaClientSubscription.Delete(true);
                         }

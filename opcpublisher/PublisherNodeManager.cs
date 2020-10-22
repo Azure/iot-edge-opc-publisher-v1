@@ -109,9 +109,6 @@ namespace OpcPublisher
 
                     MethodState getPublishedNodesLegacyMethod = CreateMethod(methodsFolder, "GetPublishedNodes", "GetPublishedNodes");
                     SetGetPublishedNodesLegacyMethodProperties(ref getPublishedNodesLegacyMethod);
-
-                    MethodState iotHubDirectMethodMethod = CreateMethod(methodsFolder, "IoTHubDirectMethod", "IoTHubDirectMethod");
-                    SetGetIoTHubDirectMethodMethodProperties(ref iotHubDirectMethodMethod);
                 }
                 catch (Exception e)
                 {
@@ -214,48 +211,6 @@ namespace OpcPublisher
                         new Argument { Name = "Published nodes", Description = "List of the nodes configured to publish in OPC Publisher in NodeId format",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
             };
             method.OnCallMethod = new GenericMethodCalledEventHandler(OnGetPublishedNodesLegacyCall);
-        }
-
-        /// <summary>
-        /// Sets properties of the IoTHubDirectMethod method
-        /// </summary>
-        private void SetGetIoTHubDirectMethodMethodProperties(ref MethodState method)
-        {
-            // define input arguments
-            method.InputArguments = new PropertyState<Argument[]>(method)
-            {
-                NodeId = new NodeId(method.BrowseName.Name + "InArgs", NamespaceIndex),
-                BrowseName = BrowseNames.InputArguments
-            };
-            method.InputArguments.DisplayName = method.InputArguments.BrowseName.Name;
-            method.InputArguments.TypeDefinitionId = VariableTypeIds.PropertyType;
-            method.InputArguments.ReferenceTypeId = ReferenceTypeIds.HasProperty;
-            method.InputArguments.DataType = DataTypeIds.Argument;
-            method.InputArguments.ValueRank = ValueRanks.OneDimension;
-
-            method.InputArguments.Value = new Argument[]
-            {
-                new Argument { Name = "MethodName", Description = "Name of the IoTHub direct method.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar },
-                new Argument { Name = "RequestJson", Description = "Request model as json string.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
-            };
-
-            // set output arguments
-            method.OutputArguments = new PropertyState<Argument[]>(method)
-            {
-                NodeId = new NodeId(method.BrowseName.Name + "OutArgs", NamespaceIndex),
-                BrowseName = BrowseNames.OutputArguments
-            };
-            method.OutputArguments.DisplayName = method.OutputArguments.BrowseName.Name;
-            method.OutputArguments.TypeDefinitionId = VariableTypeIds.PropertyType;
-            method.OutputArguments.ReferenceTypeId = ReferenceTypeIds.HasProperty;
-            method.OutputArguments.DataType = DataTypeIds.Argument;
-            method.OutputArguments.ValueRank = ValueRanks.OneDimension;
-
-            method.OutputArguments.Value = new Argument[]
-            {
-                new Argument { Name = "ResponseJson", Description = "Response model as json string.",  DataType = DataTypeIds.String, ValueRank = ValueRanks.Scalar }
-            };
-            method.OnCallMethod = new GenericMethodCalledEventHandler(OnIoTHubDirectMethodCall);
         }
 
         /// <summary>
@@ -503,13 +458,13 @@ namespace OpcPublisher
                 }
 
                 // find the session we need to monitor the node
-                OpcUaSessionManager opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                OpcUaSessionWrapper opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
 
                 // add a new session.
                 if (opcSession == null)
                 {
                     // create new session info.
-                    opcSession = new OpcUaSessionManager(endpointUri.OriginalString, true, (uint)Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, OpcAuthenticationMode.Anonymous, null);
+                    opcSession = new OpcUaSessionWrapper(endpointUri.OriginalString, true, (uint)Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, OpcUserSessionAuthenticationMode.Anonymous, null);
                     Program.Instance._nodeConfig.OpcSessions.Add(opcSession);
                     Program.Instance.Logger.Information($"OnPublishNodeCall: No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                 }
@@ -597,7 +552,7 @@ namespace OpcPublisher
                 }
 
                 // find the session we need to monitor the node
-                OpcUaSessionManager opcSession = null;
+                OpcUaSessionWrapper opcSession = null;
                 try
                 {
                     opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
@@ -673,50 +628,6 @@ namespace OpcPublisher
             List<ConfigurationFileEntryLegacyModel> configFileEntries = Program.Instance._nodeConfig.GetPublisherConfigurationFileEntriesAsNodeIdsAsync(endpointUri.OriginalString).Result;
             outputArguments[0] = JsonConvert.SerializeObject(configFileEntries);
             Program.Instance.Logger.Information($"{logPrefix} Success (number of entries: {configFileEntries.Count})");
-            return ServiceResult.Good;
-        }
-
-        /// <summary>
-        /// Handle method call to call direct IoTHub methods
-        /// </summary>
-        private ServiceResult OnIoTHubDirectMethodCall(ISystemContext context, MethodState method, IList<object> inputArguments, IList<object> outputArguments)
-        {
-            string logPrefix = "OnIoTHubDirectMethodCall:";
-            try
-            {
-                if (string.IsNullOrEmpty(inputArguments[0] as string))
-                {
-                    string errorMessage = "There is no direct method name specified.";
-                    Program.Instance.Logger.Error($"{logPrefix} {errorMessage}");
-                    return ServiceResult.Create(StatusCodes.BadArgumentsMissing, errorMessage);
-                }
-
-                string methodRequest = string.Empty;
-                if ((inputArguments[1] as string) != null)
-                {
-                    methodRequest = inputArguments[1] as string;
-                }
-
-                string methodName = inputArguments[0] as string;
-                if (Program.Instance._clientWrapper._hubMethodHandler.IotHubDirectMethods.ContainsKey(inputArguments[0] as string))
-                {
-                    var methodCallback = Program.Instance._clientWrapper._hubMethodHandler.IotHubDirectMethods.GetValueOrDefault(methodName);
-                    var methodResponse = methodCallback(new MethodRequest(methodName, Encoding.UTF8.GetBytes(methodRequest)), null).Result;
-                    outputArguments[0] = methodResponse.ResultAsJson;
-                }
-                else
-                {
-                    var methodCallback = Program.Instance._clientWrapper._hubMethodHandler.IotHubDirectMethods.GetValueOrDefault(methodName);
-                    var methodResponse = Program.Instance._clientWrapper._hubMethodHandler.DefaultMethodHandlerAsync(new MethodRequest(methodName, Encoding.UTF8.GetBytes(methodRequest)), null).Result;
-                    outputArguments[0] = methodResponse.ResultAsJson;
-                    return ServiceResult.Create(StatusCodes.BadNotImplemented, "The IoTHub direct method is not implemented");
-                }
-            }
-            catch (Exception ex)
-            {
-                Program.Instance.Logger.Error($"{logPrefix} The request is invalid!");
-                return ServiceResult.Create(ex, null, StatusCodes.Bad);
-            }
             return ServiceResult.Good;
         }
     }

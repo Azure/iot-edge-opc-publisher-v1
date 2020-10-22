@@ -65,7 +65,7 @@ namespace OpcPublisher
         /// <summary>
         /// Gets or sets the authentication mode to authenticate against the OPC UA Server.
         /// </summary>
-        public OpcAuthenticationMode OpcAuthenticationMode { get; set; }
+        public OpcUserSessionAuthenticationMode OpcAuthenticationMode { get; set; }
 
         /// <summary>
         /// Gets or sets the encrypted auth credential when OpcAuthenticationMode is set to UsernamePassword.
@@ -76,7 +76,7 @@ namespace OpcPublisher
         /// Ctor of the object.
         /// </summary>
         public NodePublishingConfigurationModel(ExpandedNodeId expandedNodeId, string originalId, string endpointUrl, bool? useSecurity,
-                    int? opcPublishingInterval, int? opcSamplingInterval, string displayName, int? heartbeatInterval, bool? skipFirst, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
+                    int? opcPublishingInterval, int? opcSamplingInterval, string displayName, int? heartbeatInterval, bool? skipFirst, OpcUserSessionAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
 
         {
             NodeId = null;
@@ -97,7 +97,7 @@ namespace OpcPublisher
         /// Ctor of the object.
         /// </summary>
         public NodePublishingConfigurationModel(NodeId nodeId, string originalId, string endpointUrl, bool? useSecurity,
-                    int? opcPublishingInterval, int? opcSamplingInterval, string displayName, int? heartbeatInterval, bool? skipFirst, OpcAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
+                    int? opcPublishingInterval, int? opcSamplingInterval, string displayName, int? heartbeatInterval, bool? skipFirst, OpcUserSessionAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
         {
             NodeId = nodeId;
             ExpandedNodeId = null;

@@ -107,7 +107,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == SettingsConfiguration.DefaultOpcPublishingInterval);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].PublishingInterval == SettingsConfiguration.DefaultOpcPublishingInterval);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -153,7 +153,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == 2000);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].PublishingInterval == 2000);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -199,7 +199,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].RequestedPublishingInterval == 2000);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].PublishingInterval == 2000);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -245,7 +245,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 3000);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 3000);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -291,7 +291,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -337,7 +337,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -383,7 +383,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == SettingsConfiguration.SkipFirstDefault);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == SettingsConfiguration.SkipFirstDefault);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -429,7 +429,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == true);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -475,7 +475,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == false);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -521,7 +521,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == false);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == false);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -567,7 +567,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].SkipFirst == true);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == true);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -613,7 +613,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == SettingsConfiguration.HeartbeatIntervalDefault);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].HeartbeatInterval == SettingsConfiguration.HeartbeatIntervalDefault);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -659,7 +659,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
@@ -705,7 +705,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionManagers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
+            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
             await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));

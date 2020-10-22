@@ -28,7 +28,7 @@ namespace OpcPublisher
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public OpcAuthenticationMode? OpcAuthenticationMode { get; set; }
+        public OpcUserSessionAuthenticationMode? OpcAuthenticationMode { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool UseSecurity { get; set; }

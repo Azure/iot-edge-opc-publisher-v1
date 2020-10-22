@@ -242,7 +242,7 @@ namespace OpcPublisher
             {
                 while (_nodeConfig.OpcSessions.Count > 0)
                 {
-                    OpcUaSessionManager opcSession = null;
+                    OpcUaSessionWrapper opcSession = null;
                     try
                     {
                         await _nodeConfig.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
@@ -386,7 +386,8 @@ namespace OpcPublisher
             ConfigSectionName = "Opc.Publisher"
         }; //TODO: make private
 
-        public HubClientWrapper _clientWrapper = new HubClientWrapper(); //TODO: make private
+        private HubClientWrapper _clientWrapper = new HubClientWrapper();
+
         public PublisherDiagnostics _diag = new PublisherDiagnostics(); //TODO: make private
         public PublishedNodesConfiguration _nodeConfig = new PublishedNodesConfiguration(); //TODO: make private
     }

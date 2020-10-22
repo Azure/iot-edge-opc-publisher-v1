@@ -237,7 +237,7 @@ namespace OpcPublisher
             SettingsConfiguration.DefaultSendIntervalSeconds = 0;
             SettingsConfiguration.HubMessageSize = 0;
 
-            // tie our unit test app it to out Program instance
+            // tie our unit test app to our Program app instance
             Program.Instance._application = _application;
         }
 

@@ -80,7 +80,7 @@ namespace OpcPublisher
             bool useSecurity = true;
             Uri endpointUri = null;
 
-            OpcAuthenticationMode? desiredAuthenticationMode = null;
+            OpcUserSessionAuthenticationMode? desiredAuthenticationMode = null;
             EncryptedNetworkCredential desiredEncryptedCredential = null;
 
             PublishNodesMethodRequestModel publishNodesMethodData = null;
@@ -95,14 +95,14 @@ namespace OpcPublisher
                 endpointUri = new Uri(publishNodesMethodData.EndpointUrl);
                 useSecurity = publishNodesMethodData.UseSecurity;
 
-                if (publishNodesMethodData.OpcAuthenticationMode == OpcAuthenticationMode.UsernamePassword)
+                if (publishNodesMethodData.OpcAuthenticationMode == OpcUserSessionAuthenticationMode.UsernamePassword)
                 {
                     if (string.IsNullOrWhiteSpace(publishNodesMethodData.UserName) && string.IsNullOrWhiteSpace(publishNodesMethodData.Password))
                     {
-                        throw new ArgumentException($"If {nameof(publishNodesMethodData.OpcAuthenticationMode)} is set to '{OpcAuthenticationMode.UsernamePassword}', you have to specify '{nameof(publishNodesMethodData.UserName)}' and/or '{nameof(publishNodesMethodData.Password)}'.");
+                        throw new ArgumentException($"If {nameof(publishNodesMethodData.OpcAuthenticationMode)} is set to '{OpcUserSessionAuthenticationMode.UsernamePassword}', you have to specify '{nameof(publishNodesMethodData.UserName)}' and/or '{nameof(publishNodesMethodData.Password)}'.");
                     }
 
-                    desiredAuthenticationMode = OpcAuthenticationMode.UsernamePassword;
+                    desiredAuthenticationMode = OpcUserSessionAuthenticationMode.UsernamePassword;
                     desiredEncryptedCredential = await EncryptedNetworkCredential.FromPlainCredential(publishNodesMethodData.UserName, publishNodesMethodData.Password);
                 }
             }
@@ -139,7 +139,7 @@ namespace OpcPublisher
                     else
                     {
                         // find the session we need to monitor the node
-                        OpcUaSessionManager opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
+                        OpcUaSessionWrapper opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
 
                         // add a new session.
                         if (opcSession == null)
@@ -147,11 +147,11 @@ namespace OpcPublisher
                             // if the no OpcAuthenticationMode is specified, we create the new session with "Anonymous" auth
                             if (!desiredAuthenticationMode.HasValue)
                             {
-                                desiredAuthenticationMode = OpcAuthenticationMode.Anonymous;
+                                desiredAuthenticationMode = OpcUserSessionAuthenticationMode.Anonymous;
                             }
 
                             // create new session info.
-                            opcSession = new OpcUaSessionManager(endpointUri.OriginalString, useSecurity, (uint) Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
+                            opcSession = new OpcUaSessionWrapper(endpointUri.OriginalString, useSecurity, (uint) Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, desiredAuthenticationMode.Value, desiredEncryptedCredential);
                             Program.Instance._nodeConfig.OpcSessions.Add(opcSession);
                             Program.Instance.Logger.Information($"{logPrefix} No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
                         }
@@ -367,7 +367,7 @@ namespace OpcPublisher
                     else
                     {
                         // find the session we need to monitor the node
-                        OpcUaSessionManager opcSession = null;
+                        OpcUaSessionWrapper opcSession = null;
                         try
                         {
                             opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
@@ -391,12 +391,12 @@ namespace OpcPublisher
                             if (unpublishNodesMethodData?.OpcNodes == null || unpublishNodesMethodData.OpcNodes.Count == 0)
                             {
                                 // loop through all subscriptions of the session
-                                foreach (var subscription in opcSession.OpcSubscriptionManagers)
+                                foreach (var subscription in opcSession.OpcSubscriptionWrappers)
                                 {
                                     // loop through all monitored items
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
                                     {
-                                        if (monitoredItem.ConfigType == OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.NodeId)
+                                        if (monitoredItem.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.NodeId)
                                         {
                                             await opcSession.RequestMonitorItemRemovalAsync(monitoredItem.ConfigNodeId, null, Program.Instance.ShutdownTokenSource.Token, false).ConfigureAwait(false);
                                         }
@@ -613,12 +613,12 @@ namespace OpcPublisher
                                 }
 
                                 // loop through all subscriptions of a connected session
-                                foreach (var subscription in session.OpcSubscriptionManagers)
+                                foreach (var subscription in session.OpcSubscriptionWrappers)
                                 {
                                     // loop through all monitored items
                                     foreach (var monitoredItem in subscription.OpcMonitoredItems)
                                     {
-                                        if (monitoredItem.ConfigType == OpcUaMonitoredItemManager.OpcMonitoredItemConfigurationType.NodeId)
+                                        if (monitoredItem.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.NodeId)
                                         {
                                             await session.RequestMonitorItemRemovalAsync(monitoredItem.ConfigNodeId, null, Program.Instance.ShutdownTokenSource.Token, false).ConfigureAwait(false);
                                         }

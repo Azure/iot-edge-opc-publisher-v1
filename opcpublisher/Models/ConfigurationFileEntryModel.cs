@@ -35,10 +35,10 @@ namespace OpcPublisher
         /// <summary>
         /// Gets ot sets the authentication mode to authenticate against the OPC UA Server.
         /// </summary>
-        [DefaultValue(OpcAuthenticationMode.Anonymous)]
+        [DefaultValue(OpcUserSessionAuthenticationMode.Anonymous)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore, NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public OpcAuthenticationMode OpcAuthenticationMode { get; set; }
+        public OpcUserSessionAuthenticationMode OpcAuthenticationMode { get; set; }
 
         /// <summary>
         /// Gets or sets the encrypted username to authenticate against the OPC UA Server (when OpcAuthenticationMode is set to UsernamePassword
