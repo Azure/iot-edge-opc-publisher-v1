@@ -113,7 +113,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// HeartbeatIntervalDefault
         /// </summary>
-        public static int? HeartbeatIntervalDefault { get; set; } = 1;
+        public static int? HeartbeatIntervalDefault { get; set; } = 0;
 
         /// <summary>
         /// SkipFirstDefault

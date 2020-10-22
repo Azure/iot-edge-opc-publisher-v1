@@ -203,12 +203,6 @@ namespace OpcPublisher
 
     public sealed class OpcPublisherFixture
     {
-        public ApplicationInstance _application = new ApplicationInstance {
-            ApplicationName = "OpcPublisherUnitTest",
-            ApplicationType = ApplicationType.Client,
-            ConfigSectionName = "Opc.Publisher"
-        };
-
         public OpcPublisherFixture()
         {
             // init publisher logging
@@ -219,6 +213,12 @@ namespace OpcPublisher
                 Program.Instance.InitLogging();
             }
 
+            ApplicationInstance _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Opc.Publisher"
+            };
+
             _application.LoadApplicationConfiguration(false).Wait();
 
             // check the application certificate.
@@ -228,9 +228,25 @@ namespace OpcPublisher
                 throw new Exception("Application instance certificate invalid!");
             }
 
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(CertificateValidator_CertificateValidation);
+
+
             // configure hub communication
             SettingsConfiguration.DefaultSendIntervalSeconds = 0;
             SettingsConfiguration.HubMessageSize = 0;
+
+            // tie our unit test app it to out Program instance
+            Program.Instance._application = _application;
+        }
+
+        private static void CertificateValidator_CertificateValidation(Opc.Ua.CertificateValidator validator, Opc.Ua.CertificateValidationEventArgs e)
+        {
+            if (e.Error.StatusCode == StatusCodes.BadCertificateUntrusted)
+            {
+                e.Accept = true;
+            }
         }
     }
 }

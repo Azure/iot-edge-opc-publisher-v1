@@ -344,7 +344,7 @@ namespace OpcPublisher
                             {
                                 if (heartbeatSourceTimestamp >= sourceTimestamp)
                                 {
-                                    //Program.Instance.Logger.Warning($"HeartbeatMessage has larger or equal timestamp than message. Adjusting...");
+                                    Program.Instance.Logger.Warning($"HeartbeatMessage has larger or equal timestamp than message. Adjusting...");
                                     sourceTimestamp.AddMilliseconds(1);
                                 }
                                 messageData.SourceTimestamp = sourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
