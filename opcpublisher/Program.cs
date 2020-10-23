@@ -153,7 +153,7 @@ namespace OpcPublisher
                 _publisherServer.CurrentInstance.SessionManager.SessionCreated += ServerEventStatus;
 
                 // startup completed
-                PublisherDiagnostics.StartupCompleted = true;
+                Metrics.StartupCompleted = true;
 
                 // stop on user request
                 if (SettingsConfiguration.NoShutdown)
@@ -336,12 +336,12 @@ namespace OpcPublisher
         public ApplicationInstance _application = new ApplicationInstance {
             ApplicationName = "OpcPublisher",
             ApplicationType = ApplicationType.ClientAndServer,
-            ConfigSectionName = "Opc.Publisher"
+            ConfigSectionName = "Configurations/Opc.Publisher"
         }; //TODO: make private
 
         private HubClientWrapper _clientWrapper = new HubClientWrapper();
 
-        public PublisherDiagnostics _diag = new PublisherDiagnostics(); //TODO: make private
+        public Metrics _diag = new Metrics(); //TODO: make private
         public PublishedNodesConfiguration _nodeConfig = new PublishedNodesConfiguration(); //TODO: make private
     }
 }

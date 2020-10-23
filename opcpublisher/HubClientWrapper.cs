@@ -23,24 +23,29 @@ namespace OpcPublisher
     /// </summary>
     public class HubClientWrapper
     {
-        private const string CONTENT_TYPE_OPCUAJSON = "application/opcua+uajson";
-        private const string CONTENT_ENCODING_UTF8 = "UTF-8";
+
 
         /// <summary>
-        /// Sets the product information that will be included in the metadata that is sent to IoT Hub.
+        /// Stores custom product information that will be appended to the user agent string that is sent to IoT Hub.
         /// </summary>
-        public void SetProductInfo(string value)
+        public string ProductInfo
         {
-            if (_edgeHubClient != null)
+            get
             {
-                _edgeHubClient.ProductInfo = value;
-            }
-            else
-            {
-                if (_iotHubClient != null)
+                if (_iotHubClient == null)
                 {
-                    _iotHubClient.ProductInfo = value;
+                    return _edgeHubClient.ProductInfo;
                 }
+                return _iotHubClient.ProductInfo;
+            }
+            set
+            {
+                if (_iotHubClient == null)
+                {
+                    _edgeHubClient.ProductInfo = value;
+                    return;
+                }
+                _iotHubClient.ProductInfo = value;
             }
         }
 
@@ -50,22 +55,20 @@ namespace OpcPublisher
         public void Close()
         {
             // send cancellation token and wait for last IoT Hub message to be sent.
-            _hubCommunicationCancellation.Cancel();
-
+            _hubCommunicationCts?.Cancel();
             try
             {
                 _monitoredItemsProcessorTask?.Wait();
+                _monitoredItemsProcessorTask = null;
 
                 if (_edgeHubClient != null)
                 {
                     _edgeHubClient.CloseAsync().Wait();
                 }
-                else
+
+                if (_iotHubClient != null)
                 {
-                    if (_iotHubClient != null)
-                    {
-                        _iotHubClient.CloseAsync().Wait();
-                    }
+                    _iotHubClient.CloseAsync().Wait();
                 }
             }
             catch (Exception e)
@@ -94,6 +97,9 @@ namespace OpcPublisher
         /// </summary>
         public void InitHubCommunication(bool runningInIoTEdgeContext, string connectionString)
         {
+            _hubCommunicationCts = new CancellationTokenSource();
+            _shutdownToken = _hubCommunicationCts.Token;
+
             ExponentialBackoff exponentialRetryPolicy = new ExponentialBackoff(int.MaxValue, TimeSpan.FromMilliseconds(2), TimeSpan.FromMilliseconds(1024), TimeSpan.FromMilliseconds(3));
 
             // open connection
@@ -141,7 +147,7 @@ namespace OpcPublisher
                 _hubMethodHandler.RegisterMethodHandlers(_iotHubClient);
             }
 
-            SetProductInfo("OpcPublisher");
+            ProductInfo = "OpcPublisher";
             SetRetryPolicy(exponentialRetryPolicy);
 
             // register connection status change handler
@@ -163,7 +169,7 @@ namespace OpcPublisher
 
                 // start up task to send telemetry to IoTHub
                 Program.Instance.Logger.Information("Creating task process and batch monitored item data updates...");
-                _monitoredItemsProcessorTask = Task.Run(() => MonitoredItemsProcessorAsync(_hubCommunicationCancellation.Token));
+                _monitoredItemsProcessorTask = Task.Run(() => MonitoredItemsProcessorAsync(_shutdownToken).ConfigureAwait(false), _shutdownToken);
                 
             }
             catch (Exception e)
@@ -341,7 +347,7 @@ namespace OpcPublisher
                             timeTillNextSend = nextSendTime.Subtract(DateTime.UtcNow);
                             if (timeTillNextSend < TimeSpan.Zero)
                             {
-                                PublisherDiagnostics.MissedSendIntervalCount++;
+                                Metrics.MissedSendIntervalCount++;
                                 // do not wait if we missed the send interval
                                 timeTillNextSend = TimeSpan.Zero;
                             }
@@ -369,12 +375,12 @@ namespace OpcPublisher
                         // check if we got an item or if we hit the timeout or got canceled
                         if (gotItem)
                         {
-                            PublisherDiagnostics.EnqueueFailureCount--;
+                            Metrics.EnqueueFailureCount--;
 
                             // create a JSON message from the messageData object
                             jsonMessage = await CreateJsonMessageAsync(messageData).ConfigureAwait(false);
   
-                            PublisherDiagnostics.NumberOfEvents++;
+                            Metrics.NumberOfEvents++;
                             jsonMessageSize = Encoding.UTF8.GetByteCount(jsonMessage);
 
                             // sanity check that the user has set a large enough messages size
@@ -382,7 +388,7 @@ namespace OpcPublisher
                             {
                                 Program.Instance.Logger.Error($"There is a telemetry message (size: {jsonMessageSize}), which will not fit into an hub message (max size: {hubMessageBufferSize}].");
                                 Program.Instance.Logger.Error($"Please check your hub message size settings. The telemetry message will be discarded.");
-                                PublisherDiagnostics.TooLargeCount++;
+                                Metrics.TooLargeCount++;
                                 continue;
                             }
 
@@ -419,7 +425,7 @@ namespace OpcPublisher
                         // the batching is completed or we reached the send interval or got a cancelation request
                         try
                         {
-                            Message encodedhubMessage = null;
+                            Microsoft.Azure.Devices.Client.Message encodedhubMessage = null;
 
                             // if we reached the send interval, but have nothing to send (only the opening square bracket is there), we continue
                             if (!gotItem && hubMessage.Position == 1)
@@ -460,15 +466,15 @@ namespace OpcPublisher
 
                             try
                             {
-                                PublisherDiagnostics.SentBytes += encodedhubMessage.GetBytes().Length;
+                                Metrics.SentBytes += encodedhubMessage.GetBytes().Length;
                                 SendEvent(encodedhubMessage);
-                                PublisherDiagnostics.SentMessages++;
-                                PublisherDiagnostics.SentLastTime = DateTime.UtcNow;
+                                Metrics.SentMessages++;
+                                Metrics.SentLastTime = DateTime.UtcNow;
                                 Program.Instance.Logger.Debug($"Sending {encodedhubMessage.BodyStream.Length} bytes to hub.");
                             }
                             catch
                             {
-                                PublisherDiagnostics.FailedMessages++;
+                                Metrics.FailedMessages++;
                             }
 
                             // reset the messaage
@@ -508,17 +514,12 @@ namespace OpcPublisher
         /// </summary>
         public void SetRetryPolicy(IRetryPolicy retryPolicy)
         {
-            if (_edgeHubClient != null)
+            if (_iotHubClient == null)
             {
                 _edgeHubClient.SetRetryPolicy(retryPolicy);
+                return;
             }
-            else
-            {
-                if (_iotHubClient != null)
-                {
-                    _iotHubClient.SetRetryPolicy(retryPolicy);
-                }
-            }
+            _iotHubClient.SetRetryPolicy(retryPolicy);
         }
 
         /// <summary>
@@ -527,17 +528,12 @@ namespace OpcPublisher
         /// </summary>
         public void SetConnectionStatusChangesHandler(ConnectionStatusChangesHandler statusChangesHandler)
         {
-            if (_edgeHubClient != null)
+            if (_iotHubClient == null)
             {
                 _edgeHubClient.SetConnectionStatusChangesHandler(statusChangesHandler);
+                return;
             }
-            else
-            {
-                if (_iotHubClient != null)
-                {
-                    _iotHubClient.SetConnectionStatusChangesHandler(statusChangesHandler);
-                }
-            }
+            _iotHubClient.SetConnectionStatusChangesHandler(statusChangesHandler);
         }
 
         /// <summary>
@@ -564,28 +560,33 @@ namespace OpcPublisher
         public static void Enqueue(MessageDataModel json)
         {
             // Try to add the message.
-            Interlocked.Increment(ref PublisherDiagnostics.EnqueueCount);
+            Interlocked.Increment(ref Metrics.EnqueueCount);
             if (_monitoredItemsDataQueue.TryAdd(json) == false)
             {
-                Interlocked.Increment(ref PublisherDiagnostics.EnqueueFailureCount);
-                if (PublisherDiagnostics.EnqueueFailureCount % 10000 == 0)
+                Interlocked.Increment(ref Metrics.EnqueueFailureCount);
+                if (Metrics.EnqueueFailureCount % 10000 == 0)
                 {
-                    Program.Instance.Logger.Information($"The internal monitored item message queue is above its capacity of {_monitoredItemsDataQueue.BoundedCapacity}. We have lost {PublisherDiagnostics.EnqueueFailureCount} monitored item notifications so far.");
+                    Program.Instance.Logger.Information($"The internal monitored item message queue is above its capacity of {_monitoredItemsDataQueue.BoundedCapacity}. We have lost {Metrics.EnqueueFailureCount} monitored item notifications so far.");
                 }
             }
             else
             {
-                PublisherDiagnostics.MonitoredItemsQueueCount++;
+                Metrics.MonitoredItemsQueueCount++;
             }
         }
 
+        private const string CONTENT_TYPE_OPCUAJSON = "application/opcua+uajson";
+        private const string CONTENT_ENCODING_UTF8 = "UTF-8";
+        
         private static BlockingCollection<MessageDataModel> _monitoredItemsDataQueue;
+
         private Task _monitoredItemsProcessorTask;
-        private CancellationTokenSource _hubCommunicationCancellation = new CancellationTokenSource();
+        private CancellationTokenSource _hubCommunicationCts;
+        private CancellationToken _shutdownToken;
 
         private DeviceClient _iotHubClient;
         private ModuleClient _edgeHubClient;
 
-        public HubMethodHandler _hubMethodHandler = new HubMethodHandler();//TODO: make private
+        public HubMethodHandler _hubMethodHandler = new HubMethodHandler(); //TODO: make private
     }
 }

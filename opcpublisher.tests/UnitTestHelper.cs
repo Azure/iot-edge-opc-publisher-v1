@@ -34,8 +34,8 @@ namespace OpcPublisher
         {
             // wait till monitoring starts
             int iter = 0;
-            long numberOfEventsStart = PublisherDiagnostics.NumberOfEvents;
-            while ((nodeConfig.NumberOfOpcMonitoredItemsMonitored == 0 || (PublisherDiagnostics.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
+            long numberOfEventsStart = Metrics.NumberOfEvents;
+            while ((nodeConfig.NumberOfOpcMonitoredItemsMonitored == 0 || (Metrics.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;

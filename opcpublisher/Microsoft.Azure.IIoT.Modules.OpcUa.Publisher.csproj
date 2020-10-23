@@ -30,7 +30,7 @@
     <None Remove="publishednodes.json" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Opc.Publisher.Config.xml">
+    <Content Include="Configurations\Opc.Publisher.Config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="publishednodes.json">

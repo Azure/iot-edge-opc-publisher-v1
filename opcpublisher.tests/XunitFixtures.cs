@@ -216,7 +216,7 @@ namespace OpcPublisher
             ApplicationInstance _application = new ApplicationInstance {
                 ApplicationName = "OpcPublisherUnitTest",
                 ApplicationType = ApplicationType.Client,
-                ConfigSectionName = "Opc.Publisher"
+                ConfigSectionName = "Configurations/Opc.Publisher"
             };
 
             _application.LoadApplicationConfiguration(false).Wait();

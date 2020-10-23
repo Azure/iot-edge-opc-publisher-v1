@@ -15,7 +15,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class to enable output to the console.
     /// </summary>
-    public class PublisherDiagnostics
+    public class Metrics
     {
         /// <summary>
         /// Stores startup time.
@@ -80,7 +80,7 @@ namespace OpcPublisher
         /// <summary>
         /// Initialize the diagnostic object.
         /// </summary>
-        public PublisherDiagnostics()
+        public Metrics()
         {
             // init data
             _showDiagnosticsInfoTask = null;
