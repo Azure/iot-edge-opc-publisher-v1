@@ -179,7 +179,7 @@ namespace OpcPublisher
                 _publisherServer.Stop();
 
                 // shutdown all OPC sessions
-                await SessionShutdownAsync().ConfigureAwait(false);
+                _nodeConfig.Close();
 
                 // shutdown the IoTHub messaging
                 _clientWrapper.Close();
@@ -230,53 +230,6 @@ namespace OpcPublisher
             finally
             {
                 _nodeConfig.OpcSessionsListSemaphore.Release();
-            }
-        }
-
-        /// <summary>
-        /// Shutdown all sessions.
-        /// </summary>
-        public async Task SessionShutdownAsync()
-        {
-            try
-            {
-                while (_nodeConfig.OpcSessions.Count > 0)
-                {
-                    OpcUaSessionWrapper opcSession = null;
-                    try
-                    {
-                        await _nodeConfig.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
-                        opcSession = _nodeConfig.OpcSessions.ElementAt(0);
-                        _nodeConfig.OpcSessions.RemoveAt(0);
-                    }
-                    finally
-                    {
-                        _nodeConfig.OpcSessionsListSemaphore.Release();
-                    }
-                    await (opcSession?.ShutdownAsync()).ConfigureAwait(false);
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Fatal(e, "Failed to shutdown all sessions.");
-            }
-
-            // Wait and continue after a while.
-            uint maxTries = SettingsConfiguration.PublisherShutdownWaitPeriod;
-            while (true)
-            {
-                int sessionCount = _nodeConfig.OpcSessions.Count;
-                if (sessionCount == 0)
-                {
-                    return;
-                }
-                if (maxTries-- == 0)
-                {
-                    Logger.Information($"There are still {sessionCount} sessions alive. Ignore and continue shutdown.");
-                    return;
-                }
-                Logger.Information($"Publisher is shutting down. Wait {SettingsConfiguration.SessionConnectWaitSec} seconds, since there are stil {sessionCount} sessions alive...");
-                await Task.Delay(SettingsConfiguration.SessionConnectWaitSec * 1000).ConfigureAwait(false);
             }
         }
 

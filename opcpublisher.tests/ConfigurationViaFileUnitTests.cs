@@ -58,7 +58,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-            
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -66,6 +65,7 @@ namespace OpcPublisher
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -99,7 +99,6 @@ namespace OpcPublisher
             SettingsConfiguration.DefaultOpcPublishingInterval = 2000;
 
             nodeConfig.Init();
-
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -112,6 +111,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == null);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -145,7 +145,6 @@ namespace OpcPublisher
             SettingsConfiguration.DefaultOpcPublishingInterval = 3000;
 
             nodeConfig.Init();
-            
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -158,6 +157,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -191,7 +191,6 @@ namespace OpcPublisher
             SettingsConfiguration.DefaultOpcPublishingInterval = 2000;
 
             nodeConfig.Init();
-            
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -204,6 +203,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -237,7 +237,6 @@ namespace OpcPublisher
             SettingsConfiguration.DefaultOpcSamplingInterval = 3000;
 
             nodeConfig.Init();
-
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -250,6 +249,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == null);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -282,7 +282,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             SettingsConfiguration.DefaultOpcSamplingInterval = 3000;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
@@ -296,6 +295,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -328,7 +328,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             SettingsConfiguration.DefaultOpcSamplingInterval = 2000;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
@@ -342,6 +341,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -375,7 +375,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -388,6 +387,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == null);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -420,7 +420,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             SettingsConfiguration.SkipFirstDefault = false;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
@@ -434,6 +433,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -466,7 +466,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             SettingsConfiguration.SkipFirstDefault = true;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
@@ -480,6 +479,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -512,7 +512,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             SettingsConfiguration.SkipFirstDefault = false;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
@@ -526,6 +525,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -558,7 +558,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             SettingsConfiguration.SkipFirstDefault = true;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
@@ -572,6 +571,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
+            nodeConfig.Close();
         }
 
 
@@ -605,7 +605,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
@@ -618,6 +617,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == null);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -650,7 +650,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             SettingsConfiguration.HeartbeatIntervalDefault = 5;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
@@ -664,6 +663,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
+            nodeConfig.Close();
         }
 
         /// <summary>
@@ -696,7 +696,6 @@ namespace OpcPublisher
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
-
             SettingsConfiguration.HeartbeatIntervalDefault = 2;
             Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
@@ -710,6 +709,7 @@ namespace OpcPublisher
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
+            nodeConfig.Close();
         }
 
         public static IEnumerable<object[]> PnPlcSimple =>

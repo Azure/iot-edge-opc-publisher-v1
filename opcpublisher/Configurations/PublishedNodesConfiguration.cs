@@ -634,6 +634,18 @@ namespace OpcPublisher.Configurations
             }
         }
 
+        public void Close()
+        {
+            while (OpcSessions.Count > 0)
+            {
+                OpcSessionsListSemaphore.Wait();
+                OpcUaSessionWrapper opcSession = OpcSessions.ElementAt(0);
+                opcSession?.ShutdownAsync().Wait();
+                OpcSessions.RemoveAt(0);
+                OpcSessionsListSemaphore.Release();
+            }
+        }
+
         private List<NodePublishingConfigurationModel> _nodePublishingConfiguration;
         private List<ConfigurationFileEntryLegacyModel> _configurationFileEntries;
     }

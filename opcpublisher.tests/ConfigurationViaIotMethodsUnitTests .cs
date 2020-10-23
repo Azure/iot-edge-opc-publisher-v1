@@ -55,12 +55,14 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -89,6 +91,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == null);
+            nodeConfig.Close();
+            clientWrapper.Close();
     }
 
         /// <summary>
@@ -118,13 +122,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcPublishingInterval = 3000;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -152,6 +158,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -181,13 +189,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcPublishingInterval = 2000;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -216,6 +226,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -244,12 +256,14 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -278,6 +292,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == null);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -307,13 +323,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcSamplingInterval = 3000;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
- 
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -341,6 +359,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -370,13 +390,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcSamplingInterval = 2000;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
- 
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -405,6 +427,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -434,13 +458,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -469,6 +495,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == null);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -498,13 +526,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -533,6 +563,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == null);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -562,13 +594,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -596,6 +630,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -625,13 +661,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
- 
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -659,6 +697,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -688,13 +728,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -722,6 +764,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -751,13 +795,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -785,6 +831,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -814,13 +862,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 0;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
- 
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -849,6 +899,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == null);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -878,13 +930,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 2;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -913,6 +967,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == null);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -942,13 +998,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 1;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
-
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -976,6 +1034,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         /// <summary>
@@ -1005,13 +1065,15 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper clientWrapper = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 2;
 
             nodeConfig.Init();
             clientWrapper.InitMessageProcessing();
- 
             Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
             Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
@@ -1039,6 +1101,8 @@ namespace OpcPublisher
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
+            nodeConfig.Close();
+            clientWrapper.Close();
         }
 
         public static IEnumerable<object[]> PnPlcEmptyAndPayloadPublishingInterval2000 =>

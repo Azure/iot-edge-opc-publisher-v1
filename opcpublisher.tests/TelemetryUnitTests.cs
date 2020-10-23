@@ -3,8 +3,6 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using Microsoft.Azure.Devices.Client;
-using Moq;
 using OpcPublisher.Configurations;
 using System.Collections.Generic;
 using System.IO;
@@ -51,7 +49,10 @@ namespace OpcPublisher
 
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
-            
+
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             
@@ -70,12 +71,14 @@ namespace OpcPublisher
             long eventsAfterConnect = PublisherDiagnostics.NumberOfEvents;
             await Task.Delay(2500).ConfigureAwait(false);
             long eventsAfterDelay = PublisherDiagnostics.NumberOfEvents;
+            Assert.Equal(2, eventsAfterDelay - eventsAfterConnect);
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started");
-            Assert.Equal(3, eventsAfterDelay - eventsAtStart);
+            nodeConfig.Close();
+            hubClient.Close();
         }
 
         /// <summary>
@@ -102,6 +105,9 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
@@ -119,14 +125,16 @@ namespace OpcPublisher
             Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
             int seconds = UnitTestHelper.WaitTilItemsAreMonitored(nodeConfig);
             long eventsAfterConnect = PublisherDiagnostics.NumberOfEvents;
-            await Task.Delay(3000).ConfigureAwait(false);
+            await Task.Delay(2500).ConfigureAwait(false);
             long eventsAfterDelay = PublisherDiagnostics.NumberOfEvents;
+            Assert.Equal(1, eventsAfterDelay - eventsAfterConnect);
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.Equal(1, eventsAfterDelay - eventsAtStart);
+            nodeConfig.Close();
+            hubClient.Close();
         }
 
         /// <summary>
@@ -153,6 +161,9 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
@@ -170,14 +181,16 @@ namespace OpcPublisher
             Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
             int seconds = UnitTestHelper.WaitTilItemsAreMonitored(nodeConfig);
             long eventsAfterConnect = PublisherDiagnostics.NumberOfEvents;
-            await Task.Delay(1900).ConfigureAwait(false);
+            await Task.Delay(2500).ConfigureAwait(false);
             long eventsAfterDelay = PublisherDiagnostics.NumberOfEvents;
+            Assert.Equal(3, eventsAfterDelay - eventsAfterConnect); 
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.True(eventsAfterDelay - eventsAtStart == 1);
+            nodeConfig.Close();
+            hubClient.Close();
         }
 
         /// <summary>
@@ -204,6 +217,9 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
@@ -221,14 +237,16 @@ namespace OpcPublisher
             Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
             int seconds = UnitTestHelper.WaitTilItemsAreMonitored(nodeConfig);
             long eventsAfterConnect = PublisherDiagnostics.NumberOfEvents;
-            await Task.Delay(3000).ConfigureAwait(false);
+            await Task.Delay(2500).ConfigureAwait(false);
             long eventsAfterDelay = PublisherDiagnostics.NumberOfEvents;
+            Assert.Equal(1, eventsAfterDelay - eventsAfterConnect);
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.True(eventsAfterDelay - eventsAtStart == 0);
+            nodeConfig.Close();
+            hubClient.Close();
         }
 
         /// <summary>
@@ -255,6 +273,9 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
@@ -272,14 +293,16 @@ namespace OpcPublisher
             Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
             int seconds = UnitTestHelper.WaitTilItemsAreMonitored(nodeConfig);
             long eventsAfterConnect = PublisherDiagnostics.NumberOfEvents;
-            await Task.Delay(5000).ConfigureAwait(false);
+            await Task.Delay(2500).ConfigureAwait(false);
             long eventsAfterDelay = PublisherDiagnostics.NumberOfEvents;
+            Assert.Equal(3, eventsAfterDelay - eventsAfterConnect); 
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.Equal(2, eventsAfterDelay - eventsAtStart);
+            nodeConfig.Close();
+            hubClient.Close();
         }
 
         /// <summary>
@@ -306,6 +329,9 @@ namespace OpcPublisher
             PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
             HubClientWrapper hubClient = new HubClientWrapper();
 
+            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
+            Program.Instance._nodeConfig = nodeConfig;
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
@@ -323,14 +349,16 @@ namespace OpcPublisher
             Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
             int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived(nodeConfig);
             long eventsAfterConnect = PublisherDiagnostics.NumberOfEvents;
-            await Task.Delay(3000).ConfigureAwait(false);
+            await Task.Delay(2500).ConfigureAwait(false);
             long eventsAfterDelay = PublisherDiagnostics.NumberOfEvents;
+            Assert.Equal(1, eventsAfterDelay - eventsAfterConnect);
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
             _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
             _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
             _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.True(eventsAfterDelay - eventsAtStart == 2);
+            nodeConfig.Close();
+            hubClient.Close();
         }
 
         public static IEnumerable<object[]> PnPlcCurrentTime =>
