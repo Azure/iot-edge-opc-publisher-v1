@@ -77,10 +77,8 @@ namespace OpcPublisher
         public async Task<MethodResponse> HandlePublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandlePublishNodesMethodAsync:";
-            bool useSecurity = true;
-            Uri endpointUri = null;
-
-            OpcUserSessionAuthenticationMode? desiredAuthenticationMode = null;
+            
+            OpcUserSessionAuthenticationMode desiredAuthenticationMode = OpcUserSessionAuthenticationMode.Anonymous;
             EncryptedNetworkCredential desiredEncryptedCredential = null;
 
             PublishNodesMethodRequestModel publishNodesMethodData = null;
@@ -91,8 +89,6 @@ namespace OpcPublisher
             {
                 Program.Instance.Logger.Debug($"{logPrefix} called");
                 publishNodesMethodData = JsonConvert.DeserializeObject<PublishNodesMethodRequestModel>(methodRequest.DataAsJson);
-                endpointUri = new Uri(publishNodesMethodData.EndpointUrl);
-                useSecurity = publishNodesMethodData.UseSecurity;
 
                 if (publishNodesMethodData.OpcAuthenticationMode == OpcUserSessionAuthenticationMode.UsernamePassword)
                 {
@@ -124,12 +120,23 @@ namespace OpcPublisher
             {
                 try
                 {
-                    NodePublishingConfigurationModel node = new NodePublishingConfigurationModel {
-                        NodeId = nodeId,
-                        ExpandedNodeId = expandedNodeId,
-                        EndpointUrl = endpointUri.ToString()
-                    };
-                    UAClient.PublishNode(node);
+                    foreach (OpcNodeOnEndpointModel nodeOnEndpoint in publishNodesMethodData.OpcNodes)
+                    {
+                        NodePublishingConfigurationModel node = new NodePublishingConfigurationModel {
+                            NodeId = nodeOnEndpoint.Id,
+                            ExpandedNodeId = nodeOnEndpoint.ExpandedNodeId,
+                            EndpointUrl = new Uri(publishNodesMethodData.EndpointUrl).ToString(),
+                            SkipFirst = nodeOnEndpoint.SkipFirst,
+                            DisplayName = nodeOnEndpoint.DisplayName,
+                            HeartbeatInterval = nodeOnEndpoint.HeartbeatInterval,
+                            OpcPublishingInterval = nodeOnEndpoint.OpcPublishingInterval,
+                            OpcSamplingInterval = nodeOnEndpoint.OpcSamplingInterval,
+                            UseSecurity = publishNodesMethodData.UseSecurity,
+                            EncryptedAuthCredential = desiredEncryptedCredential,
+                            OpcAuthenticationMode = desiredAuthenticationMode
+                        };
+                        UAClient.PublishNode(node);
+                    }
                 }
                 catch (AggregateException e)
                 {
@@ -173,9 +180,6 @@ namespace OpcPublisher
         public async Task<MethodResponse> HandleUnpublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleUnpublishNodesMethodAsync:";
-            NodeId nodeId = null;
-            ExpandedNodeId expandedNodeId = null;
-            Uri endpointUri = null;
             UnpublishNodesMethodRequestModel unpublishNodesMethodData = null;
             HttpStatusCode statusCode = HttpStatusCode.OK;
             List<string> statusResponse = new List<string>();
@@ -184,7 +188,6 @@ namespace OpcPublisher
             {
                 Program.Instance.Logger.Debug($"{logPrefix} called");
                 unpublishNodesMethodData = JsonConvert.DeserializeObject<UnpublishNodesMethodRequestModel>(methodRequest.DataAsJson);
-                endpointUri = new Uri(unpublishNodesMethodData.EndpointUrl);
             }
             catch (UriFormatException e)
             {
@@ -205,13 +208,20 @@ namespace OpcPublisher
             {
                 try
                 {
-                    NodePublishingConfigurationModel node = new NodePublishingConfigurationModel {
-                        NodeId = nodeId,
-                        ExpandedNodeId = expandedNodeId,
-                        EndpointUrl = endpointUri.ToString()
-                    };
-                    UAClient.UnpublishNode(node);
-
+                    foreach (OpcNodeOnEndpointModel nodeOnEndpoint in unpublishNodesMethodData.OpcNodes)
+                    {
+                        NodePublishingConfigurationModel node = new NodePublishingConfigurationModel {
+                            NodeId = nodeOnEndpoint.Id,
+                            ExpandedNodeId = nodeOnEndpoint.ExpandedNodeId,
+                            EndpointUrl = new Uri(unpublishNodesMethodData.EndpointUrl).ToString(),
+                            SkipFirst = nodeOnEndpoint.SkipFirst,
+                            DisplayName = nodeOnEndpoint.DisplayName,
+                            HeartbeatInterval = nodeOnEndpoint.HeartbeatInterval,
+                            OpcPublishingInterval = nodeOnEndpoint.OpcPublishingInterval,
+                            OpcSamplingInterval = nodeOnEndpoint.OpcSamplingInterval,
+                        };
+                        UAClient.UnpublishNode(node);
+                    }
                 }
                 catch (AggregateException e)
                 {
@@ -366,7 +376,7 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of all endpoints
-                endpointUrls = UAClient.GetPublisherConfigurationFileEntries(null, false, out nodeConfigVersion).Select(e => e.EndpointUrl.OriginalString).ToList();
+                endpointUrls = UAClient.GetListofPublishedNodes().Select(e => e.EndpointUrl.OriginalString).ToList();
                 uint endpointsCount = (uint)endpointUrls.Count;
 
                 // validate version
@@ -484,7 +494,7 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of published nodes for the endpoint
-                List<ConfigurationFileEntryModel> configFileEntries = UAClient.GetPublisherConfigurationFileEntries(endpointUri.OriginalString, false, out nodeConfigVersion);
+                List<ConfigurationFileEntryModel> configFileEntries = UAClient.GetListofPublishedNodes();
 
                 // return if there are no nodes configured for this endpoint
                 if (configFileEntries.Count == 0)

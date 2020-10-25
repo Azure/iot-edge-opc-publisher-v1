@@ -367,7 +367,7 @@ namespace OpcPublisher
                 finally
                 {
                     // update the config file if required
-                    await Program.Instance._nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+                    await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
                 }
             }
         }
