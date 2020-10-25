@@ -449,47 +449,17 @@ namespace OpcPublisher
             // find/create a session to the endpoint URL and start monitoring the node.
             try
             {
-                // lock the publishing configuration till we are done
-                Program.Instance._nodeConfig.OpcSessionsListSemaphore.Wait();
-
-                if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
-                {
-                    return ServiceResult.Create(StatusCodes.BadUnexpectedError, $"Publisher shutdown in progress.");
-                }
-
-                // find the session we need to monitor the node
-                OpcUaSessionWrapper opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
-
-                // add a new session.
-                if (opcSession == null)
-                {
-                    // create new session info.
-                    opcSession = new OpcUaSessionWrapper(endpointUri.OriginalString, true, (uint)Program.Instance._application.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout, OpcUserSessionAuthenticationMode.Anonymous, null);
-                    Program.Instance._nodeConfig.OpcSessions.Add(opcSession);
-                    Program.Instance.Logger.Information($"OnPublishNodeCall: No matching session found for endpoint '{endpointUri.OriginalString}'. Requested to create a new one.");
-                }
-
-                if (isNodeIdFormat)
-                {
-                    // add the node info to the subscription with the default publishing interval, execute syncronously
-                    Program.Instance.Logger.Debug($"{logPrefix} Request to monitor item with NodeId '{nodeId.ToString()}' (with default PublishingInterval and SamplingInterval)");
-                    statusCode = opcSession.AddNodeForMonitoringAsync(nodeId, null, null, null, null, null, null, Program.Instance.ShutdownTokenSource.Token).Result;
-                }
-                else
-                {
-                    // add the node info to the subscription with the default publishing interval, execute syncronously
-                    Program.Instance.Logger.Debug($"{logPrefix} Request to monitor item with ExpandedNodeId '{expandedNodeId.ToString()}' (with default PublishingInterval and SamplingInterval)");
-                    statusCode = opcSession.AddNodeForMonitoringAsync(null, expandedNodeId, null, null, null, null, null, Program.Instance.ShutdownTokenSource.Token).Result;
-                }
+                NodePublishingConfigurationModel node = new NodePublishingConfigurationModel {
+                    NodeId = nodeId,
+                    ExpandedNodeId = expandedNodeId,
+                    EndpointUrl = endpointUri.ToString()
+                };
+                UAClient.PublishNode(node);
             }
             catch (Exception e)
             {
                 Program.Instance.Logger.Error(e, $"{logPrefix} Exception while trying to configure publishing node '{(isNodeIdFormat ? nodeId.ToString() : expandedNodeId.ToString())}'");
                 return ServiceResult.Create(e, StatusCodes.BadUnexpectedError, $"Unexpected error publishing node: {e.Message}");
-            }
-            finally
-            {
-                Program.Instance._nodeConfig.OpcSessionsListSemaphore.Release();
             }
 
             if (statusCode == HttpStatusCode.OK || statusCode == HttpStatusCode.Accepted)
@@ -515,19 +485,16 @@ namespace OpcPublisher
             NodeId nodeId = null;
             ExpandedNodeId expandedNodeId = null;
             Uri endpointUri = null;
-            bool isNodeIdFormat = true;
             try
             {
                 string id = inputArguments[0] as string;
                 if (id.Contains("nsu=", StringComparison.InvariantCulture))
                 {
                     expandedNodeId = ExpandedNodeId.Parse(id);
-                    isNodeIdFormat = false;
                 }
                 else
                 {
                     nodeId = NodeId.Parse(id);
-                    isNodeIdFormat = true;
                 }
                 endpointUri = new Uri(inputArguments[1] as string);
             }
@@ -545,54 +512,19 @@ namespace OpcPublisher
             // find the session and stop monitoring the node.
             try
             {
-                Program.Instance._nodeConfig.OpcSessionsListSemaphore.Wait();
-                if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
-                {
-                    return ServiceResult.Create(StatusCodes.BadUnexpectedError, $"Publisher shutdown in progress.");
-                }
-
-                // find the session we need to monitor the node
-                OpcUaSessionWrapper opcSession = null;
-                try
-                {
-                    opcSession = Program.Instance._nodeConfig.OpcSessions.FirstOrDefault(s => s.EndpointUrl.Equals(endpointUri.OriginalString, StringComparison.OrdinalIgnoreCase));
-                }
-                catch
-                {
-                    opcSession = null;
-                }
-
-                if (opcSession == null)
-                {
-                    // do nothing if there is no session for this endpoint.
-                    Program.Instance.Logger.Error($"{logPrefix} Session for endpoint '{endpointUri.OriginalString}' not found.");
-                    return ServiceResult.Create(StatusCodes.BadSessionIdInvalid, "Session for endpoint of node to unpublished not found!");
-                }
-                else
-                {
-                    if (isNodeIdFormat)
-                    {
-                        // stop monitoring the node, execute syncronously
-                        Program.Instance.Logger.Information($"{logPrefix} Request to stop monitoring item with NodeId '{nodeId.ToString()}')");
-                        statusCode = opcSession.RequestMonitorItemRemovalAsync(nodeId, null, Program.Instance.ShutdownTokenSource.Token).Result;
-                    }
-                    else
-                    {
-                        // stop monitoring the node, execute syncronously
-                        Program.Instance.Logger.Information($"{logPrefix} Request to stop monitoring item with ExpandedNodeId '{expandedNodeId.ToString()}')");
-                        statusCode = opcSession.RequestMonitorItemRemovalAsync(null, expandedNodeId, Program.Instance.ShutdownTokenSource.Token).Result;
-                    }
-                }
+                NodePublishingConfigurationModel node = new NodePublishingConfigurationModel {
+                    NodeId = nodeId,
+                    ExpandedNodeId = expandedNodeId,
+                    EndpointUrl = endpointUri.ToString()
+                };
+                UAClient.UnpublishNode(node);
             }
             catch (Exception e)
             {
                 Program.Instance.Logger.Error(e, $"{logPrefix} Exception while trying to configure publishing node '{nodeId.ToString()}'");
                 return ServiceResult.Create(e, StatusCodes.BadUnexpectedError, $"Unexpected error unpublishing node: {e.Message}");
             }
-            finally
-            {
-                Program.Instance._nodeConfig.OpcSessionsListSemaphore.Release();
-            }
+
             return statusCode == HttpStatusCode.OK || statusCode == HttpStatusCode.Accepted ? ServiceResult.Good : ServiceResult.Create(StatusCodes.Bad, "Can not stop monitoring node!");
         }
 
@@ -625,8 +557,7 @@ namespace OpcPublisher
             }
 
             // get the list of published nodes in NodeId format
-            List<ConfigurationFileEntryLegacyModel> configFileEntries = Program.Instance._nodeConfig.GetPublisherConfigurationFileEntriesAsNodeIdsAsync(endpointUri.OriginalString).Result;
-            outputArguments[0] = JsonConvert.SerializeObject(configFileEntries);
+            outputArguments[0] = JsonConvert.SerializeObject(UAClient.GetListofPublishedNodes());
             Program.Instance.Logger.Information($"{logPrefix} Success (number of entries: {configFileEntries.Count})");
             return ServiceResult.Good;
         }

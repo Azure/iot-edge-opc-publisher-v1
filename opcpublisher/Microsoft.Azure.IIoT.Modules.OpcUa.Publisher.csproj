@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>opcpublisher</AssemblyName>
+    <AssemblyName>OpcPublisher</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>OpcPublisher</PackageId>
     <DebugType>portable</DebugType>
@@ -9,6 +9,8 @@
     <HighEntropyVA>true</HighEntropyVA>
     <IsPackable>false</IsPackable>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <RootNamespace>OpcPublisher</RootNamespace>
+    <StartupObject>OpcPublisher.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="CertificateStores\**" />

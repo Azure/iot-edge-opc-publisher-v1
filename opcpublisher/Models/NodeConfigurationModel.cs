@@ -71,46 +71,5 @@ namespace OpcPublisher
         /// Gets or sets the encrypted auth credential when OpcAuthenticationMode is set to UsernamePassword.
         /// </summary>
         public EncryptedNetworkCredential EncryptedAuthCredential { get; set; }
-
-        /// <summary>
-        /// Ctor of the object.
-        /// </summary>
-        public NodePublishingConfigurationModel(ExpandedNodeId expandedNodeId, string originalId, string endpointUrl, bool? useSecurity,
-                    int? opcPublishingInterval, int? opcSamplingInterval, string displayName, int? heartbeatInterval, bool? skipFirst, OpcUserSessionAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
-
-        {
-            NodeId = null;
-            ExpandedNodeId = expandedNodeId;
-            OriginalId = originalId;
-            EndpointUrl = endpointUrl;
-            UseSecurity = useSecurity ?? true;
-            DisplayName = displayName;
-            OpcSamplingInterval = opcSamplingInterval;
-            OpcPublishingInterval = opcPublishingInterval;
-            HeartbeatInterval = heartbeatInterval;
-            SkipFirst = skipFirst;
-            OpcAuthenticationMode = opcAuthenticationMode;
-            EncryptedAuthCredential = encryptedAuthCredential;
-        }
-
-        /// <summary>
-        /// Ctor of the object.
-        /// </summary>
-        public NodePublishingConfigurationModel(NodeId nodeId, string originalId, string endpointUrl, bool? useSecurity,
-                    int? opcPublishingInterval, int? opcSamplingInterval, string displayName, int? heartbeatInterval, bool? skipFirst, OpcUserSessionAuthenticationMode opcAuthenticationMode, EncryptedNetworkCredential encryptedAuthCredential)
-        {
-            NodeId = nodeId;
-            ExpandedNodeId = null;
-            OriginalId = originalId;
-            EndpointUrl = endpointUrl;
-            UseSecurity = useSecurity ?? true;
-            DisplayName = displayName;
-            OpcSamplingInterval = opcSamplingInterval;
-            OpcPublishingInterval = opcPublishingInterval;
-            HeartbeatInterval = heartbeatInterval;
-            SkipFirst = skipFirst;
-            OpcAuthenticationMode = opcAuthenticationMode;
-            EncryptedAuthCredential = encryptedAuthCredential;
-        }
     }
 }
