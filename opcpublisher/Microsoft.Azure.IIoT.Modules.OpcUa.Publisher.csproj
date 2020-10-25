@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>OpcPublisher</AssemblyName>
+    <AssemblyName>opcpublisher</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>OpcPublisher</PackageId>
     <DebugType>portable</DebugType>
@@ -9,19 +9,23 @@
     <HighEntropyVA>true</HighEntropyVA>
     <IsPackable>false</IsPackable>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <RootNamespace>OpcPublisher</RootNamespace>
-    <StartupObject>OpcPublisher.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="CertificateStores\**" />
     <Compile Remove="Logs\**" />
     <Compile Remove="pki\**" />
+    <Compile Remove="pkiown\**" />
+    <Compile Remove="pkitrusted\**" />
     <EmbeddedResource Remove="CertificateStores\**" />
     <EmbeddedResource Remove="Logs\**" />
     <EmbeddedResource Remove="pki\**" />
+    <EmbeddedResource Remove="pkiown\**" />
+    <EmbeddedResource Remove="pkitrusted\**" />
     <None Remove="CertificateStores\**" />
     <None Remove="Logs\**" />
     <None Remove="pki\**" />
+    <None Remove="pkiown\**" />
+    <None Remove="pkitrusted\**" />
   </ItemGroup>
   <ItemGroup>
     <ProjectCapability Include="AzureIoTEdgeModule" />

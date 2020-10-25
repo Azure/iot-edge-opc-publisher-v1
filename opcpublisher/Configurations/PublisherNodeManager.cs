@@ -557,7 +557,8 @@ namespace OpcPublisher
             }
 
             // get the list of published nodes in NodeId format
-            outputArguments[0] = JsonConvert.SerializeObject(UAClient.GetListofPublishedNodes());
+            List<ConfigurationFileEntryModel> configFileEntries = UAClient.GetListofPublishedNodes();
+            outputArguments[0] = JsonConvert.SerializeObject(configFileEntries);
             Program.Instance.Logger.Information($"{logPrefix} Success (number of entries: {configFileEntries.Count})");
             return ServiceResult.Good;
         }

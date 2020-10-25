@@ -150,7 +150,7 @@ namespace OpcPublisher.Configurations
         /// </summary>
         public static async Task UpdateNodeConfigurationFileAsync()
         {
-            if (OpcUaSessionWrapper.NodeConfigVersion != _lastNodeConfigVersion)
+            if (UAClient.NodeConfigVersion != _lastNodeConfigVersion)
             {
                 try
                 {

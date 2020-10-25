@@ -85,7 +85,6 @@ namespace OpcPublisher
 
             PublishNodesMethodRequestModel publishNodesMethodData = null;
             HttpStatusCode statusCode = HttpStatusCode.OK;
-            HttpStatusCode nodeStatusCode = HttpStatusCode.InternalServerError;
             List<string> statusResponse = new List<string>();
             string statusMessage = string.Empty;
             try
@@ -177,10 +176,8 @@ namespace OpcPublisher
             NodeId nodeId = null;
             ExpandedNodeId expandedNodeId = null;
             Uri endpointUri = null;
-            bool isNodeIdFormat = true;
             UnpublishNodesMethodRequestModel unpublishNodesMethodData = null;
             HttpStatusCode statusCode = HttpStatusCode.OK;
-            HttpStatusCode nodeStatusCode = HttpStatusCode.InternalServerError;
             List<string> statusResponse = new List<string>();
             string statusMessage = string.Empty;
             try
@@ -293,78 +290,7 @@ namespace OpcPublisher
 
             if (statusCode == HttpStatusCode.OK)
             {
-                // schedule to remove all nodes on all sessions
-                try
-                {
-                    if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
-                    {
-                        statusMessage = $"Publisher is in shutdown";
-                        Program.Instance.Logger.Error($"{logPrefix} {statusMessage}");
-                        statusResponse.Add(statusMessage);
-                        statusCode = HttpStatusCode.Gone;
-                    }
-                    else
-                    {
-                        // loop through all sessions
-                        foreach (var session in Program.Instance._nodeConfig.OpcSessions)
-                        {
-                            bool sessionLocked = false;
-                            try
-                            {
-                                // is an endpoint was given, limit unpublish to this endpoint
-                                if (endpointUri != null && !endpointUri.OriginalString.Equals(session.EndpointUrl, StringComparison.InvariantCulture))
-                                {
-                                    continue;
-                                }
-
-                                sessionLocked = await session.LockSessionAsync().ConfigureAwait(false);
-                                if (!sessionLocked || Program.Instance.ShutdownTokenSource.IsCancellationRequested)
-                                {
-                                    break;
-                                }
-
-                                // loop through all subscriptions of a connected session
-                                foreach (var subscription in session.OpcSubscriptionWrappers)
-                                {
-                                    // loop through all monitored items
-                                    foreach (var monitoredItem in subscription.OpcMonitoredItems)
-                                    {
-                                        if (monitoredItem.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.NodeId)
-                                        {
-                                            await session.RequestMonitorItemRemovalAsync(monitoredItem.ConfigNodeId, null, Program.Instance.ShutdownTokenSource.Token, false).ConfigureAwait(false);
-                                        }
-                                        else
-                                        {
-                                            await session.RequestMonitorItemRemovalAsync(null, monitoredItem.ConfigExpandedNodeId, Program.Instance.ShutdownTokenSource.Token, false).ConfigureAwait(false);
-                                        }
-                                    }
-                                }
-                            }
-                            finally
-                            {
-                                if (sessionLocked)
-                                {
-                                    session.ReleaseSession();
-                                }
-                            }
-                        }
-                        // build response
-                        statusMessage = $"All monitored items in all subscriptions{(endpointUri != null ? $" on endpoint '{endpointUri.OriginalString}'" : " ")} tagged for removal";
-                        statusResponse.Add(statusMessage);
-                        Program.Instance.Logger.Information($"{logPrefix} {statusMessage}");
-                    }
-                }
-                catch (Exception e)
-                {
-                    statusMessage = $"EndpointUrl: '{unpublishAllNodesMethodData?.EndpointUrl}': exception ({e.Message}) while trying to unpublish";
-                    Program.Instance.Logger.Error(e, $"{logPrefix} {statusMessage}");
-                    statusResponse.Add(statusMessage);
-                    statusCode = HttpStatusCode.InternalServerError;
-                }
-                finally
-                {
-                    Program.Instance._nodeConfig.OpcSessionsListSemaphore.Release();
-                }
+                UAClient.RemoveAllMonitoredNodes();
             }
 
             // adjust response size to available package size and keep proper json syntax
@@ -440,7 +366,7 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of all endpoints
-                endpointUrls = Program.Instance._nodeConfig.GetPublisherConfigurationFileEntries(null, false, out nodeConfigVersion).Select(e => e.EndpointUrl.OriginalString).ToList();
+                endpointUrls = UAClient.GetPublisherConfigurationFileEntries(null, false, out nodeConfigVersion).Select(e => e.EndpointUrl.OriginalString).ToList();
                 uint endpointsCount = (uint)endpointUrls.Count;
 
                 // validate version
@@ -558,7 +484,7 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of published nodes for the endpoint
-                List<ConfigurationFileEntryModel> configFileEntries = Program.Instance._nodeConfig.GetPublisherConfigurationFileEntries(endpointUri.OriginalString, false, out nodeConfigVersion);
+                List<ConfigurationFileEntryModel> configFileEntries = UAClient.GetPublisherConfigurationFileEntries(endpointUri.OriginalString, false, out nodeConfigVersion);
 
                 // return if there are no nodes configured for this endpoint
                 if (configFileEntries.Count == 0)
