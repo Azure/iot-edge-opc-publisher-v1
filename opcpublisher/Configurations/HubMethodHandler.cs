@@ -221,6 +221,11 @@ namespace OpcPublisher
                             OpcSamplingInterval = nodeOnEndpoint.OpcSamplingInterval,
                         };
                         UAClient.UnpublishNode(node);
+
+                        // build response
+                        statusMessage = $"All monitored items in all subscriptions{(unpublishNodesMethodData.EndpointUrl != null ? $" on endpoint '{unpublishNodesMethodData.EndpointUrl}'" : " ")} tagged for removal";
+                        statusResponse.Add(statusMessage);
+                        Program.Instance.Logger.Information($"{logPrefix} {statusMessage}");
                     }
                 }
                 catch (AggregateException e)
@@ -300,7 +305,17 @@ namespace OpcPublisher
 
             if (statusCode == HttpStatusCode.OK)
             {
-                UAClient.RemoveAllMonitoredNodes();
+                if (Program.Instance.ShutdownTokenSource.IsCancellationRequested)
+                {
+                    statusMessage = $"Publisher is in shutdown";
+                    Program.Instance.Logger.Error($"{logPrefix} {statusMessage}");
+                    statusResponse.Add(statusMessage);
+                    statusCode = HttpStatusCode.Gone;
+                }
+                else
+                {
+                    UAClient.RemoveAllMonitoredNodes();
+                }
             }
 
             // adjust response size to available package size and keep proper json syntax

@@ -65,7 +65,7 @@ namespace OpcPublisher
                 parser.Parse(args);
 
                 _application.LoadApplicationConfiguration(false).Wait();
-
+                
                 Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(LoggerOpcUaTraceHandler);
                 Logger.Information($"opcstacktracemask set to: 0x{_application.ApplicationConfiguration.TraceConfiguration.TraceMasks:X}");
 
@@ -111,9 +111,6 @@ namespace OpcPublisher
                 // init diagnostics
                 _diag.Init();
 
-                // init node config
-                _nodeConfig.Init();
-
                 // log shopfloor site setting
                 if (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite))
                 {
@@ -143,9 +140,6 @@ namespace OpcPublisher
                 
                 // initialize message processing
                 _clientWrapper.InitMessageProcessing();
-
-                // kick off OPC session creation and node monitoring
-                await SessionStartAsync().ConfigureAwait(false);
 
                 // Show notification on session events
                 _publisherServer.CurrentInstance.SessionManager.SessionActivated += ServerEventStatus;
@@ -178,9 +172,6 @@ namespace OpcPublisher
                 // stop the server
                 _publisherServer.Stop();
 
-                // shutdown all OPC sessions
-                _nodeConfig.Close();
-
                 // shutdown the IoTHub messaging
                 _clientWrapper.Close();
 
@@ -210,26 +201,6 @@ namespace OpcPublisher
                 // always accept all OPC UA server certificates for our OPC UA client
                 Program.Instance.Logger.Information("Automatically trusting server certificate " + e.Certificate.Subject);
                 e.Accept = true;
-            }
-        }
-
-        /// <summary>
-        /// Start all sessions.
-        /// </summary>
-        public async Task SessionStartAsync()
-        {
-            try
-            {
-                await _nodeConfig.OpcSessionsListSemaphore.WaitAsync().ConfigureAwait(false);
-                _nodeConfig.OpcSessions.ForEach(s => s.ConnectAndMonitorSession.Set());
-            }
-            catch (Exception e)
-            {
-                Logger.Fatal(e, "Failed to start all sessions.");
-            }
-            finally
-            {
-                _nodeConfig.OpcSessionsListSemaphore.Release();
             }
         }
 

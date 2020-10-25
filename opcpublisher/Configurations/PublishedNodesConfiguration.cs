@@ -17,7 +17,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Keeps the version of the node configuration that has lastly been persisted
         /// </summary>
-        private static uint _lastNodeConfigVersion;
+        private static uint _lastNodeConfigVersion = 0;
 
         /// <summary>
         /// Read and parse the publisher node configuration file.
@@ -148,9 +148,10 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Updates the configuration file to persist all currently published nodes
         /// </summary>
-        public static async Task UpdateNodeConfigurationFileAsync()
+        public static async Task UpdateNodeConfigurationFileAsync(uint nodeConfigVersion)
         {
-            if (UAClient.NodeConfigVersion != _lastNodeConfigVersion)
+            // only persist newer versions
+            if (nodeConfigVersion > _lastNodeConfigVersion)
             {
                 try
                 {
@@ -161,6 +162,8 @@ namespace OpcPublisher.Configurations
 
                     // update the config file
                     await File.WriteAllTextAsync(SettingsConfiguration.PublisherNodeConfigurationFilename, JsonConvert.SerializeObject(publisherNodeConfiguration, Formatting.Indented)).ConfigureAwait(false);
+
+                    _lastNodeConfigVersion = nodeConfigVersion;
                 }
                 catch (Exception e)
                 {

@@ -23,6 +23,41 @@ namespace OpcPublisher
         public static DateTime PublisherStartTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
+        /// Number of configured OPC UA sessions.
+        /// </summary>
+        public static int NumberOfOpcSessionsConfigured;
+        
+        /// <summary>
+        /// Number of connected OPC UA session.
+        /// </summary>
+        public static int NumberOfOpcSessionsConnected;
+        
+        /// <summary>
+        /// Number of configured OPC UA subscriptions.
+        /// </summary>
+        public static int NumberOfOpcSubscriptionsConfigured;
+        
+        /// <summary>
+        /// Number of connected OPC UA subscriptions.
+        /// </summary>
+        public static int NumberOfOpcSubscriptionsConnected;
+        
+        /// <summary>
+        /// Number of OPC UA nodes configured to monitor.
+        /// </summary>
+        public static int NumberOfOpcMonitoredItemsConfigured;
+
+        /// <summary>
+        /// Number of monitored OPC UA nodes.
+        /// </summary>
+        public int NumberOfOpcMonitoredItemsMonitored;
+
+        /// <summary>
+        /// Number of OPC UA nodes requested to stop monitoring.
+        /// </summary>
+        public int NumberOfOpcMonitoredItemsToRemove;
+
+        /// <summary>
         /// Signal for completed startup.
         /// </summary>
         public static bool StartupCompleted { get; set; } = false;
@@ -106,13 +141,13 @@ namespace OpcPublisher
             try
             {
                 diagnosticInfo.PublisherStartTime = PublisherStartTime;
-                diagnosticInfo.NumberOfOpcSessionsConfigured = Program.Instance._nodeConfig.NumberOfOpcSessionsConfigured;
-                diagnosticInfo.NumberOfOpcSessionsConnected = Program.Instance._nodeConfig.NumberOfOpcSessionsConnected;
-                diagnosticInfo.NumberOfOpcSubscriptionsConfigured = Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConfigured;
-                diagnosticInfo.NumberOfOpcSubscriptionsConnected = Program.Instance._nodeConfig.NumberOfOpcSubscriptionsConnected;
-                diagnosticInfo.NumberOfOpcMonitoredItemsConfigured = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsConfigured;
-                diagnosticInfo.NumberOfOpcMonitoredItemsMonitored = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsMonitored;
-                diagnosticInfo.NumberOfOpcMonitoredItemsToRemove = Program.Instance._nodeConfig.NumberOfOpcMonitoredItemsToRemove;
+                diagnosticInfo.NumberOfOpcSessionsConfigured = NumberOfOpcSessionsConfigured;
+                diagnosticInfo.NumberOfOpcSessionsConnected = NumberOfOpcSessionsConnected;
+                diagnosticInfo.NumberOfOpcSubscriptionsConfigured = NumberOfOpcSubscriptionsConfigured;
+                diagnosticInfo.NumberOfOpcSubscriptionsConnected = NumberOfOpcSubscriptionsConnected;
+                diagnosticInfo.NumberOfOpcMonitoredItemsConfigured = NumberOfOpcMonitoredItemsConfigured;
+                diagnosticInfo.NumberOfOpcMonitoredItemsMonitored = NumberOfOpcMonitoredItemsMonitored;
+                diagnosticInfo.NumberOfOpcMonitoredItemsToRemove = NumberOfOpcMonitoredItemsToRemove;
                 diagnosticInfo.MonitoredItemsQueueCapacity = SettingsConfiguration.MonitoredItemsQueueCapacity;
                 diagnosticInfo.MonitoredItemsQueueCount = MonitoredItemsQueueCount;
                 diagnosticInfo.EnqueueCount = EnqueueCount;

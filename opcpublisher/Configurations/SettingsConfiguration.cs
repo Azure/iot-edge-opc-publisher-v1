@@ -149,5 +149,10 @@ namespace OpcPublisher.Configurations
         /// DefaultOpcPublishingInternal
         /// </summary>
         public static int DefaultOpcPublishingInterval = 1000;
+
+        /// <summary>
+        /// Use secuirty by default for all sessions
+        /// </summary>
+        public static bool UseSecurity = true;
     }
 }
