@@ -95,10 +95,11 @@ namespace OpcPublisher
         /// <summary>
         /// Initializes edge message broker communication.
         /// </summary>
-        public void InitHubCommunication(bool runningInIoTEdgeContext, string connectionString)
+        public void InitHubCommunication(UAClient uaClient, bool runningInIoTEdgeContext, string connectionString)
         {
             _hubCommunicationCts = new CancellationTokenSource();
             _shutdownToken = _hubCommunicationCts.Token;
+            _hubMethodHandler = new HubMethodHandler(uaClient);
 
             ExponentialBackoff exponentialRetryPolicy = new ExponentialBackoff(int.MaxValue, TimeSpan.FromMilliseconds(2), TimeSpan.FromMilliseconds(1024), TimeSpan.FromMilliseconds(3));
 
@@ -587,6 +588,6 @@ namespace OpcPublisher
         private DeviceClient _iotHubClient;
         private ModuleClient _edgeHubClient;
 
-        public HubMethodHandler _hubMethodHandler = new HubMethodHandler(); //TODO: make private
+        private HubMethodHandler _hubMethodHandler;
     }
 }

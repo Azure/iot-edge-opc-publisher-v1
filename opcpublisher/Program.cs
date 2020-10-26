@@ -121,11 +121,15 @@ namespace OpcPublisher
                     Logger.Information($"Publisher is in site '{SettingsConfiguration.PublisherSite}'.");
                 }
 
-                // start our server interface
+                // start our UA client
+                _uaClient = new UAClient(_application.ApplicationConfiguration);
+
+                // start our UA server
                 try
                 {
                     Logger.Information($"Starting server on endpoint {_application.ApplicationConfiguration.ServerConfiguration.BaseAddresses[0].ToString(CultureInfo.InvariantCulture)} ...");
-                    _publisherServer.Start(_application.ApplicationConfiguration);
+                    _uaServer = new PublisherServer(_uaClient);
+                    _uaServer.Start(_application.ApplicationConfiguration);
                     Logger.Information("Server started.");
                 }
                 catch (Exception e)
@@ -136,15 +140,18 @@ namespace OpcPublisher
                 }
 
                 // initialize and start EdgeHub communication
-                _clientWrapper.InitHubCommunication(SettingsConfiguration.RunningInIoTEdgeContext, SettingsConfiguration.DeviceConnectionString);
+                _hubClientWrapper.InitHubCommunication(_uaClient, SettingsConfiguration.RunningInIoTEdgeContext, SettingsConfiguration.DeviceConnectionString);
                 
                 // initialize message processing
-                _clientWrapper.InitMessageProcessing();
+                _hubClientWrapper.InitMessageProcessing();
 
                 // Show notification on session events
-                _publisherServer.CurrentInstance.SessionManager.SessionActivated += ServerEventStatus;
-                _publisherServer.CurrentInstance.SessionManager.SessionClosing += ServerEventStatus;
-                _publisherServer.CurrentInstance.SessionManager.SessionCreated += ServerEventStatus;
+                _uaServer.CurrentInstance.SessionManager.SessionActivated += ServerEventStatus;
+                _uaServer.CurrentInstance.SessionManager.SessionClosing += ServerEventStatus;
+                _uaServer.CurrentInstance.SessionManager.SessionCreated += ServerEventStatus;
+
+                // load our publishedNodes.json
+                PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
                 // startup completed
                 Metrics.StartupCompleted = true;
@@ -169,11 +176,14 @@ namespace OpcPublisher
                 ShutdownTokenSource.Cancel();
                 Logger.Information("Publisher is shutting down...");
 
-                // stop the server
-                _publisherServer.Stop();
+                // shutdown the server
+                _uaServer.Stop();
+
+                // shutdown the client
+                _uaClient.Close();
 
                 // shutdown the IoTHub messaging
-                _clientWrapper.Close();
+                _hubClientWrapper.Close();
 
                 // free resources
                 ShutdownTokenSource = null;
@@ -302,17 +312,16 @@ namespace OpcPublisher
             Logger.Information($"Log level is: {SettingsConfiguration.LogLevel}");
         }
                
-        private PublisherServer _publisherServer = new PublisherServer();
+        private PublisherServer     _uaServer;
+        private UAClient            _uaClient;
+        private HubClientWrapper    _hubClientWrapper = new HubClientWrapper();
 
-        public ApplicationInstance _application = new ApplicationInstance {
+        private ApplicationInstance _application = new ApplicationInstance {
             ApplicationName = "OpcPublisher",
             ApplicationType = ApplicationType.ClientAndServer,
             ConfigSectionName = "Configurations/Opc.Publisher"
-        }; //TODO: make private
-
-        private HubClientWrapper _clientWrapper = new HubClientWrapper();
+        };
 
         public Metrics _diag = new Metrics(); //TODO: make private
-        public PublishedNodesConfiguration _nodeConfig = new PublishedNodesConfiguration(); //TODO: make private
     }
 }

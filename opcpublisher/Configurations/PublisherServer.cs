@@ -14,6 +14,12 @@ namespace OpcPublisher
 {
     public class PublisherServer : StandardServer
     {
+        public PublisherServer(UAClient client)
+            :base()
+        {
+            _uaClient = client;
+        }
+
         /// <summary>
         /// Creates the node managers for the server.
         /// </summary>
@@ -26,7 +32,7 @@ namespace OpcPublisher
         {
             List<INodeManager> nodeManagers = new List<INodeManager>
             {
-                new PublisherNodeManager(server, configuration)
+                new PublisherNodeManager(server, _uaClient, configuration)
             };
 
             return new MasterNodeManager(server, configuration, null, nodeManagers.ToArray());
@@ -115,5 +121,7 @@ namespace OpcPublisher
 
             base.OnServerStopping();
         }
+
+        private UAClient _uaClient;
     }
 }

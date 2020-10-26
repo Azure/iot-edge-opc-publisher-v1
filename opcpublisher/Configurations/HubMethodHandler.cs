@@ -24,25 +24,22 @@ namespace OpcPublisher
     public class HubMethodHandler
     {
         /// <summary>
-        /// Dictionary of available IoTHub direct methods.
-        /// </summary>
-        public Dictionary<string, MethodCallback> IotHubDirectMethods { get; } = new Dictionary<string, MethodCallback>();
-
-        /// <summary>
         /// Private default constructor
         /// </summary>
-        public HubMethodHandler()
+        public HubMethodHandler(UAClient uaClient)
         {
-            IotHubDirectMethods.Add("PublishNodes", HandlePublishNodesMethodAsync);
-            IotHubDirectMethods.Add("UnpublishNodes", HandleUnpublishNodesMethodAsync);
-            IotHubDirectMethods.Add("UnpublishAllNodes", HandleUnpublishAllNodesMethodAsync);
-            IotHubDirectMethods.Add("GetConfiguredEndpoints", HandleGetConfiguredEndpointsMethodAsync);
-            IotHubDirectMethods.Add("GetConfiguredNodesOnEndpoint", HandleGetConfiguredNodesOnEndpointMethodAsync);
-            IotHubDirectMethods.Add("GetDiagnosticInfo", HandleGetDiagnosticInfoMethodAsync);
-            IotHubDirectMethods.Add("GetDiagnosticLog", HandleGetDiagnosticLogMethodAsync);
-            IotHubDirectMethods.Add("GetDiagnosticStartupLog", HandleGetDiagnosticStartupLogMethodAsync);
-            IotHubDirectMethods.Add("ExitApplication", HandleExitApplicationMethodAsync);
-            IotHubDirectMethods.Add("GetInfo", HandleGetInfoMethodAsync);
+            _uaClient = uaClient;
+
+            _directMethods.Add("PublishNodes", HandlePublishNodesMethodAsync);
+            _directMethods.Add("UnpublishNodes", HandleUnpublishNodesMethodAsync);
+            _directMethods.Add("UnpublishAllNodes", HandleUnpublishAllNodesMethodAsync);
+            _directMethods.Add("GetConfiguredEndpoints", HandleGetConfiguredEndpointsMethodAsync);
+            _directMethods.Add("GetConfiguredNodesOnEndpoint", HandleGetConfiguredNodesOnEndpointMethodAsync);
+            _directMethods.Add("GetDiagnosticInfo", HandleGetDiagnosticInfoMethodAsync);
+            _directMethods.Add("GetDiagnosticLog", HandleGetDiagnosticLogMethodAsync);
+            _directMethods.Add("GetDiagnosticStartupLog", HandleGetDiagnosticStartupLogMethodAsync);
+            _directMethods.Add("ExitApplication", HandleExitApplicationMethodAsync);
+            _directMethods.Add("GetInfo", HandleGetInfoMethodAsync);
         }
 
         public async void RegisterMethodHandlers(DeviceClient client)
@@ -51,7 +48,7 @@ namespace OpcPublisher
             Program.Instance.Logger.Debug($"Register desired properties and method callbacks");
 
             // register method handlers
-            foreach (var iotHubMethod in IotHubDirectMethods)
+            foreach (var iotHubMethod in _directMethods)
             {
                 await client.SetMethodHandlerAsync(iotHubMethod.Key, iotHubMethod.Value, client).ConfigureAwait(false);
             }
@@ -64,7 +61,7 @@ namespace OpcPublisher
             Program.Instance.Logger.Debug($"Register desired properties and method callbacks");
 
             // register method handlers
-            foreach (var iotHubMethod in IotHubDirectMethods)
+            foreach (var iotHubMethod in _directMethods)
             {
                 await client.SetMethodHandlerAsync(iotHubMethod.Key, iotHubMethod.Value, client).ConfigureAwait(false);
             }
@@ -79,8 +76,7 @@ namespace OpcPublisher
             string logPrefix = "HandlePublishNodesMethodAsync:";
             
             OpcUserSessionAuthenticationMode desiredAuthenticationMode = OpcUserSessionAuthenticationMode.Anonymous;
-            EncryptedNetworkCredential desiredEncryptedCredential = null;
-
+            
             PublishNodesMethodRequestModel publishNodesMethodData = null;
             HttpStatusCode statusCode = HttpStatusCode.OK;
             List<string> statusResponse = new List<string>();
@@ -98,7 +94,6 @@ namespace OpcPublisher
                     }
 
                     desiredAuthenticationMode = OpcUserSessionAuthenticationMode.UsernamePassword;
-                    desiredEncryptedCredential = await EncryptedNetworkCredential.FromPlainCredential(publishNodesMethodData.UserName, publishNodesMethodData.Password);
                 }
             }
             catch (UriFormatException e)
@@ -132,10 +127,40 @@ namespace OpcPublisher
                             OpcPublishingInterval = nodeOnEndpoint.OpcPublishingInterval,
                             OpcSamplingInterval = nodeOnEndpoint.OpcSamplingInterval,
                             UseSecurity = publishNodesMethodData.UseSecurity,
-                            EncryptedAuthCredential = desiredEncryptedCredential,
+                            AuthCredential = new NetworkCredential(publishNodesMethodData.UserName, publishNodesMethodData.Password),
                             OpcAuthenticationMode = desiredAuthenticationMode
                         };
-                        UAClient.PublishNode(node);
+                        statusCode = _uaClient.PublishNode(node);
+
+                        // check and store a result message in case of an error
+                        switch (statusCode)
+                        {
+                            case HttpStatusCode.OK:
+                                statusMessage = $"'{node.NodeId}': already monitored";
+                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
+                                statusResponse.Add(statusMessage);
+                                break;
+
+                            case HttpStatusCode.Accepted:
+                                statusMessage = $"'{node.NodeId}': added";
+                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
+                                statusResponse.Add(statusMessage);
+                                break;
+
+                            case HttpStatusCode.Gone:
+                                statusMessage = $"'{node.NodeId}': session to endpoint does not exist anymore";
+                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
+                                statusResponse.Add(statusMessage);
+                                statusCode = HttpStatusCode.Gone;
+                                break;
+
+                            case HttpStatusCode.InternalServerError:
+                                statusMessage = $"'{node.NodeId}': error while trying to configure";
+                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
+                                statusResponse.Add(statusMessage);
+                                statusCode = HttpStatusCode.InternalServerError;
+                                break;
+                        }
                     }
                 }
                 catch (AggregateException e)
@@ -220,7 +245,37 @@ namespace OpcPublisher
                             OpcPublishingInterval = nodeOnEndpoint.OpcPublishingInterval,
                             OpcSamplingInterval = nodeOnEndpoint.OpcSamplingInterval,
                         };
-                        UAClient.UnpublishNode(node);
+                        statusCode = _uaClient.UnpublishNode(node);
+
+                        // check and store a result message in case of an error
+                        switch (statusCode)
+                        {
+                            case HttpStatusCode.OK:
+                                statusMessage = $"Id '{node.NodeId}': was not configured";
+                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
+                                statusResponse.Add(statusMessage);
+                                break;
+
+                            case HttpStatusCode.Accepted:
+                                statusMessage = $"Id '{node.NodeId}': tagged for removal";
+                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
+                                statusResponse.Add(statusMessage);
+                                break;
+
+                            case HttpStatusCode.Gone:
+                                statusMessage = $"Id '{node.NodeId}': session to endpoint does not exist anymore";
+                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
+                                statusResponse.Add(statusMessage);
+                                statusCode = HttpStatusCode.Gone;
+                                break;
+
+                            case HttpStatusCode.InternalServerError:
+                                statusMessage = $"Id '{node.NodeId}': error while trying to remove";
+                                Program.Instance.Logger.Debug($"{logPrefix} {statusMessage}");
+                                statusResponse.Add(statusMessage);
+                                statusCode = HttpStatusCode.InternalServerError;
+                                break;
+                        }
 
                         // build response
                         statusMessage = $"All monitored items in all subscriptions{(unpublishNodesMethodData.EndpointUrl != null ? $" on endpoint '{unpublishNodesMethodData.EndpointUrl}'" : " ")} tagged for removal";
@@ -314,7 +369,7 @@ namespace OpcPublisher
                 }
                 else
                 {
-                    UAClient.RemoveAllMonitoredNodes();
+                    _uaClient.RemoveAllMonitoredNodes();
                 }
             }
 
@@ -391,7 +446,7 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of all endpoints
-                endpointUrls = UAClient.GetListofPublishedNodes().Select(e => e.EndpointUrl.OriginalString).ToList();
+                endpointUrls = _uaClient.GetListofPublishedNodes().Select(e => e.EndpointUrl.OriginalString).ToList();
                 uint endpointsCount = (uint)endpointUrls.Count;
 
                 // validate version
@@ -509,7 +564,7 @@ namespace OpcPublisher
             if (statusCode == HttpStatusCode.OK)
             {
                 // get the list of published nodes for the endpoint
-                List<ConfigurationFileEntryModel> configFileEntries = UAClient.GetListofPublishedNodes();
+                List<ConfigurationFileEntryModel> configFileEntries = _uaClient.GetListofPublishedNodes();
 
                 // return if there are no nodes configured for this endpoint
                 if (configFileEntries.Count == 0)
@@ -930,5 +985,9 @@ namespace OpcPublisher
             // exit
             Environment.Exit(2);
         }
+
+        private Dictionary<string, MethodCallback> _directMethods = new Dictionary<string, MethodCallback>();
+
+        private UAClient _uaClient;
     }
 }

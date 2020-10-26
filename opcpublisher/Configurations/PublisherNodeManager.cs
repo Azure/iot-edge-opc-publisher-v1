@@ -3,25 +3,22 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using Opc.Ua;
 using Opc.Ua.Server;
-using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 
 namespace OpcPublisher
 {
     public class PublisherNodeManager : CustomNodeManager2
     {
-        public PublisherNodeManager(Opc.Ua.Server.IServerInternal server, ApplicationConfiguration configuration)
+        public PublisherNodeManager(Opc.Ua.Server.IServerInternal server, UAClient client, ApplicationConfiguration configuration)
         : base(server, configuration, "http://microsoft.com/Opc/Publisher/")
         {
             SystemContext.NodeIdFactory = this;
+            _uaClient = client;
         }
 
         /// <summary>
@@ -454,7 +451,7 @@ namespace OpcPublisher
                     ExpandedNodeId = expandedNodeId,
                     EndpointUrl = endpointUri.ToString()
                 };
-                UAClient.PublishNode(node);
+                _uaClient.PublishNode(node);
             }
             catch (Exception e)
             {
@@ -517,7 +514,7 @@ namespace OpcPublisher
                     ExpandedNodeId = expandedNodeId,
                     EndpointUrl = endpointUri.ToString()
                 };
-                UAClient.UnpublishNode(node);
+                _uaClient.UnpublishNode(node);
             }
             catch (Exception e)
             {
@@ -557,10 +554,12 @@ namespace OpcPublisher
             }
 
             // get the list of published nodes in NodeId format
-            List<ConfigurationFileEntryModel> configFileEntries = UAClient.GetListofPublishedNodes();
+            List<ConfigurationFileEntryModel> configFileEntries = _uaClient.GetListofPublishedNodes();
             outputArguments[0] = JsonConvert.SerializeObject(configFileEntries);
             Program.Instance.Logger.Information($"{logPrefix} Success (number of entries: {configFileEntries.Count})");
             return ServiceResult.Good;
         }
+
+        private UAClient _uaClient;
     }
 }

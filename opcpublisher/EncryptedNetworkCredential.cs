@@ -6,7 +6,6 @@
 using System;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 
 namespace OpcPublisher
 {
@@ -15,13 +14,9 @@ namespace OpcPublisher
     /// </summary>
     public class EncryptedNetworkCredential : NetworkCredential
     {
-        public async static Task<EncryptedNetworkCredential> FromPlainCredential(string username, string password) => await Encrypt(new NetworkCredential(username, password));
-
-        public async static Task<EncryptedNetworkCredential> Encrypt(NetworkCredential networkCredential)
+        public static EncryptedNetworkCredential Encrypt(X509Certificate2 cert, NetworkCredential networkCredential)
         {
             EncryptedNetworkCredential result = new EncryptedNetworkCredential();
-
-            X509Certificate2 cert = await Program.Instance._application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
 
             if (networkCredential.UserName != null)
             {
@@ -36,11 +31,9 @@ namespace OpcPublisher
             return result;
         }
 
-        public async Task<NetworkCredential> Decrypt()
+        public NetworkCredential Decrypt(X509Certificate2 cert)
         {
             NetworkCredential result = new NetworkCredential();
-
-            X509Certificate2 cert = await Program.Instance._application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).ConfigureAwait(false);
 
             if (UserName != null)
             {

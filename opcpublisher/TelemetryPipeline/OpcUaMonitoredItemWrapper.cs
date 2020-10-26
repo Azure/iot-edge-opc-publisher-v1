@@ -8,7 +8,6 @@ using Opc.Ua.Client;
 using OpcPublisher.Configurations;
 using System;
 using System.Globalization;
-using System.Linq;
 using System.Threading;
 
 namespace OpcPublisher
@@ -19,216 +18,9 @@ namespace OpcPublisher
     public class OpcUaMonitoredItemWrapper
     {
         /// <summary>
-        /// The state of the monitored item.
-        /// </summary>
-        public enum OpcMonitoredItemState
-        {
-            Unmonitored = 0,
-            UnmonitoredNamespaceUpdateRequested,
-            Monitored,
-            RemovalRequested,
-        }
-
-        /// <summary>
-        /// The configuration type of the monitored item.
-        /// </summary>
-        public enum OpcMonitoredItemConfigurationType
-        {
-            NodeId = 0,
-            ExpandedNodeId
-        }
-
-        /// <summary>
-        /// The display name to use in the telemetry event for the monitored item.
-        /// </summary>
-        public string DisplayName { get; set; }
-
-        /// <summary>
-        /// Flag to signal that the display name was requested by the node configuration.
-        /// </summary>
-        public bool DisplayNameFromConfiguration { get; set; }
-
-        /// <summary>
-        /// The state of the monitored item.
-        /// </summary>
-        public OpcMonitoredItemState State { get; set; }
-
-        /// <summary>
-        /// The OPC UA attributes to use when monitoring the node.
-        /// </summary>
-        public uint AttributeId { get; set; }
-
-        /// <summary>
-        /// The OPC UA monitoring mode to use when monitoring the node.
-        /// </summary>
-        public MonitoringMode MonitoringMode { get; set; }
-
-        /// <summary>
-        /// The requested sampling interval to be used for the node.
-        /// </summary>
-        public int RequestedSamplingInterval { get; set; }
-
-        /// <summary>
-        /// The actual sampling interval used for the node.
-        /// </summary>
-        public double SamplingInterval { get; set; }
-
-        /// <summary>
-        /// Flag to signal that the sampling interval was requested by the node configuration.
-        /// </summary>
-        public bool RequestedSamplingIntervalFromConfiguration { get; set; }
-
-        /// <summary>
-        /// The OPC UA queue size to use for the node monitoring.
-        /// </summary>
-        public uint QueueSize { get; set; }
-
-        /// <summary>
-        /// A flag to control the queue behaviour of the OPC UA stack for the node.
-        /// </summary>
-        public bool DiscardOldest { get; set; }
-
-        /// <summary>
-        /// The event handler of the node in case the OPC UA stack detected a change.
-        /// </summary>
-        public MonitoredItemNotificationEventHandler Notification { get; set; }
-
-        /// <summary>
-        /// The endpoint URL of the OPC UA server this nodes is residing on.
-        /// </summary>
-        public string EndpointUrl { get; set; }
-
-        /// <summary>
-        /// The OPC UA stacks monitored item object.
-        /// </summary>
-        public MonitoredItem OpcUaClientMonitoredItem { get; set; }
-
-        /// <summary>
-        /// The OPC UA identifier of the node in NodeId ("ns=") syntax.
-        /// </summary>
-        public NodeId ConfigNodeId { get; set; }
-
-        /// <summary>
-        /// The OPC UA identifier of the node in ExpandedNodeId ("nsu=") syntax.
-        /// </summary>
-        public ExpandedNodeId ConfigExpandedNodeId { get; set; }
-
-        /// <summary>
-        /// The OPC UA identifier of the node as it was configured.
-        /// </summary>
-        public string OriginalId { get; set; }
-
-        /// <summary>
-        /// Identifies the configuration type of the node.
-        /// </summary>
-        public OpcMonitoredItemConfigurationType ConfigType { get; set; }
-
-        public int HeartbeatInterval
-        {
-            get => _heartbeatInterval;
-            set => _heartbeatInterval = value <= 0 ? 0 : value > SettingsConfiguration.HeartbeatIntvervalMax ? SettingsConfiguration.HeartbeatIntvervalMax : value;
-        }
-
-        public bool HeartbeatIntervalFromConfiguration { get; set; } = false;
-
-        public MessageDataModel HeartbeatMessage { get; set; } = null;
-
-        public Timer HeartbeatSendTimer { get; set; } = null;
-
-        public bool SkipNextEvent { get; set; } = false;
-
-        public bool SkipFirst { get; set; }
-
-        public bool SkipFirstFromConfiguration { get; set; } = false;
-
-        /// <summary>
-        /// Ctor using NodeId (ns syntax for namespace).
-        /// </summary>
-        public OpcUaMonitoredItemWrapper(NodeId nodeId, string sessionEndpointUrl, int? samplingInterval,
-            string displayName, int? heartbeatInterval, bool? skipFirst)
-        {
-            ConfigNodeId = nodeId;
-            ConfigExpandedNodeId = null;
-            OriginalId = nodeId.ToString();
-            ConfigType = OpcMonitoredItemConfigurationType.NodeId;
-            Init(sessionEndpointUrl, samplingInterval, displayName, heartbeatInterval, skipFirst);
-            State = OpcMonitoredItemState.Unmonitored;
-        }
-
-        /// <summary>
-        /// Ctor using ExpandedNodeId ("nsu=") syntax.
-        /// </summary>
-        public OpcUaMonitoredItemWrapper(ExpandedNodeId expandedNodeId, string sessionEndpointUrl, int? samplingInterval,
-            string displayName, int? heartbeatInterval, bool? skipFirst)
-        {
-            ConfigNodeId = null;
-            ConfigExpandedNodeId = expandedNodeId;
-            OriginalId = expandedNodeId.ToString();
-            ConfigType = OpcMonitoredItemConfigurationType.ExpandedNodeId;
-            Init(sessionEndpointUrl, samplingInterval, displayName, heartbeatInterval, skipFirst);
-            State = OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested;
-        }
-
-        /// <summary>
-        /// Checks if the monitored item does monitor the node described by the given objects.
-        /// </summary>
-        public bool IsMonitoringThisNode(NodeId nodeId, ExpandedNodeId expandedNodeId, NamespaceTable namespaceTable)
-        {
-            if (State == OpcMonitoredItemState.RemovalRequested)
-            {
-                return false;
-            }
-            if (ConfigType == OpcMonitoredItemConfigurationType.NodeId)
-            {
-                if (nodeId != null)
-                {
-                    if (ConfigNodeId == nodeId)
-                    {
-                        return true;
-                    }
-                }
-                if (expandedNodeId != null)
-                {
-                    string namespaceUri = namespaceTable.ToArray().ElementAtOrDefault(ConfigNodeId.NamespaceIndex);
-                    if (expandedNodeId.NamespaceUri != null && expandedNodeId.NamespaceUri.Equals(namespaceUri, StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (expandedNodeId.Identifier.ToString().Equals(ConfigNodeId.Identifier.ToString(), StringComparison.OrdinalIgnoreCase))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            if (ConfigType == OpcMonitoredItemConfigurationType.ExpandedNodeId)
-            {
-                if (nodeId != null)
-                {
-                    int namespaceIndex = namespaceTable.GetIndex(ConfigExpandedNodeId?.NamespaceUri);
-                    if (nodeId.NamespaceIndex == namespaceIndex)
-                    {
-                        if (nodeId.Identifier.ToString().Equals(ConfigExpandedNodeId.Identifier.ToString(), StringComparison.OrdinalIgnoreCase))
-                        {
-                            return true;
-                        }
-                    }
-                }
-                if (expandedNodeId != null)
-                {
-                    if (ConfigExpandedNodeId.NamespaceUri != null &&
-                        ConfigExpandedNodeId.NamespaceUri.Equals(expandedNodeId.NamespaceUri, StringComparison.OrdinalIgnoreCase) &&
-                        ConfigExpandedNodeId.Identifier.ToString().Equals(expandedNodeId.Identifier.ToString(), StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        /// <summary>
         /// The notification that the data for a monitored item has changed on an OPC UA server.
         /// </summary>
-        public void MonitoredItemNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
+        public static void MonitoredItemNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
         {
             try
             {
@@ -255,12 +47,11 @@ namespace OpcPublisher
                 }
 
                 // stop the heartbeat timer
-                HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                //HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
                 MessageDataModel messageData = new MessageDataModel();
-                messageData.EndpointUrl = EndpointUrl;
-                messageData.ExpandedNodeId = ConfigExpandedNodeId?.ToString();
-                messageData.NodeId = OriginalId;
+                //TODO: messageData.EndpointUrl = ?,
+                messageData.NodeId = monitoredItem.ResolvedNodeId.ToString();
                 messageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite) ? "" : $":{SettingsConfiguration.PublisherSite}");
                 
                 if (monitoredItem.DisplayName != null)
@@ -327,7 +118,7 @@ namespace OpcPublisher
                     Program.Instance.Logger.Debug($"Enqueue a new message from subscription {(monitoredItem.Subscription == null ? "removed" : monitoredItem.Subscription.Id.ToString(CultureInfo.InvariantCulture))}");
                     Program.Instance.Logger.Debug($" with publishing interval: {monitoredItem?.Subscription?.PublishingInterval} and sampling interval: {monitoredItem?.SamplingInterval}):");
                 }
-
+/* TODO
                 // setup heartbeat processing
                 if (HeartbeatInterval > 0)
                 {
@@ -369,6 +160,7 @@ namespace OpcPublisher
                     SkipNextEvent = false;
                 }
                 else
+*/
                 {
                     // enqueue the telemetry event
                     HubClientWrapper.Enqueue(messageData);
@@ -379,30 +171,7 @@ namespace OpcPublisher
                 Program.Instance.Logger.Error(ex, "Error processing monitored item notification");
             }
         }
-
-        /// <summary>
-        /// Init instance variables.
-        /// </summary>
-        private void Init(string sessionEndpointUrl, int? samplingInterval, string displayName, int? heartbeatInterval, bool? skipFirst)
-        {
-            State = OpcMonitoredItemState.Unmonitored;
-            AttributeId = Attributes.Value;
-            MonitoringMode = MonitoringMode.Reporting;
-            QueueSize = 0;
-            DiscardOldest = true;
-            Notification = new MonitoredItemNotificationEventHandler(MonitoredItemNotificationEventHandler);
-            EndpointUrl = sessionEndpointUrl;
-            DisplayName = displayName;
-            DisplayNameFromConfiguration = string.IsNullOrEmpty(displayName) ? false : true;
-            RequestedSamplingInterval = samplingInterval ?? SettingsConfiguration.DefaultOpcSamplingInterval;
-            RequestedSamplingIntervalFromConfiguration = samplingInterval != null ? true : false;
-            SamplingInterval = RequestedSamplingInterval;
-            HeartbeatInterval = (int)(heartbeatInterval == null ? SettingsConfiguration.HeartbeatIntervalDefault : heartbeatInterval);
-            HeartbeatIntervalFromConfiguration = heartbeatInterval != null ? true : false;
-            SkipFirst = skipFirst == null ? SettingsConfiguration.SkipFirstDefault : (bool)skipFirst;
-            SkipFirstFromConfiguration = skipFirst != null ? true : false;
-        }
-
+/*
         /// <summary>
         /// Timer callback for heartbeat telemetry send.
         /// </summary>
@@ -432,7 +201,6 @@ namespace OpcPublisher
                 }
             }
         }
-
-        private int _heartbeatInterval;
+*/
     }
 }

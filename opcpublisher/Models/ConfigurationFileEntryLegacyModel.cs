@@ -74,7 +74,9 @@ namespace OpcPublisher
             set
             {
                 if (EncryptedAuthCredential == null)
+                {
                     EncryptedAuthCredential = new EncryptedNetworkCredential();
+                }
 
                 EncryptedAuthCredential.UserName = value;
             }
@@ -93,7 +95,9 @@ namespace OpcPublisher
             set
             {
                 if (EncryptedAuthCredential == null)
+                {
                     EncryptedAuthCredential = new EncryptedNetworkCredential();
+                }
 
                 EncryptedAuthCredential.Password = value;
             }

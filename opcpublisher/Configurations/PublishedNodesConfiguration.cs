@@ -8,6 +8,7 @@ using Opc.Ua;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace OpcPublisher.Configurations
@@ -23,7 +24,7 @@ namespace OpcPublisher.Configurations
         /// Read and parse the publisher node configuration file.
         /// </summary>
         /// <returns></returns>
-        public static bool ReadConfig()
+        public static bool ReadConfig(UAClient client, X509Certificate2 cert)
         {
             // get information on the nodes to publish and validate the json by deserializing it.
             try
@@ -67,9 +68,9 @@ namespace OpcPublisher.Configurations
                                             HeartbeatInterval = opcNode.HeartbeatInterval,
                                             SkipFirst = opcNode.SkipFirst,
                                             OpcAuthenticationMode = publisherConfigFileEntryLegacy.OpcAuthenticationMode,
-                                            EncryptedAuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential
+                                            AuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential.Decrypt(cert)
                                         };
-                                        UAClient.PublishNode(publishingInfo);
+                                        client.PublishNode(publishingInfo);
                                     }
                                     else
                                     {
@@ -89,9 +90,9 @@ namespace OpcPublisher.Configurations
                                                 HeartbeatInterval = opcNode.HeartbeatInterval,
                                                 SkipFirst = opcNode.SkipFirst,
                                                 OpcAuthenticationMode = publisherConfigFileEntryLegacy.OpcAuthenticationMode,
-                                                EncryptedAuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential
+                                                AuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential.Decrypt(cert)
                                             };
-                                            UAClient.PublishNode(publishingInfo);
+                                            client.PublishNode(publishingInfo);
                                         }
                                         else
                                         {
@@ -108,9 +109,9 @@ namespace OpcPublisher.Configurations
                                                 HeartbeatInterval = opcNode.HeartbeatInterval,
                                                 SkipFirst = opcNode.SkipFirst,
                                                 OpcAuthenticationMode = publisherConfigFileEntryLegacy.OpcAuthenticationMode,
-                                                EncryptedAuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential
+                                                AuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential.Decrypt(cert)
                                             };
-                                            UAClient.PublishNode(publishingInfo);
+                                            client.PublishNode(publishingInfo);
                                         }
                                     }
                                 }
@@ -124,9 +125,9 @@ namespace OpcPublisher.Configurations
                                     EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString,
                                     UseSecurity = (bool)publisherConfigFileEntryLegacy.UseSecurity,
                                     OpcAuthenticationMode = publisherConfigFileEntryLegacy.OpcAuthenticationMode,
-                                    EncryptedAuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential
+                                    AuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential.Decrypt(cert)
                                 };
-                                UAClient.PublishNode(publishingInfo);
+                                client.PublishNode(publishingInfo);
                             }
                         }
                     }
@@ -148,7 +149,7 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Updates the configuration file to persist all currently published nodes
         /// </summary>
-        public static async Task UpdateNodeConfigurationFileAsync(uint nodeConfigVersion)
+        public static async Task UpdateNodeConfigurationFileAsync(UAClient client, uint nodeConfigVersion)
         {
             // only persist newer versions
             if (nodeConfigVersion > _lastNodeConfigVersion)
@@ -156,7 +157,7 @@ namespace OpcPublisher.Configurations
                 try
                 {
                     // iterate through all sessions, subscriptions and monitored items and create config file entries
-                    List<ConfigurationFileEntryModel> publisherNodeConfiguration = UAClient.GetListofPublishedNodes();
+                    List<ConfigurationFileEntryModel> publisherNodeConfiguration = client.GetListofPublishedNodes();
 
                     Program.Instance.Logger.Debug($"Update node configuration file, version: {_lastNodeConfigVersion:X8}");
 

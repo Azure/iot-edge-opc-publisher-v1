@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 using Opc.Ua;
+using System.Net;
 
 namespace OpcPublisher
 {
@@ -68,8 +69,8 @@ namespace OpcPublisher
         public OpcUserSessionAuthenticationMode OpcAuthenticationMode { get; set; }
 
         /// <summary>
-        /// Gets or sets the encrypted auth credential when OpcAuthenticationMode is set to UsernamePassword.
+        /// Gets or sets the auth credential when OpcAuthenticationMode is set to UsernamePassword.
         /// </summary>
-        public EncryptedNetworkCredential EncryptedAuthCredential { get; set; }
+        public NetworkCredential AuthCredential { get; set; }
     }
 }
