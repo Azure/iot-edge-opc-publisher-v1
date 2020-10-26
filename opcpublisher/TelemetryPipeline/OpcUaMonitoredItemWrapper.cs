@@ -7,8 +7,8 @@ using Opc.Ua;
 using Opc.Ua.Client;
 using OpcPublisher.Configurations;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
 
 namespace OpcPublisher
 {
@@ -50,7 +50,7 @@ namespace OpcPublisher
                 //HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
                 MessageDataModel messageData = new MessageDataModel();
-                //TODO: messageData.EndpointUrl = ?,
+                messageData.EndpointUrl = monitoredItem.Subscription.Session.ConfiguredEndpoint.EndpointUrl.ToString();
                 messageData.NodeId = monitoredItem.ResolvedNodeId.ToString();
                 messageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite) ? "" : $":{SettingsConfiguration.PublisherSite}");
                 
@@ -118,49 +118,14 @@ namespace OpcPublisher
                     Program.Instance.Logger.Debug($"Enqueue a new message from subscription {(monitoredItem.Subscription == null ? "removed" : monitoredItem.Subscription.Id.ToString(CultureInfo.InvariantCulture))}");
                     Program.Instance.Logger.Debug($" with publishing interval: {monitoredItem?.Subscription?.PublishingInterval} and sampling interval: {monitoredItem?.SamplingInterval}):");
                 }
-/* TODO
-                // setup heartbeat processing
-                if (HeartbeatInterval > 0)
-                {
-                    if (HeartbeatMessage != null)
-                    {
-                        // ensure that the timestamp of the message is larger than the current heartbeat message
-                        lock (HeartbeatMessage)
-                        {
-                            DateTime sourceTimestamp;
-                            DateTime heartbeatSourceTimestamp;
-                            if (DateTime.TryParse(messageData.SourceTimestamp, out sourceTimestamp) && DateTime.TryParse(HeartbeatMessage.SourceTimestamp, out heartbeatSourceTimestamp))
-                            {
-                                if (heartbeatSourceTimestamp >= sourceTimestamp)
-                                {
-                                    Program.Instance.Logger.Warning($"HeartbeatMessage has larger or equal timestamp than message. Adjusting...");
-                                    sourceTimestamp.AddMilliseconds(1);
-                                }
-                                messageData.SourceTimestamp = sourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
-                            }
-
-                            // store the message for the heartbeat
-                            HeartbeatMessage = messageData;
-                        }
-                    }
-                    else
-                    {
-                        HeartbeatMessage = messageData;
-                    }
-
-                    // recharge the heartbeat timer
-                    HeartbeatSendTimer.Change(HeartbeatInterval * 1000, HeartbeatInterval * 1000);
-                    Program.Instance.Logger.Debug($"Setting up {HeartbeatInterval} sec heartbeat for node '{DisplayName}'.");
-                }
 
                 // skip event if needed
-                if (SkipNextEvent)
+                if (_skipFirst[messageData.NodeId])
                 {
-                    Program.Instance.Logger.Debug($"Skipping first telemetry event for node '{DisplayName}'.");
-                    SkipNextEvent = false;
+                    Program.Instance.Logger.Debug($"Skipping first telemetry event for node '{messageData.DisplayName}'.");
+                    _skipFirst[messageData.NodeId] = false;
                 }
                 else
-*/
                 {
                     // enqueue the telemetry event
                     HubClientWrapper.Enqueue(messageData);
@@ -171,36 +136,7 @@ namespace OpcPublisher
                 Program.Instance.Logger.Error(ex, "Error processing monitored item notification");
             }
         }
-/*
-        /// <summary>
-        /// Timer callback for heartbeat telemetry send.
-        /// </summary>
-        internal void HeartbeatSend(object state)
-        {
-            System.Diagnostics.Debug.Assert(state == null);
-            // send the last known message
-            lock (HeartbeatMessage)
-            {
-                if (HeartbeatMessage != null)
-                {
-                    // advance the SourceTimestamp
-                    DateTime sourceTimestamp;
-                    if (DateTime.TryParse(HeartbeatMessage.SourceTimestamp, out sourceTimestamp))
-                    {
-                        sourceTimestamp = sourceTimestamp.AddSeconds(HeartbeatInterval);
-                        HeartbeatMessage.SourceTimestamp = sourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
-                    }
 
-                    // enqueue the message
-                    HubClientWrapper.Enqueue(HeartbeatMessage);
-                    Program.Instance.Logger.Debug($"Message enqueued for heartbeat with sourceTimestamp '{HeartbeatMessage.SourceTimestamp}'.");
-                }
-                else
-                {
-                    Program.Instance.Logger.Warning($"No message is available for heartbeat.");
-                }
-            }
-        }
-*/
+        public static Dictionary<string, bool> _skipFirst = new Dictionary<string, bool>();
     }
 }

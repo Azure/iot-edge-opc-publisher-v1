@@ -180,7 +180,7 @@ namespace OpcPublisher
                 _uaServer.Stop();
 
                 // shutdown the client
-                _uaClient.Close();
+                _uaClient.RemoveAllMonitoredNodes();
 
                 // shutdown the IoTHub messaging
                 _hubClientWrapper.Close();

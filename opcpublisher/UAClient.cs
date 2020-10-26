@@ -36,20 +36,7 @@ namespace OpcPublisher
             _uaApplicationConfiguration = applicationConfig;
         }
 
-        public void Close()
-        {
-            // close all sessions
-            lock (_sessionsLock)
-            {
-                foreach (Session session in _sessions)
-                {
-                    session.Close(_uaApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout);
-                    Program.Instance.Logger.Information($"Session to endpoint URI '{session.Endpoint.EndpointUrl}' closed successfully.");
-                }
-            }
-        }
-
-        public Session FindSession(string endpointUrl)
+         public Session FindSession(string endpointUrl)
         {
             EndpointDescription selectedEndpoint = CoreClientUtils.SelectEndpoint(endpointUrl, SettingsConfiguration.UseSecurity);
 
@@ -140,6 +127,8 @@ namespace OpcPublisher
             // loop through all sessions
             lock (_sessionsLock)
             {
+                _heartbeats.Clear();
+
                 foreach (Session session in _sessions)
                 {
                     foreach (Subscription subscription in session.Subscriptions)
@@ -154,162 +143,10 @@ namespace OpcPublisher
                     }
 
                     session.Close();
+                    Program.Instance.Logger.Information($"Session to endpoint URI '{session.Endpoint.EndpointUrl}' closed successfully.");
                 }
             }
         }
-
-
-/* TODO
-                            // update the namespace of the node if requested. there are two cases where this is requested:
-                            // 1) publishing requests via the OPC server method are raised using a NodeId format. for those
-                            //    the NodeId format is converted into an ExpandedNodeId format
-                            // 2) ExpandedNodeId configuration file entries do not have at parsing time a session to get
-                            //    the namespace index. this is set now.
-                            if (item.State == OpcUaMonitoredItemWrapper.OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested)
-                            {
-                                if (item.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.ExpandedNodeId)
-                                {
-                                    int namespaceIndex = _namespaceTable.GetIndex(item.ConfigExpandedNodeId?.NamespaceUri);
-                                    if (namespaceIndex < 0)
-                                    {
-                                        Program.Instance.Logger.Information($"The namespace URI of node '{item.ConfigExpandedNodeId.ToString()}' can be not mapped to a namespace index.");
-                                    }
-                                    else
-                                    {
-                                        item.ConfigExpandedNodeId = new ExpandedNodeId(item.ConfigExpandedNodeId.Identifier, (ushort)namespaceIndex, item.ConfigExpandedNodeId?.NamespaceUri, 0);
-                                    }
-                                }
-                                if (item.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.NodeId)
-                                {
-                                    string namespaceUri = _namespaceTable.ToArray().ElementAtOrDefault(item.ConfigNodeId.NamespaceIndex);
-                                    if (string.IsNullOrEmpty(namespaceUri))
-                                    {
-                                        Program.Instance.Logger.Information($"The namespace index of node '{item.ConfigNodeId.ToString()}' is invalid and the node format can not be updated.");
-                                    }
-                                    else
-                                    {
-                                        item.ConfigExpandedNodeId = new ExpandedNodeId(item.ConfigNodeId.Identifier, item.ConfigNodeId.NamespaceIndex, namespaceUri, 0);
-                                        item.ConfigType = OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.ExpandedNodeId;
-                                    }
-                                }
-                                item.State = OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Unmonitored;
-                            }
-
-                            // lookup namespace index if ExpandedNodeId format has been used and build NodeId identifier.
-                            if (item.ConfigType == OpcUaMonitoredItemWrapper.OpcMonitoredItemConfigurationType.ExpandedNodeId)
-                            {
-                                int namespaceIndex = _namespaceTable.GetIndex(item.ConfigExpandedNodeId?.NamespaceUri);
-                                if (namespaceIndex < 0)
-                                {
-                                    Program.Instance.Logger.Warning($"Syntax or namespace URI of ExpandedNodeId '{item.ConfigExpandedNodeId.ToString()}' is invalid and will be ignored.");
-                                    continue;
-                                }
-                                currentNodeId = new NodeId(item.ConfigExpandedNodeId.Identifier, (ushort)namespaceIndex);
-                            }
-                            else
-                            {
-                                currentNodeId = item.ConfigNodeId;
-                                var ns = _namespaceTable.GetString(currentNodeId.NamespaceIndex);
-                                item.ConfigExpandedNodeId = new ExpandedNodeId(currentNodeId, ns);
-                            }
-
-                            // if configured, get the DisplayName for the node, otherwise use the nodeId
-                            Node node;
-                            if (string.IsNullOrEmpty(item.DisplayName))
-                            {
-                                if (SettingsConfiguration.FetchOpcNodeDisplayName == true)
-                                {
-                                    node = OpcUaClientSession.ReadNode(currentNodeId);
-                                    item.DisplayName = node.DisplayName.Text ?? currentNodeId.ToString();
-                                }
-                                else
-                                {
-                                    item.DisplayName = currentNodeId.ToString();
-                                }
-                            }
-
-                            // handle skip first request
-                            item.SkipNextEvent = item.SkipFirst;
-
-                            // create a heartbeat timer, but no start it
-                            if (item.HeartbeatInterval > 0)
-                            {
-                                item.HeartbeatSendTimer = new Timer(item.HeartbeatSend, null, Timeout.Infinite, Timeout.Infinite);
-                            }
-
-                            // add the new monitored item.
-                            MonitoredItem monitoredItem = new MonitoredItem() {
-                                StartNodeId = currentNodeId,
-                                AttributeId = item.AttributeId,
-                                DisplayName = item.DisplayName,
-                                MonitoringMode = item.MonitoringMode,
-                                SamplingInterval = item.RequestedSamplingInterval,
-                                QueueSize = item.QueueSize,
-                                DiscardOldest = item.DiscardOldest
-                            };
-                            monitoredItem.Notification += item.Notification;
-
-                            opcSubscription.OpcUaClientSubscription.AddItem(monitoredItem);
-                            if (index % 10000 == 0 || index == (unmonitoredItems.Length - 1))
-                            {
-                                opcSubscription.OpcUaClientSubscription.SetPublishingMode(true);
-                                opcSubscription.OpcUaClientSubscription.ApplyChanges();
-                            }
-                            item.OpcUaClientMonitoredItem = monitoredItem;
-                            item.State = OpcUaMonitoredItemWrapper.OpcMonitoredItemState.Monitored;
-                            item.EndpointUrl = EndpointUrl;
-                            Program.Instance.Logger.Verbose($"Created monitored item for node '{currentNodeId.ToString()}' in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}' on endpoint '{EndpointUrl}' (version: {NodeConfigVersion:X8})");
-                            if (item.RequestedSamplingInterval != monitoredItem.SamplingInterval)
-                            {
-                                Program.Instance.Logger.Information($"Sampling interval: requested: {item.RequestedSamplingInterval}; revised: {monitoredItem.SamplingInterval}");
-                                item.SamplingInterval = monitoredItem.SamplingInterval;
-                            }
-                            if (index % 10000 == 0)
-                            {
-                                Program.Instance.Logger.Information($"Now monitoring {monitoredItemsCount + index} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'");
-                            }
-                        }
-                        catch (ServiceResultException sre)
-                        {
-                            switch ((uint)sre.Result.StatusCode)
-                            {
-                                case StatusCodes.BadSessionIdInvalid:
-                                    {
-                                        Program.Instance.Logger.Information($"Session with Id {OpcUaClientSession.SessionId} is no longer available on endpoint '{EndpointUrl}'. Cleaning up.");
-                                        // clean up the session
-                                        InternalDisconnect();
-                                        break;
-                                    }
-                                case StatusCodes.BadSubscriptionIdInvalid:
-                                    {
-                                        Program.Instance.Logger.Information($"Subscription with Id {opcSubscription.OpcUaClientSubscription.Id} is no longer available on endpoint '{EndpointUrl}'. Cleaning up.");
-                                        // clean up the session/subscription
-                                        InternalDisconnect();
-                                        break;
-                                    }
-                                case StatusCodes.BadNodeIdInvalid:
-                                case StatusCodes.BadNodeIdUnknown:
-                                    {
-                                        Program.Instance.Logger.Error($"Failed to monitor node '{currentNodeId}' on endpoint '{EndpointUrl}'.");
-                                        Program.Instance.Logger.Error($"OPC UA ServiceResultException is '{sre.Result}'. Please check your publisher configuration for this node.");
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        Program.Instance.Logger.Error($"Unhandled OPC UA ServiceResultException '{sre.Result}' when monitoring node '{currentNodeId}' on endpoint '{EndpointUrl}'. Continue.");
-                                        break;
-                                    }
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Program.Instance.Logger.Error(e, $"Failed to monitor node '{currentNodeId}' on endpoint '{EndpointUrl}'");
-                        }
-                    }
-*/
- 
-        
-
 
         /// <summary>
         /// Create a subscription in the session.
@@ -461,12 +298,12 @@ namespace OpcPublisher
             bool? skipFirst)
         {
             string logPrefix = "AddNodeForMonitoringAsync:";
+            Subscription opcSubscription = null;
 
             try
             {
                 // check if there is already a subscription with the same publishing interval, which can be used to monitor the node
                 int opcPublishingIntervalForNode = opcPublishingInterval ?? SettingsConfiguration.DefaultOpcPublishingInterval;
-                Subscription opcSubscription = null;
                 foreach (Subscription subscription in session.Subscriptions)
                 {
                     if (subscription.PublishingInterval == opcPublishingIntervalForNode)
@@ -511,19 +348,49 @@ namespace OpcPublisher
                     }
                 }
 
-                MonitoredItem newMonitoredItem = new MonitoredItem(opcSubscription.DefaultItem);
-                newMonitoredItem.StartNodeId = nodeId;
-                newMonitoredItem.AttributeId = Attributes.Value;
-                newMonitoredItem.DisplayName = displayName;
-                newMonitoredItem.SamplingInterval = (int)opcSamplingInterval;
+                MonitoredItem newMonitoredItem = new MonitoredItem(opcSubscription.DefaultItem) {
+                    StartNodeId = nodeId,
+                    AttributeId = Attributes.Value,
+                    DisplayName = displayName,
+                    SamplingInterval = (int)opcSamplingInterval
+                };
                 newMonitoredItem.Notification += OpcUaMonitoredItemWrapper.MonitoredItemNotificationEventHandler;
 
                 opcSubscription.AddItem(newMonitoredItem);
                 opcSubscription.ApplyChanges();
 
+                // create a heartbeat timer, if required
+                if ((heartbeatInterval != null) && (heartbeatInterval > 0))
+                {
+                    _heartbeats.Add(new HeartBeatPublishing((uint)heartbeatInterval, session, nodeId));
+                }
+
                 Program.Instance.Logger.Debug($"{logPrefix} Added item with nodeId '{(expandedNodeId == null ? nodeId.ToString() : expandedNodeId.ToString())}' for monitoring.");
 
                 return HttpStatusCode.Accepted;
+            }
+            catch (ServiceResultException sre)
+            {
+                switch ((uint)sre.Result.StatusCode)
+                {
+                    case StatusCodes.BadSessionIdInvalid:
+                        Program.Instance.Logger.Information($"Session with Id {session.SessionId} is no longer available on endpoint '{session.ConfiguredEndpoint.EndpointUrl}'. Cleaning up.");
+                        return HttpStatusCode.Gone;
+
+                    case StatusCodes.BadSubscriptionIdInvalid:
+                        Program.Instance.Logger.Information($"Subscription with Id {opcSubscription.Id} is no longer available on endpoint '{session.ConfiguredEndpoint.EndpointUrl}'. Cleaning up.");
+                        return HttpStatusCode.Gone;
+
+                    case StatusCodes.BadNodeIdInvalid:
+                    case StatusCodes.BadNodeIdUnknown:
+                        Program.Instance.Logger.Error($"Failed to monitor node '{nodeId}' on endpoint '{session.ConfiguredEndpoint.EndpointUrl}'.");
+                        Program.Instance.Logger.Error($"OPC UA ServiceResultException is '{sre.Result}'. Please check your publisher configuration for this node.");
+                        return HttpStatusCode.InternalServerError;
+
+                    default:
+                        Program.Instance.Logger.Error($"Unhandled OPC UA ServiceResultException '{sre.Result}' when monitoring node '{nodeId}' on endpoint '{session.ConfiguredEndpoint.EndpointUrl}'. Continue.");
+                        return HttpStatusCode.InternalServerError;
+                }
             }
             catch (Exception e)
             {
@@ -564,11 +431,6 @@ namespace OpcPublisher
                             if (subscription.MonitoredItemCount == 0)
                             {
                                 session.RemoveSubscription(subscription);
-
-                                if (session.SubscriptionCount == 0)
-                                {
-                                    session.Close();
-                                }
                             }
 
                             return HttpStatusCode.OK;
@@ -642,6 +504,8 @@ namespace OpcPublisher
         
         private List<Session> _sessions = new List<Session>();
         private object _sessionsLock = new object();
+
+        private List<HeartBeatPublishing> _heartbeats = new List<HeartBeatPublishing>();
 
         private Dictionary<string, uint> _missedKeepAlives = new Dictionary<string, uint>();
     }
