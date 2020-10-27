@@ -25,17 +25,17 @@ namespace OpcPublisher
         /// <summary>
         /// Number of connected OPC UA session.
         /// </summary>
-        public static int NumberOfOpcSessionsConnected = 0;
+        public static int NumberOfOpcSessionsConnected { get; set; } = 0;
         
         /// <summary>
         /// Number of connected OPC UA subscriptions.
         /// </summary>
-        public static int NumberOfOpcSubscriptionsConnected = 0;
+        public static int NumberOfOpcSubscriptionsConnected { get; set; } = 0;
         
         /// <summary>
         /// Number of monitored OPC UA nodes.
         /// </summary>
-        public static int NumberOfOpcMonitoredItemsMonitored = 0;
+        public static int NumberOfOpcMonitoredItemsMonitored { get; set; } = 0;
 
         /// <summary>
         /// Signal for completed startup.
@@ -45,17 +45,17 @@ namespace OpcPublisher
         /// <summary>
         /// Number of events in the monitored items queue.
         /// </summary>
-        public static long MonitoredItemsQueueCount = 0;
+        public static long MonitoredItemsQueueCount { get; set; } = 0;
 
         /// <summary>
         /// Number of events we enqueued.
         /// </summary>
-        public static long EnqueueCount = 0;
+        public static long EnqueueCount { get; set; } = 0;
 
         /// <summary>
         /// Number of times enqueueing of events failed.
         /// </summary>
-        public static long EnqueueFailureCount = 0;
+        public static long EnqueueFailureCount { get; set; } = 0;
 
         /// <summary>
         /// Number of events sent to the cloud.
@@ -65,32 +65,32 @@ namespace OpcPublisher
         /// <summary>
         /// Number of times we were not able to make the send interval, because too high load.
         /// </summary>
-        public static long MissedSendIntervalCount { get; set; }
+        public static long MissedSendIntervalCount { get; set; } = 0;
 
         /// <summary>
         /// Number of times the isze fo the event payload was too large for a telemetry message.
         /// </summary>
-        public static long TooLargeCount { get; set; }
+        public static long TooLargeCount { get; set; } = 0;
 
         /// <summary>
         /// Number of payload bytes we sent to the cloud.
         /// </summary>
-        public static long SentBytes { get; set; }
+        public static long SentBytes { get; set; } = 0;
 
         /// <summary>
         /// Number of messages we sent to the cloud.
         /// </summary>
-        public static long SentMessages { get; set; }
+        public static long SentMessages { get; set; } = 0;
 
         /// <summary>
         /// Time when we sent the last telemetry message.
         /// </summary>
-        public static DateTime SentLastTime { get; set; }
+        public static DateTime SentLastTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Number of times we were not able to sent the telemetry message to the cloud.
         /// </summary>
-        public static long FailedMessages { get; set; }
+        public static long FailedMessages { get; set; } = 0;
 
         public void Init()
         {

@@ -563,10 +563,10 @@ namespace OpcPublisher
         public static void Enqueue(MessageDataModel json)
         {
             // Try to add the message.
-            Interlocked.Increment(ref Metrics.EnqueueCount);
+            Metrics.EnqueueCount++;
             if (_monitoredItemsDataQueue.TryAdd(json) == false)
             {
-                Interlocked.Increment(ref Metrics.EnqueueFailureCount);
+                Metrics.EnqueueFailureCount++;
                 if (Metrics.EnqueueFailureCount % 10000 == 0)
                 {
                     Program.Instance.Logger.Information($"The internal monitored item message queue is above its capacity of {_monitoredItemsDataQueue.BoundedCapacity}. We have lost {Metrics.EnqueueFailureCount} monitored item notifications so far.");
