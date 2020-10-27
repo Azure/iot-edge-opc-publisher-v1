@@ -5,7 +5,10 @@
 
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
+using Opc.Ua;
+using Opc.Ua.Configuration;
 using OpcPublisher.Configurations;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -52,48 +55,60 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
             await Task.Yield();
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].PublishingInterval == SettingsConfiguration.DefaultOpcPublishingInterval);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == null);
-            nodeConfig.Close();
-            clientWrapper.Close();
-    }
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 0);
+        }
 
         /// <summary>
         /// Test that OpcPublishingInterval setting is persisted when configured via method and is different as default.
@@ -119,47 +134,59 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcPublishingInterval = 3000;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].PublishingInterval == 2000);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -186,48 +213,60 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcPublishingInterval = 2000;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
             await Task.Yield();
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].PublishingInterval == 2000);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -253,47 +292,59 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
             await Task.Yield();
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].RequestedSamplingInterval == SettingsConfiguration.DefaultOpcSamplingInterval);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == null);
-            nodeConfig.Close();
-            clientWrapper.Close();
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 0);
         }
 
         /// <summary>
@@ -320,47 +371,59 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcSamplingInterval = 3000;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -387,48 +450,60 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcSamplingInterval = 2000;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
             await Task.Yield();
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].RequestedSamplingInterval == 2000);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -455,48 +530,60 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
             await Task.Yield();
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == false);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == null);
-            nodeConfig.Close();
-            clientWrapper.Close();
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
         }
 
         /// <summary>
@@ -523,48 +610,60 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
             await Task.Yield();
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == true);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == null);
-            nodeConfig.Close();
-            clientWrapper.Close();
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
         }
 
         /// <summary>
@@ -591,47 +690,60 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == true);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -658,47 +770,59 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == true);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -725,47 +849,59 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == false);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -792,47 +928,59 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].SkipFirst == false);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -859,48 +1007,60 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 0;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
             await Task.Yield();
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].HeartbeatInterval == 0);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == null);
-            nodeConfig.Close();
-            clientWrapper.Close();
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 0);
         }
 
         /// <summary>
@@ -927,48 +1087,60 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 2;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
             await Task.Yield();
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == null);
-            nodeConfig.Close();
-            clientWrapper.Close();
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 0);
         }
 
         /// <summary>
@@ -995,47 +1167,59 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 1;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         /// <summary>
@@ -1062,47 +1246,59 @@ namespace OpcPublisher
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper clientWrapper = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            };
 
-            //TODO: Temporary workaround until the Program.Instance dependencies can be removed
-            Program.Instance._nodeConfig = nodeConfig;
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 2;
 
-            nodeConfig.Init();
-            clientWrapper.InitMessageProcessing();
-            Assert.True(nodeConfig.OpcSessions.Count == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 0, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 0, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
             Assert.True(_configurationFileEntries.Count == 0);
             MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await clientWrapper._hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(nodeConfig.OpcSessions.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers.Count == 1);
-            Assert.True(nodeConfig.OpcSessions[0].OpcSubscriptionWrappers[0].OpcMonitoredItems[0].HeartbeatInterval == 2);
-            await nodeConfig.UpdateNodeConfigurationFileAsync().ConfigureAwait(false);
+            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+            
             _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
             _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(nodeConfig.OpcSessions.Count == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == 1, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == 1, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
-            nodeConfig.Close();
-            clientWrapper.Close();
         }
 
         public static IEnumerable<object[]> PnPlcEmptyAndPayloadPublishingInterval2000 =>
@@ -1206,6 +1402,8 @@ namespace OpcPublisher
 
         private readonly ITestOutputHelper _output;
         private readonly PlcOpcUaServerFixture _server;
-        private static List<ConfigurationFileEntryLegacyModel> _configurationFileEntries;
+        private List<ConfigurationFileEntryLegacyModel> _configurationFileEntries;
+        private ApplicationInstance _application;
+        private UAClient _uaClient;
     }
 }

@@ -5,7 +5,10 @@
 
 using Microsoft.Azure.Devices.Client;
 using Moq;
+using Opc.Ua;
+using Opc.Ua.Configuration;
 using OpcPublisher.Configurations;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -49,31 +52,49 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper hubClient = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            }; 
             
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
+
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
-            
-            nodeConfig.Init();
-            hubClient.InitMessageProcessing();
+
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
                         
             long eventsAtStart = Metrics.NumberOfEvents;
-            Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived(nodeConfig);
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+            int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived();
             long eventsAfterConnect = Metrics.NumberOfEvents;
             await Task.Delay(2500).ConfigureAwait(false);
             long eventsAfterDelay = Metrics.NumberOfEvents;
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started");
             Assert.Equal(3, eventsAfterDelay - eventsAtStart);
         }
@@ -99,32 +120,50 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper hubClient = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            }; 
+            
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
-            nodeConfig.Init();
-            hubClient.InitMessageProcessing();
-            
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitored(nodeConfig);
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+            int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
             long eventsAfterConnect = Metrics.NumberOfEvents;
             await Task.Delay(3000).ConfigureAwait(false);
             long eventsAfterDelay = Metrics.NumberOfEvents;
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.Equal(1, eventsAfterDelay - eventsAtStart);
         }
@@ -150,32 +189,50 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper hubClient = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            }; 
+            
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
-            nodeConfig.Init();
-            hubClient.InitMessageProcessing();
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitored(nodeConfig);
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+            int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
             long eventsAfterConnect = Metrics.NumberOfEvents;
             await Task.Delay(1900).ConfigureAwait(false);
             long eventsAfterDelay = Metrics.NumberOfEvents;
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.True(eventsAfterDelay - eventsAtStart == 1);
         }
@@ -201,32 +258,50 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper hubClient = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            }; 
+            
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
-            nodeConfig.Init();
-            hubClient.InitMessageProcessing();
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitored(nodeConfig);
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+            int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
             long eventsAfterConnect = Metrics.NumberOfEvents;
             await Task.Delay(3000).ConfigureAwait(false);
             long eventsAfterDelay = Metrics.NumberOfEvents;
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.True(eventsAfterDelay - eventsAtStart == 0);
         }
@@ -252,32 +327,50 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper hubClient = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            }; 
+            
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
-            nodeConfig.Init();
-            hubClient.InitMessageProcessing();
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitored(nodeConfig);
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+            int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
             long eventsAfterConnect = Metrics.NumberOfEvents;
             await Task.Delay(5000).ConfigureAwait(false);
             long eventsAfterDelay = Metrics.NumberOfEvents;
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.Equal(2, eventsAfterDelay - eventsAtStart);
         }
@@ -303,32 +396,50 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            PublishedNodesConfiguration nodeConfig = new PublishedNodesConfiguration();
-            HubClientWrapper hubClient = new HubClientWrapper();
+            _application = new ApplicationInstance {
+                ApplicationName = "OpcPublisherUnitTest",
+                ApplicationType = ApplicationType.Client,
+                ConfigSectionName = "Configurations/Opc.Publisher"
+            }; 
+            
+            _application.LoadApplicationConfiguration(false).Wait();
+
+            // check the application certificate.
+            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
+            if (!certOK)
+            {
+                throw new Exception("Application instance certificate invalid!");
+            }
+
+            // create cert validator
+            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
+
+            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
-            nodeConfig.Init();
-            hubClient.InitMessageProcessing();
+            PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            Assert.True(nodeConfig.OpcSessions.Count == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSessionsConfigured == configuredSessions, "wrong # of sessions");
-            Assert.True(nodeConfig.NumberOfOpcSubscriptionsConfigured == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(nodeConfig.NumberOfOpcMonitoredItemsConfigured == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived(nodeConfig);
+            
+            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+            int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived();
             long eventsAfterConnect = Metrics.NumberOfEvents;
             await Task.Delay(3000).ConfigureAwait(false);
             long eventsAfterDelay = Metrics.NumberOfEvents;
             _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {nodeConfig.NumberOfOpcSessionsConfigured}, connected {nodeConfig.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {nodeConfig.NumberOfOpcSubscriptionsConfigured}, connected {nodeConfig.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {nodeConfig.NumberOfOpcMonitoredItemsConfigured}, monitored {nodeConfig.NumberOfOpcMonitoredItemsMonitored}, toRemove {nodeConfig.NumberOfOpcMonitoredItemsToRemove}");
+            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.True(eventsAfterDelay - eventsAtStart == 2);
         }
@@ -395,5 +506,7 @@ namespace OpcPublisher
 
         private readonly ITestOutputHelper _output;
         private readonly PlcOpcUaServerFixture _server;
+        private ApplicationInstance _application;
+        private UAClient _uaClient;
     }
 }

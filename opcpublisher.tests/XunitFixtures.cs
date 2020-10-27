@@ -6,7 +6,6 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Opc.Ua;
-using Opc.Ua.Configuration;
 using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
@@ -213,35 +212,12 @@ namespace OpcPublisher
                 Program.Instance.InitLogging();
             }
 
-            ApplicationInstance _application = new ApplicationInstance {
-                ApplicationName = "OpcPublisherUnitTest",
-                ApplicationType = ApplicationType.Client,
-                ConfigSectionName = "Configurations/Opc.Publisher"
-            };
-
-            _application.LoadApplicationConfiguration(false).Wait();
-
-            // check the application certificate.
-            bool certOK = _application.CheckApplicationInstanceCertificate(false, 0).Result;
-            if (!certOK)
-            {
-                throw new Exception("Application instance certificate invalid!");
-            }
-
-            // create cert validator
-            _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
-            _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(CertificateValidator_CertificateValidation);
-
-
             // configure hub communication
             SettingsConfiguration.DefaultSendIntervalSeconds = 0;
             SettingsConfiguration.HubMessageSize = 0;
-
-            // tie our unit test app to our Program app instance
-            Program.Instance._application = _application;
         }
 
-        private static void CertificateValidator_CertificateValidation(Opc.Ua.CertificateValidator validator, Opc.Ua.CertificateValidationEventArgs e)
+        public static void CertificateValidator_CertificateValidation(Opc.Ua.CertificateValidator validator, Opc.Ua.CertificateValidationEventArgs e)
         {
             if (e.Error.StatusCode == StatusCodes.BadCertificateUntrusted)
             {

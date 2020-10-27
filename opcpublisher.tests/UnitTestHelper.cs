@@ -18,24 +18,23 @@ namespace OpcPublisher
             return memberName;
         }
 
-        public static int WaitTilItemsAreMonitored(PublishedNodesConfiguration nodeConfig)
+        public static int WaitTilItemsAreMonitored()
         {
             // wait till monitoring starts
             int iter = 0;
-            int startNum = nodeConfig.NumberOfOpcMonitoredItemsMonitored;
-            while (nodeConfig.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
+            while (Metrics.NumberOfOpcMonitoredItemsMonitored  == 0 && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
             }
             return iter < _maxIterations ? iter * _sleepMilliseconds / 1000 : -1;
         }
-        public static int WaitTilItemsAreMonitoredAndFirstEventReceived(PublishedNodesConfiguration nodeConfig)
+        public static int WaitTilItemsAreMonitoredAndFirstEventReceived()
         {
             // wait till monitoring starts
             int iter = 0;
             long numberOfEventsStart = Metrics.NumberOfEvents;
-            while ((nodeConfig.NumberOfOpcMonitoredItemsMonitored == 0 || (Metrics.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
+            while ((Metrics.NumberOfOpcMonitoredItemsMonitored == 0 || (Metrics.NumberOfEvents - numberOfEventsStart) == 0) && iter < _maxIterations)
             {
                 Thread.Sleep(_sleepMilliseconds);
                 iter++;
