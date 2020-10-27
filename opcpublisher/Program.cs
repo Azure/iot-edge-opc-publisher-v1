@@ -108,8 +108,8 @@ namespace OpcPublisher
                 _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
                 _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(CertificateValidator_CertificateValidation);
 
-                // init diagnostics
-                _diag.Init();
+                // init metrics
+                _metrics.Init();
 
                 // log shopfloor site setting
                 if (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite))
@@ -329,6 +329,6 @@ namespace OpcPublisher
             ConfigSectionName = "Configurations/Opc.Publisher"
         };
 
-        public Metrics _diag = new Metrics(); //TODO: make private
+        private Metrics _metrics = new Metrics();
     }
 }

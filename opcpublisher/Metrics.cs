@@ -92,29 +92,19 @@ namespace OpcPublisher
         /// </summary>
         public static long FailedMessages { get; set; }
 
-        /// <summary>
-        /// Initialize the diagnostic object.
-        /// </summary>
-        public Metrics()
-        {
-            // init data
-            _showDiagnosticsInfoTask = null;
-            _shutdownTokenSource = new CancellationTokenSource();
-        }
-
         public void Init()
         {
             // kick off the task to show diagnostic info
             if (SettingsConfiguration.DiagnosticsInterval > 0)
             {
-                _showDiagnosticsInfoTask = Task.Run(() => ShowDiagnosticsInfoAsync(Program.Instance.ShutdownTokenSource.Token).ConfigureAwait(false));
+                Task.Run(() => ShowDiagnosticsInfoAsync(Program.Instance.ShutdownTokenSource.Token).ConfigureAwait(false));
             }
         }
 
         /// <summary>
         /// Fetch diagnostic data.
         /// </summary>
-        public DiagnosticInfoMethodResponseModel GetDiagnosticInfo()
+        public static DiagnosticInfoMethodResponseModel GetDiagnosticInfo()
         {
             DiagnosticInfoMethodResponseModel diagnosticInfo = new DiagnosticInfoMethodResponseModel();
 
@@ -150,7 +140,7 @@ namespace OpcPublisher
         /// <summary>
         /// Fetch diagnostic log data.
         /// </summary>
-        public async Task<DiagnosticLogMethodResponseModel> GetDiagnosticLogAsync()
+        public static async Task<DiagnosticLogMethodResponseModel> GetDiagnosticLogAsync()
         {
             DiagnosticLogMethodResponseModel diagnosticLogMethodResponseModel = new DiagnosticLogMethodResponseModel();
             diagnosticLogMethodResponseModel.MissedMessageCount = _missedMessageCount;
@@ -194,7 +184,7 @@ namespace OpcPublisher
         /// <summary>
         /// Fetch diagnostic startup log data.
         /// </summary>
-        public Task<DiagnosticLogMethodResponseModel> GetDiagnosticStartupLogAsync()
+        public static Task<DiagnosticLogMethodResponseModel> GetDiagnosticStartupLogAsync()
         {
             DiagnosticLogMethodResponseModel diagnosticLogMethodResponseModel = new DiagnosticLogMethodResponseModel();
             diagnosticLogMethodResponseModel.MissedMessageCount = 0;
@@ -280,7 +270,7 @@ namespace OpcPublisher
         /// Reads a line from the diagnostic log.
         /// Note: caller must take semaphore
         /// </summary>
-        private string ReadLog()
+        private static string ReadLog()
         {
             string message = null;
             try
@@ -297,7 +287,7 @@ namespace OpcPublisher
         /// <summary>
         /// Writes a line to the diagnostic log.
         /// </summary>
-        public void WriteLog(string message)
+        public static void WriteLog(string message)
         {
             if (StartupCompleted == false)
             {
@@ -321,12 +311,10 @@ namespace OpcPublisher
             }
         }
 
-        private readonly SemaphoreSlim _logQueueSemaphore = new SemaphoreSlim(1);
-        private readonly int _logMessageCount = 100;
-        private int _missedMessageCount;
-        private readonly Queue<string> _logQueue = new Queue<string>();
-        private CancellationTokenSource _shutdownTokenSource;
-        private Task _showDiagnosticsInfoTask;
-        private readonly List<string> _startupLog = new List<string>();
+        private static readonly SemaphoreSlim  _logQueueSemaphore = new SemaphoreSlim(1);
+        private static readonly int            _logMessageCount = 100;
+        private static int                     _missedMessageCount;
+        private static readonly Queue<string>  _logQueue = new Queue<string>();
+        private static readonly List<string>   _startupLog = new List<string>();
     }
 }

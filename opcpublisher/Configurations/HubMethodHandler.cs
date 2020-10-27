@@ -674,7 +674,7 @@ namespace OpcPublisher
             DiagnosticInfoMethodResponseModel diagnosticInfo = new DiagnosticInfoMethodResponseModel();
             try
             {
-                diagnosticInfo = Program.Instance._diag.GetDiagnosticInfo();
+                diagnosticInfo = Metrics.GetDiagnosticInfo();
             }
             catch (Exception e)
             {
@@ -720,7 +720,7 @@ namespace OpcPublisher
             DiagnosticLogMethodResponseModel diagnosticLogMethodResponseModel = new DiagnosticLogMethodResponseModel();
             try
             {
-                diagnosticLogMethodResponseModel = await Program.Instance._diag.GetDiagnosticLogAsync().ConfigureAwait(false);
+                diagnosticLogMethodResponseModel = await Metrics.GetDiagnosticLogAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -766,7 +766,7 @@ namespace OpcPublisher
             DiagnosticLogMethodResponseModel diagnosticLogMethodResponseModel = new DiagnosticLogMethodResponseModel();
             try
             {
-                diagnosticLogMethodResponseModel = await Program.Instance._diag.GetDiagnosticStartupLogAsync().ConfigureAwait(false);
+                diagnosticLogMethodResponseModel = await Metrics.GetDiagnosticStartupLogAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {

@@ -23,7 +23,7 @@ namespace OpcPublisher
         public void Emit(LogEvent logEvent)
         {
             string message = $"[{logEvent.Timestamp:T} {logEvent.Level.ToString().Substring(0, 3).ToUpper(CultureInfo.InvariantCulture)}] {logEvent.RenderMessage()}";
-            Program.Instance._diag.WriteLog(message);
+            Metrics.WriteLog(message);
             
             // also dump exception message and stack
             List<string> exceptionLog = new List<string>();
@@ -34,7 +34,7 @@ namespace OpcPublisher
             }
             foreach (string log in exceptionLog)
             {
-                Program.Instance._diag.WriteLog(log);
+                Metrics.WriteLog(log);
             }
         }
     }
