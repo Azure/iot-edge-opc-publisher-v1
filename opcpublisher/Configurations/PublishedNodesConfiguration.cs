@@ -55,6 +55,13 @@ namespace OpcPublisher.Configurations
                     Program.Instance.Logger.Information($"Loaded {_configurationFileEntries.Count} config file entry/entries.");
                     foreach (ConfigurationFileEntryLegacyModel publisherConfigFileEntryLegacy in _configurationFileEntries)
                     {
+                        // decrypt username and password, if required
+                        NetworkCredential decryptedCreds = null;
+                        if (publisherConfigFileEntryLegacy.EncryptedAuthCredential != null)
+                        {
+                            decryptedCreds = publisherConfigFileEntryLegacy.EncryptedAuthCredential.Decrypt(cert);
+                        }
+
                         if (publisherConfigFileEntryLegacy.NodeId == null)
                         {
                             // new node configuration syntax.
@@ -74,19 +81,12 @@ namespace OpcPublisher.Configurations
                                         HeartbeatInterval = opcNode.HeartbeatInterval,
                                         SkipFirst = opcNode.SkipFirst,
                                         OpcAuthenticationMode = publisherConfigFileEntryLegacy.OpcAuthenticationMode,
-                                        AuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential.Decrypt(cert)
+                                        AuthCredential = decryptedCreds
                                     };
                                     client.PublishNode(publishingInfo);
                                 }
                                 else
                                 {
-                                    // decrypt username and password, if required
-                                    NetworkCredential decryptedCreds = null;
-                                    if (publisherConfigFileEntryLegacy.EncryptedAuthCredential != null)
-                                    {
-                                        decryptedCreds = publisherConfigFileEntryLegacy.EncryptedAuthCredential.Decrypt(cert);
-                                    }
-
                                     // check Id string to check which format we have
                                     if (opcNode.Id.StartsWith("nsu=", StringComparison.InvariantCulture))
                                     {
@@ -111,20 +111,20 @@ namespace OpcPublisher.Configurations
                                     {
                                         // NodeId format
                                         NodeId nodeId = NodeId.Parse(opcNode.Id);
-                                        NodePublishingConfigurationModel publishingInfo = new NodePublishingConfigurationModel();
-                                        publishingInfo.ExpandedNodeId = nodeId;
-                                        publishingInfo.NodeId = opcNode.Id;
-                                        publishingInfo.EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString;
-                                        publishingInfo.UseSecurity = (bool)publisherConfigFileEntryLegacy.UseSecurity;
-                                        publishingInfo.OpcPublishingInterval = opcNode.OpcPublishingInterval;
-                                        publishingInfo.OpcSamplingInterval = opcNode.OpcSamplingInterval;
-                                        publishingInfo.DisplayName = opcNode.DisplayName;
-                                        publishingInfo.HeartbeatInterval = opcNode.HeartbeatInterval;
-                                        publishingInfo.SkipFirst = opcNode.SkipFirst;
-                                        publishingInfo.OpcAuthenticationMode = publisherConfigFileEntryLegacy.OpcAuthenticationMode;
-                                        publishingInfo.AuthCredential = decryptedCreds;
-                                        
-                                        client.PublishNode(publishingInfo);
+                                        NodePublishingConfigurationModel publishingInfo = new NodePublishingConfigurationModel {
+                                            ExpandedNodeId = nodeId,
+                                            NodeId = opcNode.Id,
+                                            EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString,
+                                            UseSecurity = (bool)publisherConfigFileEntryLegacy.UseSecurity,
+                                            OpcPublishingInterval = opcNode.OpcPublishingInterval,
+                                            OpcSamplingInterval = opcNode.OpcSamplingInterval,
+                                            DisplayName = opcNode.DisplayName,
+                                            HeartbeatInterval = opcNode.HeartbeatInterval,
+                                            SkipFirst = opcNode.SkipFirst,
+                                            OpcAuthenticationMode = publisherConfigFileEntryLegacy.OpcAuthenticationMode,
+                                            AuthCredential = decryptedCreds
+                                        };
+                                       client.PublishNode(publishingInfo);
                                     }
                                 }
                             }
@@ -138,7 +138,7 @@ namespace OpcPublisher.Configurations
                                 EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString,
                                 UseSecurity = (bool)publisherConfigFileEntryLegacy.UseSecurity,
                                 OpcAuthenticationMode = publisherConfigFileEntryLegacy.OpcAuthenticationMode,
-                                AuthCredential = publisherConfigFileEntryLegacy.EncryptedAuthCredential.Decrypt(cert)
+                                AuthCredential = decryptedCreds
                             };
                             client.PublishNode(publishingInfo);
                         }

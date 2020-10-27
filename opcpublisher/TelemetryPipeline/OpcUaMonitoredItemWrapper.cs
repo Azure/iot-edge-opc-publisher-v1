@@ -18,6 +18,11 @@ namespace OpcPublisher
     public class OpcUaMonitoredItemWrapper
     {
         /// <summary>
+        /// Skip first notification dictionary
+        /// </summary>
+        public static Dictionary<string, bool> SkipFirst { get; set; } = new Dictionary<string, bool>();
+        
+        /// <summary>
         /// The notification that the data for a monitored item has changed on an OPC UA server.
         /// </summary>
         public static void MonitoredItemNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
@@ -46,11 +51,8 @@ namespace OpcPublisher
                     return;
                 }
 
-                // stop the heartbeat timer
-                //HeartbeatSendTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-
                 MessageDataModel messageData = new MessageDataModel();
-                messageData.EndpointUrl = monitoredItem.Subscription.Session.ConfiguredEndpoint.EndpointUrl.ToString();
+                messageData.EndpointUrl = monitoredItem.Subscription.Session.ConfiguredEndpoint.EndpointUrl.AbsoluteUri;
                 messageData.NodeId = monitoredItem.ResolvedNodeId.ToString();
                 messageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite) ? "" : $":{SettingsConfiguration.PublisherSite}");
                 
@@ -120,10 +122,10 @@ namespace OpcPublisher
                 }
 
                 // skip event if needed
-                if (_skipFirst.ContainsKey(messageData.NodeId) && _skipFirst[messageData.NodeId])
+                if (SkipFirst.ContainsKey(messageData.NodeId) && SkipFirst[messageData.NodeId])
                 {
                     Program.Instance.Logger.Debug($"Skipping first telemetry event for node '{messageData.DisplayName}'.");
-                    _skipFirst[messageData.NodeId] = false;
+                    SkipFirst[messageData.NodeId] = false;
                 }
                 else
                 {
@@ -136,7 +138,5 @@ namespace OpcPublisher
                 Program.Instance.Logger.Error(ex, "Error processing monitored item notification");
             }
         }
-
-        public static Dictionary<string, bool> _skipFirst = new Dictionary<string, bool>();
     }
 }

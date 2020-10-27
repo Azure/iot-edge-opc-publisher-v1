@@ -127,9 +127,15 @@ namespace OpcPublisher
                             OpcPublishingInterval = nodeOnEndpoint.OpcPublishingInterval,
                             OpcSamplingInterval = nodeOnEndpoint.OpcSamplingInterval,
                             UseSecurity = publishNodesMethodData.UseSecurity,
-                            AuthCredential = new NetworkCredential(publishNodesMethodData.UserName, publishNodesMethodData.Password),
+                            AuthCredential = null,
                             OpcAuthenticationMode = desiredAuthenticationMode
                         };
+
+                        if (desiredAuthenticationMode == OpcUserSessionAuthenticationMode.UsernamePassword)
+                        {
+                            node.AuthCredential = new NetworkCredential(publishNodesMethodData.UserName, publishNodesMethodData.Password);
+                        }
+
                         statusCode = _uaClient.PublishNode(node);
 
                         // check and store a result message in case of an error
@@ -369,7 +375,7 @@ namespace OpcPublisher
                 }
                 else
                 {
-                    _uaClient.UnpublishAlldNodes();
+                    _uaClient.UnpublishAllNodes();
                 }
             }
 

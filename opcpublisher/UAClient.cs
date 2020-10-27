@@ -150,32 +150,37 @@ namespace OpcPublisher
             return newSession;
         }
 
-        public void UnpublishAlldNodes()
+        public void UnpublishAllNodes()
         {
             // loop through all sessions
             lock (_sessionsLock)
             {
                 _heartbeats.Clear();
 
-                foreach (Session session in _sessions)
+                while (_sessions.Count > 0)
                 {
-                    foreach (Subscription subscription in session.Subscriptions)
+                    Session session = _sessions[0];
+                    while (session.SubscriptionCount > 0)
                     {
-                        foreach(MonitoredItem monitoredItem in subscription.MonitoredItems)
+                        Subscription subscription = session.Subscriptions.First();
+                        while (subscription.MonitoredItemCount > 0)
                         {
-                            subscription.RemoveItem(monitoredItem);
+                            subscription.RemoveItem(subscription.MonitoredItems.First());
+                            subscription.ApplyChanges();
                         }
+                        Metrics.NumberOfOpcMonitoredItemsMonitored -= (int)subscription.MonitoredItemCount;
 
-                        subscription.ApplyChanges();
                         session.RemoveSubscription(subscription);
-                        Metrics.NumberOfOpcMonitoredItemsMonitored--;
+                        Metrics.NumberOfOpcSubscriptionsConnected--;
                     }
 
+                    string endpoint = session.ConfiguredEndpoint.EndpointUrl.AbsoluteUri;
                     session.Close();
-                    Program.Instance.Logger.Information($"Session to endpoint URI '{session.Endpoint.EndpointUrl}' closed successfully.");
-                }
+                    _sessions.Remove(session);
+                    Metrics.NumberOfOpcSessionsConnected--;
 
-                Metrics.NumberOfOpcSessionsConnected = _sessions.Count;
+                    Program.Instance.Logger.Information($"Session to endpoint URI '{endpoint}' closed successfully.");
+                }
             }
         }
 
@@ -213,6 +218,7 @@ namespace OpcPublisher
             {
                 try
                 {
+                    string endpoint = session.ConfiguredEndpoint.EndpointUrl.AbsoluteUri;
                     if (!ServiceResult.IsGood(eventArgs.Status))
                     {
                         Program.Instance.Logger.Warning($"Session endpoint: {session.ConfiguredEndpoint.EndpointUrl} has Status: {eventArgs.Status}");
@@ -223,20 +229,20 @@ namespace OpcPublisher
 
                         if (session.Connected)
                         {
-                            if (!_missedKeepAlives.ContainsKey(session.ConfiguredEndpoint.EndpointUrl.ToString()))
+                            if (!_missedKeepAlives.ContainsKey(endpoint))
                             {
-                                _missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()] = 0;
+                                _missedKeepAlives[endpoint] = 0;
                             }
-                            _missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()]++;
-                            Program.Instance.Logger.Information($"Missed KeepAlives: {_missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()]}");
+                            _missedKeepAlives[endpoint]++;
+                            Program.Instance.Logger.Information($"Missed KeepAlives: {_missedKeepAlives[endpoint]}");
                         }
                     }
                     else
                     {
-                        if (_missedKeepAlives.ContainsKey(session.ConfiguredEndpoint.EndpointUrl.ToString()) && _missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()] != 0)
+                        if (_missedKeepAlives.ContainsKey(endpoint) && _missedKeepAlives[endpoint] != 0)
                         {
                             // Reset missed keep alive count
-                            Program.Instance.Logger.Information($"Session endpoint: {session.ConfiguredEndpoint.EndpointUrl} got a keep alive after {_missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()]} {(_missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()] == 1 ? "was" : "were")} missed.");
+                            Program.Instance.Logger.Information($"Session endpoint: {endpoint} got a keep alive after {_missedKeepAlives[endpoint]} {(_missedKeepAlives[endpoint] == 1 ? "was" : "were")} missed.");
                             _missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()] = 0;
                         }
                     }
@@ -405,10 +411,10 @@ namespace OpcPublisher
                 // create a skip first entry, if required
                 if (skipFirst)
                 {
-                    OpcUaMonitoredItemWrapper._skipFirst[nodeId.ToString()] = true;
+                    OpcUaMonitoredItemWrapper.SkipFirst[nodeId.ToString()] = true;
                 }
 
-                Program.Instance.Logger.Information($"{logPrefix} Now monitoring OPC UA node {(expandedNodeId == null ? nodeId.ToString() : expandedNodeId.ToString())} on endpoint {session.ConfiguredEndpoint.EndpointUrl.ToString()}");
+                Program.Instance.Logger.Information($"{logPrefix} Now monitoring OPC UA node {(expandedNodeId == null ? nodeId.ToString() : expandedNodeId.ToString())} on endpoint {session.ConfiguredEndpoint.EndpointUrl}");
                 Metrics.NumberOfOpcMonitoredItemsMonitored++;
 
                 return HttpStatusCode.Accepted;
@@ -470,7 +476,7 @@ namespace OpcPublisher
                         {
                             subscription.RemoveItem(monitoredItem);
                             subscription.ApplyChanges();
-                            Metrics.NumberOfOpcMonitoredItemsMonitored++;
+                            Metrics.NumberOfOpcMonitoredItemsMonitored--;
 
                             // cleanup empty subscriptions and sessions
                             if (subscription.MonitoredItemCount == 0)

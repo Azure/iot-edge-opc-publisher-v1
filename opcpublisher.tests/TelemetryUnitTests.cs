@@ -3,8 +3,6 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using Microsoft.Azure.Devices.Client;
-using Moq;
 using Opc.Ua;
 using Opc.Ua.Configuration;
 using OpcPublisher.Configurations;
@@ -52,7 +50,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            _application = new ApplicationInstance {
+            ApplicationInstance _application = new ApplicationInstance {
                 ApplicationName = "OpcPublisherUnitTest",
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "Configurations/Opc.Publisher"
@@ -71,11 +69,17 @@ namespace OpcPublisher
             _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
 
-            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            UAClient _uaClient = new UAClient(_application.ApplicationConfiguration);
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
-
+            
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+
+            HubClientWrapper hubClientWrapper = new HubClientWrapper();
+            hubClientWrapper.InitMessageProcessing();
+
+            // wait 5 seconds for the server to become available
+            await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
@@ -97,6 +101,9 @@ namespace OpcPublisher
             _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started");
             Assert.Equal(3, eventsAfterDelay - eventsAtStart);
+            _uaClient.UnpublishAllNodes();
+            hubClientWrapper.Close();
+            Metrics.Clear();
         }
 
         /// <summary>
@@ -120,7 +127,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            _application = new ApplicationInstance {
+            ApplicationInstance _application = new ApplicationInstance {
                 ApplicationName = "OpcPublisherUnitTest",
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "Configurations/Opc.Publisher"
@@ -139,11 +146,17 @@ namespace OpcPublisher
             _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
 
-            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            UAClient _uaClient = new UAClient(_application.ApplicationConfiguration);
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+
+            HubClientWrapper hubClientWrapper = new HubClientWrapper();
+            hubClientWrapper.InitMessageProcessing();
+
+            // wait 5 seconds for the server to become available
+            await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
@@ -166,6 +179,9 @@ namespace OpcPublisher
             _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.Equal(1, eventsAfterDelay - eventsAtStart);
+            _uaClient.UnpublishAllNodes();
+            hubClientWrapper.Close();
+            Metrics.Clear();
         }
 
         /// <summary>
@@ -189,7 +205,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            _application = new ApplicationInstance {
+            ApplicationInstance _application = new ApplicationInstance {
                 ApplicationName = "OpcPublisherUnitTest",
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "Configurations/Opc.Publisher"
@@ -208,11 +224,17 @@ namespace OpcPublisher
             _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
 
-            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            UAClient _uaClient = new UAClient(_application.ApplicationConfiguration);
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+
+            HubClientWrapper hubClientWrapper = new HubClientWrapper();
+            hubClientWrapper.InitMessageProcessing();
+            
+            // wait 5 seconds for the server to become available
+            await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
@@ -235,6 +257,9 @@ namespace OpcPublisher
             _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.True(eventsAfterDelay - eventsAtStart == 1);
+            _uaClient.UnpublishAllNodes();
+            hubClientWrapper.Close();
+            Metrics.Clear();
         }
 
         /// <summary>
@@ -258,7 +283,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            _application = new ApplicationInstance {
+            ApplicationInstance _application = new ApplicationInstance {
                 ApplicationName = "OpcPublisherUnitTest",
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "Configurations/Opc.Publisher"
@@ -277,11 +302,17 @@ namespace OpcPublisher
             _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
 
-            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            UAClient _uaClient = new UAClient(_application.ApplicationConfiguration);
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+
+            HubClientWrapper hubClientWrapper = new HubClientWrapper();
+            hubClientWrapper.InitMessageProcessing();
+
+            // wait 5 seconds for the server to become available
+            await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
@@ -304,6 +335,9 @@ namespace OpcPublisher
             _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.True(eventsAfterDelay - eventsAtStart == 0);
+            _uaClient.UnpublishAllNodes();
+            hubClientWrapper.Close();
+            Metrics.Clear();
         }
 
         /// <summary>
@@ -327,7 +361,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            _application = new ApplicationInstance {
+            ApplicationInstance _application = new ApplicationInstance {
                 ApplicationName = "OpcPublisherUnitTest",
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "Configurations/Opc.Publisher"
@@ -346,11 +380,17 @@ namespace OpcPublisher
             _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
 
-            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            UAClient _uaClient = new UAClient(_application.ApplicationConfiguration);
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+
+            HubClientWrapper hubClientWrapper = new HubClientWrapper();
+            hubClientWrapper.InitMessageProcessing();
+
+            // wait 5 seconds for the server to become available
+            await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
@@ -373,6 +413,9 @@ namespace OpcPublisher
             _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.Equal(2, eventsAfterDelay - eventsAtStart);
+            _uaClient.UnpublishAllNodes();
+            hubClientWrapper.Close();
+            Metrics.Clear();
         }
 
         /// <summary>
@@ -396,7 +439,7 @@ namespace OpcPublisher
             }
             File.Copy(fqTestFilename, fqTempFilename);
 
-            _application = new ApplicationInstance {
+            ApplicationInstance _application = new ApplicationInstance {
                 ApplicationName = "OpcPublisherUnitTest",
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "Configurations/Opc.Publisher"
@@ -415,11 +458,17 @@ namespace OpcPublisher
             _application.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             _application.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OpcPublisherFixture.CertificateValidator_CertificateValidation);
 
-            _uaClient = new UAClient(_application.ApplicationConfiguration);
+            UAClient _uaClient = new UAClient(_application.ApplicationConfiguration);
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
             SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
+
+            HubClientWrapper hubClientWrapper = new HubClientWrapper();
+            hubClientWrapper.InitMessageProcessing();
+
+            // wait 5 seconds for the server to become available
+            await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
 
@@ -442,6 +491,9 @@ namespace OpcPublisher
             _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
             _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
             Assert.True(eventsAfterDelay - eventsAtStart == 2);
+            _uaClient.UnpublishAllNodes();
+            hubClientWrapper.Close();
+            Metrics.Clear();
         }
 
         public static IEnumerable<object[]> PnPlcCurrentTime =>
@@ -506,7 +558,5 @@ namespace OpcPublisher
 
         private readonly ITestOutputHelper _output;
         private readonly PlcOpcUaServerFixture _server;
-        private ApplicationInstance _application;
-        private UAClient _uaClient;
     }
 }

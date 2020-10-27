@@ -60,7 +60,7 @@ namespace OpcPublisher
         /// <summary>
         /// Number of events sent to the cloud.
         /// </summary>
-        public static long NumberOfEvents { get; set; }
+        public static long NumberOfEvents { get; set; } = 0;
 
         /// <summary>
         /// Number of times we were not able to make the send interval, because too high load.
@@ -135,6 +135,28 @@ namespace OpcPublisher
                 Program.Instance.Logger.Error(ex, "Collecting diagnostics information causing error {diagnosticInfo}", diagnosticInfo);
             }
             return diagnosticInfo;
+        }
+
+        /// <summary>
+        /// Clear all metrics
+        /// </summary>
+        public static void Clear()
+        {
+            PublisherStartTime = DateTime.UtcNow;
+            NumberOfOpcSessionsConnected = 0;
+            NumberOfOpcSubscriptionsConnected = 0;
+            NumberOfOpcMonitoredItemsMonitored = 0;
+            StartupCompleted = false;
+            MonitoredItemsQueueCount = 0;
+            EnqueueCount = 0;
+            EnqueueFailureCount = 0;
+            NumberOfEvents = 0;
+            MissedSendIntervalCount = 0;
+            TooLargeCount = 0;
+            SentBytes = 0;
+            SentMessages = 0;
+            SentLastTime = DateTime.UtcNow;
+            FailedMessages = 0;
         }
 
         /// <summary>

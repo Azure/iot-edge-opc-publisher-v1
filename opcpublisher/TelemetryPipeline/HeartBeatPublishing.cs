@@ -19,13 +19,11 @@ namespace OpcPublisher
             // setup heartbeat processing
             if (heartbeatInterval > 0)
             {
-               // recharge the heartbeat timer
-                _timer.Change(heartbeatInterval * 1000, heartbeatInterval * 1000);
+                // setup the heartbeat timer
+                Tuple<Session, NodeId> tuple = new Tuple<Session, NodeId>(session, nodeId);
+                _timer = new Timer(HeartbeatSend, tuple, heartbeatInterval * 1000, heartbeatInterval * 1000);
                 Program.Instance.Logger.Debug($"Setting up {heartbeatInterval} sec heartbeat for node '{nodeId}'.");
             }
-
-            _session = session;
-            _nodeId = nodeId;
         }
 
         /// <summary>
@@ -33,15 +31,19 @@ namespace OpcPublisher
         /// </summary>
         static void HeartbeatSend(object state)
         {
+            Tuple<Session, NodeId> tuple = (Tuple<Session, NodeId>)state;
+            Session session = tuple.Item1;
+            NodeId nodeId = tuple.Item2;
+
             MessageDataModel messageData = new MessageDataModel();
 
             try
             {
-                DataValue value = _session.ReadValue(_nodeId);
+                DataValue value = session.ReadValue(nodeId);
 
-                messageData.EndpointUrl = _session.ConfiguredEndpoint.EndpointUrl.ToString();
-                messageData.NodeId = _nodeId.ToString();
-                messageData.ApplicationUri = _session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite) ? "" : $":{SettingsConfiguration.PublisherSite}");
+                messageData.EndpointUrl = session.ConfiguredEndpoint.EndpointUrl.AbsoluteUri;
+                messageData.NodeId = nodeId.ToString();
+                messageData.ApplicationUri = session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite) ? "" : $":{SettingsConfiguration.PublisherSite}");
 
                 // use the SourceTimestamp as reported in the notification event argument in ISO8601 format
                 messageData.SourceTimestamp = value.SourceTimestamp.ToString("o", CultureInfo.InvariantCulture);
@@ -64,10 +66,6 @@ namespace OpcPublisher
             }
         }
 
-        private Timer _timer = new Timer(HeartbeatSend, null, Timeout.Infinite, Timeout.Infinite);
-
-        private static Session _session;
-
-        private static NodeId _nodeId;
+        private Timer _timer;
     }
 }
