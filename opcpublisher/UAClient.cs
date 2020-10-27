@@ -36,16 +36,32 @@ namespace OpcPublisher
             _uaApplicationConfiguration = applicationConfig;
         }
 
-         public Session FindSession(string endpointUrl)
+        private Session FindSession(string endpointUrl)
         {
-            EndpointDescription selectedEndpoint = CoreClientUtils.SelectEndpoint(endpointUrl, SettingsConfiguration.UseSecurity);
+            EndpointDescription selectedEndpoint;
+            try
+            {
+                selectedEndpoint = CoreClientUtils.SelectEndpoint(endpointUrl, SettingsConfiguration.UseSecurity);
+            }
+            catch (Exception ex)
+            {
+                Program.Instance.Logger.Error(ex, $"Cannot reach server on endpoint {endpointUrl}. Please make sure your OPC UA server is running and accessible.");
+                return null;
+            }
+
+            if (selectedEndpoint == null)
+            {
+                // could not get the requested endpoint
+                return null;
+            }
 
             // check if we already have a session for the requested endpoint
             lock (_sessionsLock)
             {
                 foreach (Session session in _sessions)
                 {
-                    if (session.Endpoint == selectedEndpoint)
+                    ConfiguredEndpoint configuredEndpoint = new ConfiguredEndpoint(null, selectedEndpoint, EndpointConfiguration.Create());
+                    if (session.ConfiguredEndpoint.EndpointUrl == configuredEndpoint.EndpointUrl)
                     {
                         // return the existing session
                         return session;
@@ -59,9 +75,9 @@ namespace OpcPublisher
         /// <summary>
         /// Connects the session if it is disconnected.
         /// </summary>
-        public async Task<Session> ConnectSessionAsync(string endpointUrl, NetworkCredential credentials)
+        private async Task<Session> ConnectSessionAsync(string endpointUrl, NetworkCredential credentials)
         {
-            // check if we have the required ession already
+            // check if we have the required session already
             Session existingSession = FindSession(endpointUrl);
             if (existingSession != null)
             {
@@ -122,7 +138,7 @@ namespace OpcPublisher
             return newSession;
         }
 
-        public void RemoveAllMonitoredNodes()
+        public void UnpublishAlldNodes()
         {
             // loop through all sessions
             lock (_sessionsLock)
@@ -190,13 +206,17 @@ namespace OpcPublisher
 
                         if (session.Connected)
                         {
+                            if (!_missedKeepAlives.ContainsKey(session.ConfiguredEndpoint.EndpointUrl.ToString()))
+                            {
+                                _missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()] = 0;
+                            }
                             _missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()]++;
                             Program.Instance.Logger.Information($"Missed KeepAlives: {_missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()]}");
                         }
                     }
                     else
                     {
-                        if (_missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()] != 0)
+                        if (_missedKeepAlives.ContainsKey(session.ConfiguredEndpoint.EndpointUrl.ToString()) && _missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()] != 0)
                         {
                             // Reset missed keep alive count
                             Program.Instance.Logger.Information($"Session endpoint: {session.ConfiguredEndpoint.EndpointUrl} got a keep alive after {_missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()]} {(_missedKeepAlives[session.ConfiguredEndpoint.EndpointUrl.ToString()] == 1 ? "was" : "were")} missed.");
@@ -287,15 +307,15 @@ namespace OpcPublisher
         /// Adds a node to be monitored. If there is no subscription with the requested publishing interval,
         /// one is created.
         /// </summary>
-        public HttpStatusCode AddNodeForMonitoring(
+        private HttpStatusCode AddNodeForMonitoring(
             Session session,
             NodeId nodeId,
             ExpandedNodeId expandedNodeId,
-            int? opcPublishingInterval,
-            int? opcSamplingInterval,
+            int opcPublishingInterval,
+            int opcSamplingInterval,
             string displayName,
-            int? heartbeatInterval,
-            bool? skipFirst)
+            int heartbeatInterval,
+            bool skipFirst)
         {
             string logPrefix = "AddNodeForMonitoringAsync:";
             Subscription opcSubscription = null;
@@ -303,7 +323,7 @@ namespace OpcPublisher
             try
             {
                 // check if there is already a subscription with the same publishing interval, which can be used to monitor the node
-                int opcPublishingIntervalForNode = opcPublishingInterval ?? SettingsConfiguration.DefaultOpcPublishingInterval;
+                int opcPublishingIntervalForNode = (opcPublishingInterval == 0)? SettingsConfiguration.DefaultOpcPublishingInterval : opcPublishingInterval;
                 foreach (Subscription subscription in session.Subscriptions)
                 {
                     if (subscription.PublishingInterval == opcPublishingIntervalForNode)
@@ -360,9 +380,15 @@ namespace OpcPublisher
                 opcSubscription.ApplyChanges();
 
                 // create a heartbeat timer, if required
-                if ((heartbeatInterval != null) && (heartbeatInterval > 0))
+                if (heartbeatInterval > 0)
                 {
                     _heartbeats.Add(new HeartBeatPublishing((uint)heartbeatInterval, session, nodeId));
+                }
+
+                // create a skip first entry, if required
+                if (skipFirst)
+                {
+                    OpcUaMonitoredItemWrapper._skipFirst[nodeId.ToString()] = true;
                 }
 
                 Program.Instance.Logger.Debug($"{logPrefix} Added item with nodeId '{(expandedNodeId == null ? nodeId.ToString() : expandedNodeId.ToString())}' for monitoring.");

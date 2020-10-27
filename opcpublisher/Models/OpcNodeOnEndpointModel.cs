@@ -12,8 +12,14 @@ namespace OpcPublisher
     /// </summary>
     public class OpcNodeOnEndpointModel
     {
-        public OpcNodeOnEndpointModel(string id, string expandedNodeId = null, int? opcSamplingInterval = null, int? opcPublishingInterval = null,
-            string displayName = null, int? heartbeatInterval = null, bool? skipFirst = null)
+        public OpcNodeOnEndpointModel(
+            string id,
+            string expandedNodeId = null,
+            int opcSamplingInterval = 1000,
+            int opcPublishingInterval = 0,
+            string displayName = null,
+            int heartbeatInterval = 0,
+            bool skipFirst = false)
         {
             Id = id;
             ExpandedNodeId = expandedNodeId;
@@ -34,18 +40,18 @@ namespace OpcPublisher
         public string ExpandedNodeId { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public int? OpcSamplingInterval { get; set; }
+        public int OpcSamplingInterval { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public int? OpcPublishingInterval { get; set; }
+        public int OpcPublishingInterval { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string DisplayName { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public int? HeartbeatInterval { get; set; }
+        public int HeartbeatInterval { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public bool? SkipFirst { get; set; }
+        public bool SkipFirst { get; set; }
     }
 }

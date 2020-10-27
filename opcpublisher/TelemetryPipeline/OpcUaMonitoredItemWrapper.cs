@@ -120,7 +120,7 @@ namespace OpcPublisher
                 }
 
                 // skip event if needed
-                if (_skipFirst[messageData.NodeId])
+                if (_skipFirst.ContainsKey(messageData.NodeId) && _skipFirst[messageData.NodeId])
                 {
                     Program.Instance.Logger.Debug($"Skipping first telemetry event for node '{messageData.DisplayName}'.");
                     _skipFirst[messageData.NodeId] = false;

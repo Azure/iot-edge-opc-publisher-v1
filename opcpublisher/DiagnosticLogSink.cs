@@ -32,7 +32,7 @@ namespace OpcPublisher
                 exceptionLog.Add(logEvent.Exception.Message);
                 exceptionLog.Add(logEvent.Exception.StackTrace.ToString(CultureInfo.InvariantCulture));
             }
-            foreach (var log in exceptionLog)
+            foreach (string log in exceptionLog)
             {
                 Program.Instance._diag.WriteLog(log);
             }

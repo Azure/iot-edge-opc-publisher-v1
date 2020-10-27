@@ -117,7 +117,7 @@ namespace OpcPublisher
                     Limit = 10,
                 });
 
-            foreach (var container in containers)
+            foreach (ContainerListResponse container in containers)
             {
                 if (container.Image.Equals(_plcImage, StringComparison.InvariantCulture))
                 {

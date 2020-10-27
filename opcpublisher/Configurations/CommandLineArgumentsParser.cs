@@ -207,7 +207,7 @@ namespace OpcPublisher.Configurations
 
                 // verify opc status codes to suppress
                 List<string> statusCodesToSuppress = ParseListOfStrings(opcStatusCodesToSuppress);
-                foreach (var statusCodeValueOrName in statusCodesToSuppress)
+                foreach (string statusCodeValueOrName in statusCodesToSuppress)
                 {
                     uint statusCodeValue;
                     try
@@ -246,7 +246,7 @@ namespace OpcPublisher.Configurations
 
                 // show suppressed status codes
                 Program.Instance.Logger.Information($"OPC UA monitored item notifications with one of the following {SettingsConfiguration.SuppressedOpcStatusCodes.Count} status codes will not generate telemetry events:");
-                foreach (var suppressedOpcStatusCode in SettingsConfiguration.SuppressedOpcStatusCodes)
+                foreach (uint suppressedOpcStatusCode in SettingsConfiguration.SuppressedOpcStatusCodes)
                 {
                     string statusName = StatusCodes.GetBrowseName(suppressedOpcStatusCode);
                     Program.Instance.Logger.Information($"StatusCode: {(string.IsNullOrEmpty(statusName) ? "Unknown" : statusName)} (dec: {suppressedOpcStatusCode}, hex: {suppressedOpcStatusCode:X})");

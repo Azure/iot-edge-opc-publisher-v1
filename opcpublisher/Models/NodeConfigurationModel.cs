@@ -46,22 +46,22 @@ namespace OpcPublisher
         /// <summary>
         /// The OPC UA sampling interval for the node.
         /// </summary>
-        public int? OpcSamplingInterval { get; set; }
+        public int OpcSamplingInterval { get; set; }
 
         /// <summary>
         /// The OPC UA publishing interval for the node.
         /// </summary>
-        public int? OpcPublishingInterval { get; set; }
+        public int OpcPublishingInterval { get; set; }
 
         /// <summary>
         /// Flag to enable a hardbeat telemetry event publish for the node.
         /// </summary>
-        public int? HeartbeatInterval { get; set; }
+        public int HeartbeatInterval { get; set; }
 
         /// <summary>
         /// Flag to skip the first telemetry event for the node after connect.
         /// </summary>
-        public bool? SkipFirst { get; set; }
+        public bool SkipFirst { get; set; }
 
         /// <summary>
         /// Gets or sets the authentication mode to authenticate against the OPC UA Server.

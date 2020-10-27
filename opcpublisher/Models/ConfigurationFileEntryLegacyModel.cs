@@ -45,7 +45,7 @@ namespace OpcPublisher
         /// </summary>
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore, NullValueHandling = NullValueHandling.Ignore)]
-        public bool? UseSecurity { get; set; }
+        public bool UseSecurity { get; set; }
 
         /// <summary>
         /// The node to monitor in "ns=" syntax. This key is only supported for backward compatibility and should not be used anymore.

@@ -84,11 +84,11 @@ namespace OpcPublisher
         {
             if (reason == ConnectionStatusChangeReason.Connection_Ok || Program.Instance.ShutdownTokenSource.IsCancellationRequested)
             {
-                Program.Instance.Logger.Information($"Connection status changed to '{status}', reason '{reason}'");
+                Program.Instance.Logger.Information($"IoT Hub Connection status changed to '{status}', reason '{reason}'");
             }
             else
             {
-                Program.Instance.Logger.Error($"Connection status changed to '{status}', reason '{reason}'");
+                Program.Instance.Logger.Error($"IoT Hub Connection status changed to '{status}', reason '{reason}'");
             }
         }
 
@@ -313,14 +313,16 @@ namespace OpcPublisher
         {
             uint jsonSquareBracketLength = 2;
             Message tempMsg = new Message();
+            
             // the system properties are MessageId (max 128 byte), Sequence number (ulong), ExpiryTime (DateTime) and more. ideally we get that from the client.
             int systemPropertyLength = 128 + sizeof(ulong) + tempMsg.ExpiryTimeUtc.ToString(CultureInfo.InvariantCulture).Length;
             int applicationPropertyLength = Encoding.UTF8.GetByteCount($"iothub-content-type={CONTENT_TYPE_OPCUAJSON}") + Encoding.UTF8.GetByteCount($"iothub-content-encoding={CONTENT_ENCODING_UTF8}");
+            
             // if batching is requested the buffer will have the requested size, otherwise we reserve the max size
             uint hubMessageBufferSize = (SettingsConfiguration.HubMessageSize > 0 ? SettingsConfiguration.HubMessageSize : SettingsConfiguration.HubMessageSizeMax) - (uint)systemPropertyLength - jsonSquareBracketLength - (uint)applicationPropertyLength;
             byte[] hubMessageBuffer = new byte[hubMessageBufferSize];
             MemoryStream hubMessage = new MemoryStream(hubMessageBuffer);
-            var nextSendTime = DateTime.UtcNow + TimeSpan.FromSeconds(SettingsConfiguration.DefaultSendIntervalSeconds);
+            DateTime nextSendTime = DateTime.UtcNow + TimeSpan.FromSeconds(SettingsConfiguration.DefaultSendIntervalSeconds);
             bool singleMessageSend = SettingsConfiguration.DefaultSendIntervalSeconds == 0 && SettingsConfiguration.HubMessageSize == 0;
 
             using (hubMessage)

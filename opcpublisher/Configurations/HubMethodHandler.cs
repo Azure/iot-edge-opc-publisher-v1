@@ -48,7 +48,7 @@ namespace OpcPublisher
             Program.Instance.Logger.Debug($"Register desired properties and method callbacks");
 
             // register method handlers
-            foreach (var iotHubMethod in _directMethods)
+            foreach (KeyValuePair<string, MethodCallback> iotHubMethod in _directMethods)
             {
                 await client.SetMethodHandlerAsync(iotHubMethod.Key, iotHubMethod.Value, client).ConfigureAwait(false);
             }
@@ -61,7 +61,7 @@ namespace OpcPublisher
             Program.Instance.Logger.Debug($"Register desired properties and method callbacks");
 
             // register method handlers
-            foreach (var iotHubMethod in _directMethods)
+            foreach (KeyValuePair<string, MethodCallback> iotHubMethod in _directMethods)
             {
                 await client.SetMethodHandlerAsync(iotHubMethod.Key, iotHubMethod.Value, client).ConfigureAwait(false);
             }
@@ -71,7 +71,7 @@ namespace OpcPublisher
         /// <summary>
         /// Handle publish node method call.
         /// </summary>
-        public async Task<MethodResponse> HandlePublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> HandlePublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandlePublishNodesMethodAsync:";
             
@@ -196,13 +196,13 @@ namespace OpcPublisher
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
-            return methodResponse;
+            return Task.FromResult(methodResponse);
         }
 
         /// <summary>
         /// Handle unpublish node method call.
         /// </summary>
-        public async Task<MethodResponse> HandleUnpublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> HandleUnpublishNodesMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleUnpublishNodesMethodAsync:";
             UnpublishNodesMethodRequestModel unpublishNodesMethodData = null;
@@ -316,13 +316,13 @@ namespace OpcPublisher
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
-            return methodResponse;
+            return Task.FromResult(methodResponse);
         }
 
         /// <summary>
         /// Handle unpublish all nodes method call.
         /// </summary>
-        public async Task<MethodResponse> HandleUnpublishAllNodesMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> HandleUnpublishAllNodesMethodAsync(MethodRequest methodRequest, object userContext)
         {
             string logPrefix = "HandleUnpublishAllNodesMethodAsync:";
             Uri endpointUri = null;
@@ -369,7 +369,7 @@ namespace OpcPublisher
                 }
                 else
                 {
-                    _uaClient.RemoveAllMonitoredNodes();
+                    _uaClient.UnpublishAlldNodes();
                 }
             }
 
@@ -407,7 +407,7 @@ namespace OpcPublisher
             }
             MethodResponse methodResponse = new MethodResponse(result, (int)statusCode);
             Program.Instance.Logger.Information($"{logPrefix} completed with result {statusCode.ToString()}");
-            return methodResponse;
+            return Task.FromResult(methodResponse);
         }
 
         /// <summary>
@@ -576,7 +576,7 @@ namespace OpcPublisher
                 }
                 else
                 {
-                    foreach (var configFileEntry in configFileEntries)
+                    foreach (ConfigurationFileEntryModel configFileEntry in configFileEntries)
                     {
                         opcNodes.AddRange(configFileEntry.OpcNodes);
                     }

@@ -69,7 +69,7 @@ namespace OpcPublisher
                 Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(LoggerOpcUaTraceHandler);
                 Logger.Information($"opcstacktracemask set to: 0x{_application.ApplicationConfiguration.TraceConfiguration.TraceMasks:X}");
 
-                foreach (var endpoint in _application.ApplicationConfiguration.ServerConfiguration.BaseAddresses)
+                foreach (string endpoint in _application.ApplicationConfiguration.ServerConfiguration.BaseAddresses)
                 {
                     Logger.Information($"OPC UA server base address: {endpoint}");
                 }
@@ -151,7 +151,14 @@ namespace OpcPublisher
                 _uaServer.CurrentInstance.SessionManager.SessionCreated += ServerEventStatus;
 
                 // load our publishedNodes.json
-                PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+                try
+                {
+                    PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Processing of published nodes JSON file failed with {ex.Message}. Please update the file.");
+                }
 
                 // startup completed
                 Metrics.StartupCompleted = true;
@@ -180,7 +187,7 @@ namespace OpcPublisher
                 _uaServer.Stop();
 
                 // shutdown the client
-                _uaClient.RemoveAllMonitoredNodes();
+                _uaClient.UnpublishAlldNodes();
 
                 // shutdown the IoTHub messaging
                 _hubClientWrapper.Close();
