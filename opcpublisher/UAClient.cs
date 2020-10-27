@@ -41,7 +41,18 @@ namespace OpcPublisher
             EndpointDescription selectedEndpoint;
             try
             {
-                selectedEndpoint = CoreClientUtils.SelectEndpoint(endpointUrl, SettingsConfiguration.UseSecurity);
+                if (_endpointDescriptionCache.ContainsKey(endpointUrl))
+                {
+                    selectedEndpoint = _endpointDescriptionCache[endpointUrl];
+                }
+                else
+                {
+                    // use a discovery client to connect to the server and discover all its endpoints, then pick the one with the higest security
+                    selectedEndpoint = CoreClientUtils.SelectEndpoint(endpointUrl, SettingsConfiguration.UseSecurity);
+
+                    // add to cache
+                    _endpointDescriptionCache[endpointUrl] = selectedEndpoint;
+                }
             }
             catch (Exception ex)
             {
@@ -133,6 +144,7 @@ namespace OpcPublisher
             lock (_sessionsLock)
             {
                 _sessions.Add(newSession);
+                Metrics.NumberOfOpcSessionsConnected = _sessions.Count;
             }
 
             return newSession;
@@ -156,11 +168,14 @@ namespace OpcPublisher
 
                         subscription.ApplyChanges();
                         session.RemoveSubscription(subscription);
+                        Metrics.NumberOfOpcMonitoredItemsMonitored--;
                     }
 
                     session.Close();
                     Program.Instance.Logger.Information($"Session to endpoint URI '{session.Endpoint.EndpointUrl}' closed successfully.");
                 }
+
+                Metrics.NumberOfOpcSessionsConnected = _sessions.Count;
             }
         }
 
@@ -176,7 +191,9 @@ namespace OpcPublisher
             // add needs to happen before create to set the Session property
             session.AddSubscription(subscription);
             subscription.Create();
-            
+
+            Metrics.NumberOfOpcSubscriptionsConnected++;
+
             Program.Instance.Logger.Information($"Created subscription with id {subscription.Id} on endpoint '{session.Endpoint.EndpointUrl}'");
             
             if (publishingInterval != subscription.PublishingInterval)
@@ -391,7 +408,8 @@ namespace OpcPublisher
                     OpcUaMonitoredItemWrapper._skipFirst[nodeId.ToString()] = true;
                 }
 
-                Program.Instance.Logger.Debug($"{logPrefix} Added item with nodeId '{(expandedNodeId == null ? nodeId.ToString() : expandedNodeId.ToString())}' for monitoring.");
+                Program.Instance.Logger.Information($"{logPrefix} Now monitoring OPC UA node {(expandedNodeId == null ? nodeId.ToString() : expandedNodeId.ToString())} on endpoint {session.ConfiguredEndpoint.EndpointUrl.ToString()}");
+                Metrics.NumberOfOpcMonitoredItemsMonitored++;
 
                 return HttpStatusCode.Accepted;
             }
@@ -452,11 +470,13 @@ namespace OpcPublisher
                         {
                             subscription.RemoveItem(monitoredItem);
                             subscription.ApplyChanges();
+                            Metrics.NumberOfOpcMonitoredItemsMonitored++;
 
                             // cleanup empty subscriptions and sessions
                             if (subscription.MonitoredItemCount == 0)
                             {
                                 session.RemoveSubscription(subscription);
+                                Metrics.NumberOfOpcSubscriptionsConnected--;
                             }
 
                             return HttpStatusCode.OK;
@@ -534,5 +554,7 @@ namespace OpcPublisher
         private List<HeartBeatPublishing> _heartbeats = new List<HeartBeatPublishing>();
 
         private Dictionary<string, uint> _missedKeepAlives = new Dictionary<string, uint>();
+
+        private Dictionary<string, EndpointDescription> _endpointDescriptionCache = new Dictionary<string, EndpointDescription>();
     }
 }

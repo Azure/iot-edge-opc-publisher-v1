@@ -23,39 +23,19 @@ namespace OpcPublisher
         public static DateTime PublisherStartTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-        /// Number of configured OPC UA sessions.
-        /// </summary>
-        public static int NumberOfOpcSessionsConfigured;
-        
-        /// <summary>
         /// Number of connected OPC UA session.
         /// </summary>
-        public static int NumberOfOpcSessionsConnected;
-        
-        /// <summary>
-        /// Number of configured OPC UA subscriptions.
-        /// </summary>
-        public static int NumberOfOpcSubscriptionsConfigured;
+        public static int NumberOfOpcSessionsConnected = 0;
         
         /// <summary>
         /// Number of connected OPC UA subscriptions.
         /// </summary>
-        public static int NumberOfOpcSubscriptionsConnected;
+        public static int NumberOfOpcSubscriptionsConnected = 0;
         
-        /// <summary>
-        /// Number of OPC UA nodes configured to monitor.
-        /// </summary>
-        public static int NumberOfOpcMonitoredItemsConfigured;
-
         /// <summary>
         /// Number of monitored OPC UA nodes.
         /// </summary>
-        public int NumberOfOpcMonitoredItemsMonitored;
-
-        /// <summary>
-        /// Number of OPC UA nodes requested to stop monitoring.
-        /// </summary>
-        public int NumberOfOpcMonitoredItemsToRemove;
+        public static int NumberOfOpcMonitoredItemsMonitored = 0;
 
         /// <summary>
         /// Signal for completed startup.
@@ -141,13 +121,9 @@ namespace OpcPublisher
             try
             {
                 diagnosticInfo.PublisherStartTime = PublisherStartTime;
-                diagnosticInfo.NumberOfOpcSessionsConfigured = NumberOfOpcSessionsConfigured;
                 diagnosticInfo.NumberOfOpcSessionsConnected = NumberOfOpcSessionsConnected;
-                diagnosticInfo.NumberOfOpcSubscriptionsConfigured = NumberOfOpcSubscriptionsConfigured;
                 diagnosticInfo.NumberOfOpcSubscriptionsConnected = NumberOfOpcSubscriptionsConnected;
-                diagnosticInfo.NumberOfOpcMonitoredItemsConfigured = NumberOfOpcMonitoredItemsConfigured;
                 diagnosticInfo.NumberOfOpcMonitoredItemsMonitored = NumberOfOpcMonitoredItemsMonitored;
-                diagnosticInfo.NumberOfOpcMonitoredItemsToRemove = NumberOfOpcMonitoredItemsToRemove;
                 diagnosticInfo.MonitoredItemsQueueCapacity = SettingsConfiguration.MonitoredItemsQueueCapacity;
                 diagnosticInfo.MonitoredItemsQueueCount = MonitoredItemsQueueCount;
                 diagnosticInfo.EnqueueCount = EnqueueCount;
@@ -269,9 +245,9 @@ namespace OpcPublisher
                     Program.Instance.Logger.Information("==========================================================================");
                     Program.Instance.Logger.Information($"OpcPublisher status @ {System.DateTime.UtcNow} (started @ {diagnosticInfo.PublisherStartTime})");
                     Program.Instance.Logger.Information("---------------------------------");
-                    Program.Instance.Logger.Information($"OPC sessions (configured/connected): {diagnosticInfo.NumberOfOpcSessionsConfigured}/{diagnosticInfo.NumberOfOpcSessionsConnected}");
-                    Program.Instance.Logger.Information($"OPC subscriptions (configured/connected): {diagnosticInfo.NumberOfOpcSubscriptionsConfigured}/{diagnosticInfo.NumberOfOpcSubscriptionsConnected}");
-                    Program.Instance.Logger.Information($"OPC monitored items (configured/monitored/to remove): {diagnosticInfo.NumberOfOpcMonitoredItemsConfigured}/{diagnosticInfo.NumberOfOpcMonitoredItemsMonitored}/{diagnosticInfo.NumberOfOpcMonitoredItemsToRemove}");
+                    Program.Instance.Logger.Information($"OPC sessions (connected): {diagnosticInfo.NumberOfOpcSessionsConnected}");
+                    Program.Instance.Logger.Information($"OPC subscriptions (connected): {diagnosticInfo.NumberOfOpcSubscriptionsConnected}");
+                    Program.Instance.Logger.Information($"OPC monitored items (monitored): {diagnosticInfo.NumberOfOpcMonitoredItemsMonitored}");
                     Program.Instance.Logger.Information("---------------------------------");
                     Program.Instance.Logger.Information($"monitored items queue bounded capacity: {diagnosticInfo.MonitoredItemsQueueCapacity}");
                     Program.Instance.Logger.Information($"monitored items queue current items: {diagnosticInfo.MonitoredItemsQueueCount}");
