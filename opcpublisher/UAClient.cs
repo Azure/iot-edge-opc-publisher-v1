@@ -509,11 +509,14 @@ namespace OpcPublisher
                     {
                         OpcUserSessionAuthenticationMode authenticationMode = OpcUserSessionAuthenticationMode.Anonymous;
                         EncryptedNetworkCredential credentials = null;
-                        if (session.ConfiguredEndpoint.SelectedUserTokenPolicy.TokenType == UserTokenType.UserName)
+                        
+                        if (session.Identity.TokenType == UserTokenType.UserName)
                         {
                             authenticationMode = OpcUserSessionAuthenticationMode.UsernamePassword;
-                            string username = string.Empty; //TODO
-                            string password = string.Empty; //TODO
+
+                            UserNameIdentityToken token = (UserNameIdentityToken)session.Identity.GetIdentityToken();
+                            string username = token.UserName;
+                            string password = token.DecryptedPassword;
                             credentials = EncryptedNetworkCredential.Encrypt(_uaApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null).Result, new NetworkCredential(username, password));
                         }
                        
@@ -532,8 +535,8 @@ namespace OpcPublisher
                                     OpcPublishingInterval = subscription.PublishingInterval,
                                     OpcSamplingInterval = monitoredItem.SamplingInterval,
                                     DisplayName = monitoredItem.DisplayName,
-                                    HeartbeatInterval = 0, //TODO
-                                    SkipFirst = false //TODO
+                                    HeartbeatInterval = 0, //TODO: Need to retrieve heartbeatinterval
+                                    SkipFirst = false //TODO: Need to retrieve skipfirst flag
                                 };
                                 publisherConfigurationFileEntry.OpcNodes.Add(opcNodeOnEndpoint);
                             }
