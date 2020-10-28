@@ -13,7 +13,7 @@ It runs on [Azure IoT Edge](https://azure.microsoft.com/en-us/services/iot-edge/
 
 Please use our released Docker containers for OPC Publisher available in the Microsoft Container Registry, rather than building from sources. The easiest way to deploy OPC Publisher is through the [Azure Marketplace](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/microsoft_iot.iotedge-opc-publisher). 
 
-<img src="C:\Users\erichb\AppData\Roaming\Typora\typora-user-images\image-20201028141833399.png" alt="image-20201028141833399" style="zoom:50%;" />
+<img src="image-20201028141833399.png" style="zoom:50%;" />
 
 Simply click the Get it now button, pick your IoT Hub (the OPC Publisher is supposed to send data to) as well as your IoT Edge device (the OPC Publisher is supposed to run on) and click Create.
 
@@ -39,7 +39,7 @@ IoT Edge provides OPC Publisher with its security configuration for accessing Io
 
 For accessing OPC UA-enabled assets, X.509 certificates and their associated private keys are used by OPC UA. OPC Publisher uses a file system-based certificate store to manage all certificates. During startup, OPC Publisher checks if there is a certificate it can use in this certificate stores and creates a new self-signed certificate and new associated private key if there is none. Self-signed certificates provide weak authentication, since they are not signed by a trusted CA, but at least the communication to the OPC UA-enabled asset can be encrypted this way.
 
-To persist the security configuration of OPC Publisher across restarts, the certificate and private key located in the the certificate store directory must be mapped to the IoT Edge host OS filesystem. Please see Specifying Container Create Options in the Azure Portal below.
+To persist the security configuration of OPC Publisher across restarts, the certificate and private key located in the the certificate store directory must be mapped to the IoT Edge host OS filesystem. Please see [Specifying Container Create Options in the Azure Portal](https://github.com/Azure/iot-edge-opc-publisher/tree/docs#specifying-container-create-options-in-the-azure-portal).
 
 ### Configuration via Configuration File
 
@@ -47,29 +47,32 @@ The simplest way to configure OPC Publisher is via a configuration file. An exam
 Configuration file syntax has changed over time and OPC Publisher still can read old formats, but converts them into the latest format when persisting the configuration, done regularly in an automated fashion.
 
 An basic configuration file looks like this:
-
-    [
+```
+[
+  {
+    "EndpointUrl": "opc.tcp://testserver:62541/Quickstarts/ReferenceServer",
+    "UseSecurity": false,
+    "OpcNodes": [
       {
-        "EndpointUrl": "opc.tcp://testserver:62541/Quickstarts/ReferenceServer",
-        "UseSecurity": false,
-        "OpcNodes": [
-          {
-            "Id": "i=2258",
-            "OpcSamplingInterval": 2000,
-            "OpcPublishingInterval": 5000,
-            "DisplayName": "Current time"
-          }
-        ]
+        "Id": "i=2258",
+        "OpcSamplingInterval": 2000,
+        "OpcPublishingInterval": 5000,
+        "DisplayName": "Current time"
       }
     ]
+  }
+]
+```
 
 OPC UA assets optimizes network bandwidth by only sending data changes to OPC Publisher when the data has changed. If data changes need to be published more often or at regular intervals, OPC Publisher supports a "heartbeat" for every configured data item that can be enabled by additionally specifying the HeartbeatInterval key in the data item's configuration. The interval is specified in seconds:
-
+```
     "HeartbeatInterval": 3600,
+```
 
 An OPC UA asset always send the current value of a data item when OPC Publisher first connects to it. To prevent publishing this data to IoT Hub, the SkipFirst key can be additionally specified in the data item's configuration:
-
+```
     "SkipFirst": true,
+```
 
 Both settings can be enabled globally via command line options, too.
 
@@ -121,15 +124,14 @@ A cloud-based, companion microservice with a REST interface is described and ava
 OPC Publisher version 2.6 and above supports standardized OPC UA PubSub JSON format as specified in [part 14 of the OPC UA specification](https://opcfoundation.org/developer-tools/specifications-unified-architecture/part-14-pubsub/). 
 
 In addition, all versions of OPC Publisher support a non-standardized, simple JSON telemetry format, which is compatible with [Azure Time Series Insights](https://azure.microsoft.com/en-us/services/time-series-insights/) and looks like this:
-
 ```
 {
-	"NodeId": "i=2058",
+    "NodeId": "i=2058",
     "ApplicationUri": "urn:myopcserver",
     "DisplayName": "CurrentTime",
     "Value": {
-    	"Value": "10.11.2017 14:03:17",
-		"SourceTimestamp": "2017-11-10T14:03:17Z"
+        "Value": "10.11.2017 14:03:17",
+        "SourceTimestamp": "2017-11-10T14:03:17Z"
     }
 }
 ```
@@ -146,28 +148,29 @@ OPC Publisher allows filtering the parts of the non-standardized, simple telemet
 
 ## Specifying Container Create Options in the Azure Portal
 When deploying OPC Publisher through the Azure Portal, container create options can be specified in the Update IoT Edge Module page of OPC Publisher. These create options must be in JSON format. The OPC Publisher command line arguments can be specified via the Cmd key, e.g.:
-
 ```
 "Cmd": [
-	"--pf=./pn.json",
+    "--pf=./pn.json",
     "--aa"
 ],
 ```
 
 A typical set of IoT Edge Module Container Create Options for OPC Publisher is:
-
-    {
-    	"Hostname": "opcpublisher",
-        "Cmd": [
-            "--pf=./pn.json",
-            "--aa"
-        ],
-        "HostConfig": {
-            "Binds": [
-                "/iiotedge:/appdata"
-            ]
-        }
+```
+{
+  	"Hostname": "opcpublisher",
+    "Cmd": [
+        "--pf=./pn.json",
+        "--aa"
+    ],
+    "HostConfig": {
+        "Binds": [
+            "/iiotedge:/appdata"
+        ]
     }
+}
+```
+
 With these options specified, OPC Publisher will read the configuration file `./pn.json`. The OPC Publisher's working directory is set to
 `/appdata` at startup and thus OPC Publisher will read the file `/appdata/pn.json` inside its Docker container. 
 OPC Publisher's log file `publisher-publisher.log` (the default name) will be written to `/appdata` and the `CertificateStores` directory (used for OPC UA certificates) will also be created in this directory. To make these files available in the IoT Edge host file system the container configuration requires a bind mount volume. The `/iiotedge:/appdata` bind will map the directory `/appdata` (which is the current working directory on container startup) to the host directory `/iiotedge` (which will be created by the IoT Edge runtime if it doesn't exist). 
@@ -176,12 +179,13 @@ OPC Publisher's log file `publisher-publisher.log` (the default name) will be wr
 
 If you need to connect to an OPC UA server using the hostname of the OPC UA server and have no DNS configured on your network, you can enable resolving the hostname by adding an `ExtraHosts` configuration to the `HostConfig` object:
 
-    "HostConfig": {
-        "ExtraHosts": [
-            "opctestsvr:192.168.178.26"
-        ]
-    }
-
+```
+"HostConfig": {
+    "ExtraHosts": [
+        "opctestsvr:192.168.178.26"
+    ]
+}
+```
 
 
 ## Performance and Memory Tuning OPC Publisher V2.5 and below
@@ -215,7 +219,7 @@ Here are some measurements with different values for `--si` and `--ms` parameter
 OPC Publisher was used as debug build on Windows 10 natively for 120 seconds. The IoTHub protocol was the default MQTT protocol.
 
 #### Default configuration (--si 10 --ms 262144)
-
+```
         ==========================================================================
         OpcPublisher status @ 26.10.2017 15:33:05 (started @ 26.10.2017 15:31:09)
         ---------------------------------
@@ -243,12 +247,13 @@ OPC Publisher was used as debug build on Windows 10 natively for 120 seconds. Th
         --ms setting: 262144
         --ih setting: Mqtt
         ==========================================================================
+```
 
 The default configuration sends data to IoTHub each 10 seconds or when 256 kB of data to ingest is available. This adds a moderate latency of max 10 seconds, but has lowest probability of loosing data because of the large message size.
 As you see in the diagnostics output there are no OPC node updates lost (`monitored item notifications enqueue failure`).
 
 #### Constant send inverval (--si 1 --ms 0)
-
+```
         ==========================================================================
         OpcPublisher status @ 26.10.2017 15:35:59 (started @ 26.10.2017 15:34:03)
         ---------------------------------
@@ -276,12 +281,12 @@ As you see in the diagnostics output there are no OPC node updates lost (`monito
         --ms setting: 0
         --ih setting: Mqtt
         ==========================================================================
-
+```
 When the message size is set to 0 and there is a send interval configured (or the default of 1 second is used), then OPC Publisher does use internally batch data using the maximal supported IoTHub message size, which is 256 kB. As you see in the diagnostic output,
 the average message size is 115019 byte. In this configuration we do not loose any OPC node value updates and compared to the default it adds lower latency.
 
 #### Send each OPC node value update (--si 0 --ms 0)
-
+```
         ==========================================================================
         OpcPublisher status @ 26.10.2017 15:39:33 (started @ 26.10.2017 15:37:37)
         ---------------------------------
@@ -309,12 +314,12 @@ the average message size is 115019 byte. In this configuration we do not loose a
         --ms setting: 0
         --ih setting: Mqtt
         ==========================================================================
-
+```
 This configuration sends for each OPC node value change a message to IoTHub. You see the average message size of 234 byte is pretty small. The advantage of this configuration is that OPC Publisher does not add any latency to the ingest data path. The number of
 lost OPC node value updates (`monitored item notifications enqueue failure: 44624`) is the highest of all compared configurations, which make this configuration not recommendable for use cases, when a lot of telemetry should be published.
 
 #### Maximum batching (--si 0 --ms 262144)
-
+```
         ==========================================================================
         OpcPublisher status @ 26.10.2017 15:42:55 (started @ 26.10.2017 15:41:00)
         ---------------------------------
@@ -342,7 +347,7 @@ lost OPC node value updates (`monitored item notifications enqueue failure: 4462
         --ms setting: 262144
         --ih setting: Mqtt
         ==========================================================================
-
+```
 This configuration batches as much OPC node value updates as possible. The maximum IoTHub message size is 256 kB, which is configured here. There is no send interval requested, which makes the time when data is ingested
 completely controlled by the data itself. This configuration has the least probability of loosing any OPC node values and can be used for publishing a high number of nodes.
 When using this configuration you need to ensure, that your scenario does not have conditions where high latency is introduced (because the message size of 256 kB is not reached).
