@@ -25,7 +25,7 @@ If you want to deploy the latest released version of OPC Publisher manually, you
 docker run mcr.microsoft.com/iotedge/opc-publisher:latest <name>
 ```
 
-Where <name> is the name you want to give to the container.
+Where '<name>' is the name you want to give to the container.
 
 
 

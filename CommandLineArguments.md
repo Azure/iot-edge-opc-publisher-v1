@@ -2,9 +2,6 @@
 
         Usage: opcpublisher.exe <applicationname> [<iothubconnectionstring>] [<options>]
     
-        OPC Edge Publisher to subscribe to configured OPC UA servers and send telemetry to Azure IoTHub.
-        To exit the application, just press CTRL-C while it is running.
-    
         applicationname: the OPC UA application name to use, required
                          The application name is also used to register the publisher under this name in the
                          IoTHub device registry.

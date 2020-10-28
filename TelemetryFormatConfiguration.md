@@ -1,5 +1,5 @@
 ```
-	// The configuration settings file consists of two objects:
+    // The configuration settings file consists of two objects:
     // 1) The 'Defaults' object, which defines defaults for the telemetry configuration
     // 2) An array 'EndpointSpecific' of endpoint specific configuration
     // Both objects are optional and if they are not specified, then OPC Publisher uses
