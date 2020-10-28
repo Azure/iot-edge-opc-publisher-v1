@@ -5,6 +5,7 @@
 
 using System;
 using System.Net;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 namespace OpcPublisher
@@ -20,12 +21,12 @@ namespace OpcPublisher
 
             if (networkCredential.UserName != null)
             {
-                result.UserName = Convert.ToBase64String(cert.GetRSAPublicKey().EncryptValue(Convert.FromBase64String(networkCredential.UserName)));
+                result.UserName = Convert.ToBase64String(cert.GetRSAPublicKey().Encrypt(Convert.FromBase64String(networkCredential.UserName), RSAEncryptionPadding.Pkcs1));
             }
             
             if (networkCredential.Password != null)
             {
-                result.Password = Convert.ToBase64String(cert.GetRSAPublicKey().EncryptValue(Convert.FromBase64String(networkCredential.Password)));
+                result.Password = Convert.ToBase64String(cert.GetRSAPublicKey().Encrypt(Convert.FromBase64String(networkCredential.Password), RSAEncryptionPadding.Pkcs1));
             }
 
             return result;
@@ -37,12 +38,12 @@ namespace OpcPublisher
 
             if (UserName != null)
             {
-                result.UserName = Convert.ToBase64String(cert.GetRSAPrivateKey().DecryptValue(Convert.FromBase64String(UserName)));
+                result.UserName = Convert.ToBase64String(cert.GetRSAPrivateKey().Decrypt(Convert.FromBase64String(UserName), RSAEncryptionPadding.Pkcs1));
             }
 
             if (Password != null)
             {
-                result.Password = Convert.ToBase64String(cert.GetRSAPrivateKey().DecryptValue(Convert.FromBase64String(Password)));
+                result.Password = Convert.ToBase64String(cert.GetRSAPrivateKey().Decrypt(Convert.FromBase64String(Password), RSAEncryptionPadding.Pkcs1));
             }
 
             return result;
