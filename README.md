@@ -3,7 +3,7 @@ Please note: This project has adopted the [Microsoft Open Source Code of Conduct
 
 
 # Microsoft OPC Publisher
-OPC Publisher is a fully supported Microsoft product, developed in the open, that bridges the gap between your industrial assets and the Microsoft Azure cloud. It does so by connecting to your OPC UA-enabled assets or industrial connectivity software and publishes telemetry data to [Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) in IEC62541 OPC UA PubSub standard format.
+OPC Publisher is a fully supported Microsoft product, developed in the open, that bridges the gap between industrial assets and the Microsoft Azure cloud. It does so by connecting to OPC UA-enabled assets or industrial connectivity software and publishes telemetry data to [Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) in IEC62541 OPC UA PubSub standard format.
 
 It runs on [Azure IoT Edge](https://azure.microsoft.com/en-us/services/iot-edge/) as a Module or on plain Docker as a container. Since it leverages the [.Net cross-platform runtime](https://docs.microsoft.com/en-us/dotnet/core/introduction), it also runs natively on Linux and Windows 10.
 
@@ -19,13 +19,13 @@ Simply click the Get It Now button, pick the IoT Hub (the OPC Publisher is suppo
 
 ##### Accessing the Microsoft Container Registry Docker containers for OPC Publisher manually
 
-If you want to deploy the latest released version of OPC Publisher manually, you can do so by running:
+The latest released version of OPC Publisher can be run manually via:
 
 ```
 docker run mcr.microsoft.com/iotedge/opc-publisher:latest <name>
 ```
 
-Where '<name>' is the name you want to give to the container.
+Where "name" is the name for the container.
 
 
 
@@ -35,7 +35,7 @@ OPC Publisher has several interfaces that can be used to configure it.
 
 ### Configuring Security
 
-IoT Edge provides OPC Publisher with its security configuration for accessing IoT Hub. Should you need to run OPC Publisher as a standalone Docker container, you can specify a device connection string for accessing IoT Hub via the --dc command line parameter. You can create a device for IoT Hub and retrieve its connection string via the Azure Portal.
+IoT Edge provides OPC Publisher with its security configuration for accessing IoT Hub automatically. OPC Publisher can also run as a standalone Docker container by specifying a device connection string for accessing IoT Hub via the --dc command line parameter. A device for IoT Hub can be created and its connection string retrieved through the Azure Portal.
 
 For accessing OPC UA-enabled assets, X.509 certificates and their associated private keys are used by OPC UA. OPC Publisher uses a file system-based certificate store to manage all certificates. During startup, OPC Publisher checks if there is a certificate it can use in this certificate stores and creates a new self-signed certificate and new associated private key if there is none. Self-signed certificates provide weak authentication, since they are not signed by a trusted CA, but at least the communication to the OPC UA-enabled asset can be encrypted this way.
 
@@ -109,7 +109,7 @@ OPC Publisher implements the following [IoTHub Direct Methods](https://docs.micr
   - ExitApplication
   - GetInfo
 
-We have provided a [sample configuration application](https://github.com/Azure-Samples/iot-edge-opc-publisher-nodeconfiguration) as well as an [application for reading diagnostic information](https://github.com/Azure-Samples/iot-edge-opc-publisher-diagnostics) from OPC Publisher open-source that leverages this interface for your reference.
+We have provided a [sample configuration application](https://github.com/Azure-Samples/iot-edge-opc-publisher-nodeconfiguration) as well as an [application for reading diagnostic information](https://github.com/Azure-Samples/iot-edge-opc-publisher-diagnostics) from OPC Publisher open-source, leveraging this interface.
 
 ### Configuration via Cloud-based, Companion REST Microservice
 
@@ -177,7 +177,7 @@ OPC Publisher's log file `publisher-publisher.log` (the default name) will be wr
 
 **Without this bind mount volume, all OPC Publisher configuration files will be lost when the container is restarted.**
 
-If you need to connect to an OPC UA server using the hostname of the OPC UA server and have no DNS configured on your network, you can enable resolving the hostname by adding an `ExtraHosts` configuration to the `HostConfig` object:
+A connection to an OPC UA server using the hostname of the OPC UA server without a DNS server configured on the network can be achieved by adding an `ExtraHosts` configuration to the `HostConfig` object:
 
 ```
 "HostConfig": {
@@ -189,135 +189,34 @@ If you need to connect to an OPC UA server using the hostname of the OPC UA serv
 
 
 
-## Performance and Memory Tuning OPC Publisher V2.5 and below
-When running OPC Publisher you need to be aware of your performance requirements and the memory resources you have available on your platform.
-Since both are interdependent and both depend on the configuration of how many nodes are configured to publish, you should ensure that the parameters you are using for:
+## Performance and Memory Tuning for OPC Publisher
+When running OPC Publisher in production setups, network performance requirements (throughput and latency) and memory resources must be considered. OPC Publisher exposes the following command line parameters to help meet these requirements:
 
+* Message queue capacity (`--mq`)
 * IoTHub send interval (`--si`)
 * IoTHub message size (`--ms`)
-* Monitored Items queue capacity (`--mq`)
-do meet your requirements.
 
-The `--mq` parameter controls the upper bound of the capacity of the internal queue, which buffers all notifications if a value of an OPC node changes. If OPC Publisher is not able to send messages to IoTHub fast enough,
-then this queue buffers those notifications. The parameter sets the number of notifications which can be buffered. If you seen the number of items in this queue increasing in your test runs, you need to:
+The `--mq` parameter controls the upper bound of the capacity of the internal message queue. This queue buffers all messages before they are sent to IoT Hub. If OPC Publisher is not able to send messages to IoT Hub fast enough, this queue buffers those messages and starts to grow. If the number of items in this queue increasing in test runs, please:
 
 * decrease the IoTHub send interval (`--si`)
+
 * increase the IoTHub message size (`--ms`)
-otherwise you will loose the data values of those OPC node changes. The `--mq` parameter at the same time allows to prevent controlling the upper bound of the memory resources used by OPC Publisher.
 
-The `--si` parameter enforces OPC Publisher to send messages to IoTHub as the specified interval. If there is an IoTHub message size specified via the `--ms` parameter (or by the default value for it),
-then a message will be sent either when the message size is reached (in this case the interval is restarted) or when the specified interval time has passed. If you disable the message size by `--ms 0`, OPC Publisher
-uses the maximal possible IoTHub message size of 256 kB to batch data.
+Otherwise, messages will be lost. The `--mq` parameter also controls the upper bound of the memory resources used by OPC Publisher.
 
-The `--ms` parameter allows you to enable batching of messages sent to IoTHub. Depending on the protocol you are using, the overhead to send a message to IoTHub is high compared to the actual time of sending the payload.
-If your scenario allows latency for the data ingested, you should configure OPC Publisher to use the maximal message size of 256 kB.
+The `--si` parameter enforces OPC Publisher to send messages to IoTHub at the specified interval. A message is sent either when the message size is reached (triggering the send interval to reset) or when the specified interval time has passed. If the message size parameter is disabled by setting it to 0, OPC Publisher uses the maximal possible IoTHub message size of 256 kB to batch data.
 
-Before you use OPC Publisher in production scenarios, you need to test the performance and memory under production conditions. You can use the `--di` command line parameter to specify a interval in seconds,
-which will trigger the output of diagnostic information at this interval.
+The `--ms` parameter enables batching of messages sent to IoTHub. In most network setups, the latency of sending a single message to IoTHub is high, compared to the time it takes to transmit the payload.
+If a small delay for the data to arrive in the cloud is acceptable, OPC Publisher should be configured to use the maximal message size of 256 kB.
 
-### Test measurements
-Here are some measurements with different values for `--si` and `--ms` parameters publishing 500 nodes with an OPC publishing interval of 1 second.
-OPC Publisher was used as debug build on Windows 10 natively for 120 seconds. The IoTHub protocol was the default MQTT protocol.
+To measure the performance of OPC Publisher,  the `--di` command line parameter can be specified, which will print performance metrics to the trace log in the interval specified (in seconds).
 
-#### Default configuration (--si 10 --ms 262144)
-```
-        ==========================================================================
-        OpcPublisher status @ 26.10.2017 15:33:05 (started @ 26.10.2017 15:31:09)
-        ---------------------------------
-        OPC sessions: 1
-        connected OPC sessions: 1
-        connected OPC subscriptions: 5
-        OPC monitored items: 500
-        ---------------------------------
-        monitored items queue bounded capacity: 8192
-        monitored items queue current items: 0
-        monitored item notifications enqueued: 54363
-        monitored item notifications enqueue failure: 0
-        monitored item notifications dequeued: 54363
-        ---------------------------------
-        messages sent to IoTHub: 109
-        last successful msg sent @: 26.10.2017 15:33:04
-        bytes sent to IoTHub: 12709429
-        avg msg size: 116600
-        msg send failures: 0
-        messages too large to sent to IoTHub: 0
-        times we missed send interval: 0
-        ---------------------------------
-        current working set in MB: 90
-        --si setting: 10
-        --ms setting: 262144
-        --ih setting: Mqtt
-        ==========================================================================
-```
+The default configuration sends data to IoT Hub each 10 seconds or when 256 kB of message data is available. This adds a moderate delay of 10 seconds max, but has lowest probability of losing data because of the large message size.
+The metric `monitored item notifications enqueue failure` shows how many messages were lost in the logs.
 
-The default configuration sends data to IoTHub each 10 seconds or when 256 kB of data to ingest is available. This adds a moderate latency of max 10 seconds, but has lowest probability of loosing data because of the large message size.
-As you see in the diagnostics output there are no OPC node updates lost (`monitored item notifications enqueue failure`).
+When the message size is set to 0 and there is a send interval configured (or the default of 1 second is used), OPC Publisher uses batching with the largest supported IoTHub message size, which is 256 kB. 
 
-#### Constant send inverval (--si 1 --ms 0)
-```
-        ==========================================================================
-        OpcPublisher status @ 26.10.2017 15:35:59 (started @ 26.10.2017 15:34:03)
-        ---------------------------------
-        OPC sessions: 1
-        connected OPC sessions: 1
-        connected OPC subscriptions: 5
-        OPC monitored items: 500
-        ---------------------------------
-        monitored items queue bounded capacity: 8192
-        monitored items queue current items: 0
-        monitored item notifications enqueued: 54243
-        monitored item notifications enqueue failure: 0
-        monitored item notifications dequeued: 54243
-        ---------------------------------
-        messages sent to IoTHub: 109
-        last successful msg sent @: 26.10.2017 15:35:59
-        bytes sent to IoTHub: 12683836
-        avg msg size: 116365
-        msg send failures: 0
-        messages too large to sent to IoTHub: 0
-        times we missed send interval: 0
-        ---------------------------------
-        current working set in MB: 90
-        --si setting: 1
-        --ms setting: 0
-        --ih setting: Mqtt
-        ==========================================================================
-```
-When the message size is set to 0 and there is a send interval configured (or the default of 1 second is used), then OPC Publisher does use internally batch data using the maximal supported IoTHub message size, which is 256 kB. As you see in the diagnostic output,
-the average message size is 115019 byte. In this configuration we do not loose any OPC node value updates and compared to the default it adds lower latency.
-
-#### Send each OPC node value update (--si 0 --ms 0)
-```
-        ==========================================================================
-        OpcPublisher status @ 26.10.2017 15:39:33 (started @ 26.10.2017 15:37:37)
-        ---------------------------------
-        OPC sessions: 1
-        connected OPC sessions: 1
-        connected OPC subscriptions: 5
-        OPC monitored items: 500
-        ---------------------------------
-        monitored items queue bounded capacity: 8192
-        monitored items queue current items: 8184
-        monitored item notifications enqueued: 54232
-        monitored item notifications enqueue failure: 44624
-        monitored item notifications dequeued: 1424
-        ---------------------------------
-        messages sent to IoTHub: 1423
-        last successful msg sent @: 26.10.2017 15:39:33
-        bytes sent to IoTHub: 333046
-        avg msg size: 234
-        msg send failures: 0
-        messages too large to sent to IoTHub: 0
-        times we missed send interval: 0
-        ---------------------------------
-        current working set in MB: 96
-        --si setting: 0
-        --ms setting: 0
-        --ih setting: Mqtt
-        ==========================================================================
-```
-This configuration sends for each OPC node value change a message to IoTHub. You see the average message size of 234 byte is pretty small. The advantage of this configuration is that OPC Publisher does not add any latency to the ingest data path. The number of
-lost OPC node value updates (`monitored item notifications enqueue failure: 44624`) is the highest of all compared configurations, which make this configuration not recommendable for use cases, when a lot of telemetry should be published.
+When both send interval and message size are set to 0, OPC Publisher sends a message to IoTHub for every data item. The results in an average message size of just 234 bytes, which is small. However, the advantage of this configuration is that OPC Publisher sends the data straight away as it comes in from the connected asset. The number of lost messages (`monitored item notifications enqueue failure`) will be high, which means that this configuration is not recommendable for use cases where a large amount of data must be published.
 
 #### Maximum batching (--si 0 --ms 262144)
 ```
@@ -352,12 +251,6 @@ lost OPC node value updates (`monitored item notifications enqueue failure: 4462
 This configuration batches as much OPC node value updates as possible. The maximum IoTHub message size is 256 kB, which is configured here. There is no send interval requested, which makes the time when data is ingested
 completely controlled by the data itself. This configuration has the least probability of loosing any OPC node values and can be used for publishing a high number of nodes.
 When using this configuration you need to ensure, that your scenario does not have conditions where high latency is introduced (because the message size of 256 kB is not reached).
-
-
-
-## Performance and Memory Tuning OPC Publisher V2.6 and above
-
-TODO
 
 
 
