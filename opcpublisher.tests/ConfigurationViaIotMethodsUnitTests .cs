@@ -78,40 +78,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            await Task.Yield();
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 0);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Task.Yield();
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 0);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -161,40 +167,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcPublishingInterval = 3000;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -244,41 +256,47 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcPublishingInterval = 2000;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            await Task.Yield();
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Task.Yield();
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcPublishingInterval == 2000);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -327,40 +345,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            await Task.Yield();
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 0);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Task.Yield();
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 0);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -410,40 +434,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcSamplingInterval = 3000;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -493,41 +523,47 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.DefaultOpcSamplingInterval = 2000;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            await Task.Yield();
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Task.Yield();
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].OpcSamplingInterval == 2000);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -577,41 +613,47 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            await Task.Yield();
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Task.Yield();
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -661,41 +703,47 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            await Task.Yield();
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Task.Yield();
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -745,41 +793,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -829,40 +882,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == true);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -912,40 +971,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = true;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -995,40 +1060,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.SkipFirstDefault = false;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].SkipFirst == false);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -1078,41 +1149,47 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 0;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            await Task.Yield();
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 0);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Task.Yield();
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 0);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -1162,41 +1239,47 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 2;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            await Task.Yield();
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 0);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                await Task.Yield();
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 0);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -1246,40 +1329,45 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 1;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
 
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -1329,40 +1417,46 @@ namespace OpcPublisher
             HubMethodHandler hubMethodHandler = new HubMethodHandler(_uaClient);
 
             UnitTestHelper.SetPublisherDefaults();
-            SettingsConfiguration.PublisherNodeConfigurationFilename = fqTempFilename;
             SettingsConfiguration.HeartbeatIntervalDefault = 2;
 
             // wait 5 seconds for the server to become available
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(_configurationFileEntries.Count == 0);
-            MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
-            await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
-            
-            _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
-            _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodeConfigurationFilename));
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
-            _uaClient.UnpublishAllNodes();
-            Metrics.Clear();
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 0, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 0, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 0, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(_configurationFileEntries.Count == 0);
+                MethodRequest methodRequest = new MethodRequest("PublishNodes", File.ReadAllBytes(fqPayloadFilename));
+                await hubMethodHandler.HandlePublishNodesMethodAsync(methodRequest, null).ConfigureAwait(false);
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1);
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1);
+
+                _configurationFileEntries = new List<ConfigurationFileEntryLegacyModel>();
+                _configurationFileEntries = JsonConvert.DeserializeObject<List<ConfigurationFileEntryLegacyModel>>(File.ReadAllText(SettingsConfiguration.PublisherNodePersistencyFilename));
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == 1, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == 1, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == 1, "wrong # of monitored items");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                Assert.True(_configurationFileEntries[0].OpcNodes[0].HeartbeatInterval == 2);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                Metrics.Clear();
+            }
         }
 
         public static IEnumerable<object[]> PnPlcEmptyAndPayloadPublishingInterval2000 =>

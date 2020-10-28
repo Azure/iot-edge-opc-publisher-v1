@@ -98,8 +98,6 @@ namespace OpcPublisher
         /// </summary>
         public void InitHubCommunication(UAClient uaClient, bool runningInIoTEdgeContext, string connectionString)
         {
-            _hubCommunicationCts = new CancellationTokenSource();
-            _shutdownToken = _hubCommunicationCts.Token;
             _hubMethodHandler = new HubMethodHandler(uaClient);
 
             ExponentialBackoff exponentialRetryPolicy = new ExponentialBackoff(int.MaxValue, TimeSpan.FromMilliseconds(2), TimeSpan.FromMilliseconds(1024), TimeSpan.FromMilliseconds(3));
@@ -171,8 +169,7 @@ namespace OpcPublisher
 
                 // start up task to send telemetry to IoTHub
                 Program.Instance.Logger.Information("Creating task process and batch monitored item data updates...");
-                _monitoredItemsProcessorTask = Task.Run(() => MonitoredItemsProcessorAsync(_shutdownToken).ConfigureAwait(false), _shutdownToken);
-                
+                _monitoredItemsProcessorTask = Task.Run(() => MonitoredItemsProcessorAsync(_hubCommunicationCts.Token));
             }
             catch (Exception e)
             {
@@ -310,7 +307,7 @@ namespace OpcPublisher
         /// <summary>
         /// Dequeue monitored item notification messages, batch them for send (if needed) and send them to IoTHub.
         /// </summary>
-        public async Task MonitoredItemsProcessorAsync(CancellationToken ct)
+        public async Task MonitoredItemsProcessorAsync(CancellationToken cancellationToken)
         {
             uint jsonSquareBracketLength = 2;
             Message tempMsg = new Message();
@@ -369,9 +366,10 @@ namespace OpcPublisher
                         else
                         {
                             // if we are in shutdown do not wait, else wait infinite if send interval is not set
-                            millisToWait = ct.IsCancellationRequested ? 0 : Timeout.Infinite;
+                            millisToWait = cancellationToken.IsCancellationRequested ? 0 : Timeout.Infinite;
                         }
-                        bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, millisToWait, ct);
+
+                        bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, millisToWait, cancellationToken);
 
                         // the two commandline parameter --ms (message size) and --si (send interval) control when data is sent to IoTHub/EdgeHub
                         // pls see detailed comments on performance and memory consumption at https://github.com/Azure/iot-edge-opc-publisher
@@ -418,7 +416,7 @@ namespace OpcPublisher
                         else
                         {
                             // if we got no message, we either reached the interval or we are in shutdown and have processed all messages
-                            if (ct.IsCancellationRequested)
+                            if (cancellationToken.IsCancellationRequested)
                             {
                                 Program.Instance.Logger.Information($"Cancellation requested.");
                                 _monitoredItemsDataQueue.CompleteAdding();
@@ -588,8 +586,7 @@ namespace OpcPublisher
         private static BlockingCollection<MessageDataModel> _monitoredItemsDataQueue;
 
         private Task _monitoredItemsProcessorTask;
-        private CancellationTokenSource _hubCommunicationCts;
-        private CancellationToken _shutdownToken;
+        private CancellationTokenSource _hubCommunicationCts = new CancellationTokenSource();
 
         private DeviceClient _iotHubClient;
         private ModuleClient _edgeHubClient;

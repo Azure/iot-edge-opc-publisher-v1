@@ -6,6 +6,7 @@
 using Newtonsoft.Json;
 using Opc.Ua;
 using Opc.Ua.Server;
+using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -459,6 +460,9 @@ namespace OpcPublisher
                 return ServiceResult.Create(e, StatusCodes.BadUnexpectedError, $"Unexpected error publishing node: {e.Message}");
             }
 
+            // update our publishednodes JSON persistency
+            PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient).Wait();
+
             if (statusCode == HttpStatusCode.OK || statusCode == HttpStatusCode.Accepted)
             {
                 return ServiceResult.Good;
@@ -521,6 +525,9 @@ namespace OpcPublisher
                 Program.Instance.Logger.Error(e, $"{logPrefix} Exception while trying to configure publishing node '{nodeId.ToString()}'");
                 return ServiceResult.Create(e, StatusCodes.BadUnexpectedError, $"Unexpected error unpublishing node: {e.Message}");
             }
+
+            // update our publishednodes JSON persistency
+            PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient).Wait();
 
             return statusCode == HttpStatusCode.OK || statusCode == HttpStatusCode.Accepted ? ServiceResult.Good : ServiceResult.Create(StatusCodes.Bad, "Can not stop monitoring node!");
         }

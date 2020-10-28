@@ -397,7 +397,7 @@ namespace OpcPublisher
                     DisplayName = displayName,
                     SamplingInterval = (int)opcSamplingInterval
                 };
-                newMonitoredItem.Notification += OpcUaMonitoredItemWrapper.MonitoredItemNotificationEventHandler;
+                newMonitoredItem.Notification += MonitoredItemNotification.DataChangedEventHandler;
 
                 opcSubscription.AddItem(newMonitoredItem);
                 opcSubscription.ApplyChanges();
@@ -411,7 +411,7 @@ namespace OpcPublisher
                 // create a skip first entry, if required
                 if (skipFirst)
                 {
-                    OpcUaMonitoredItemWrapper.SkipFirst[nodeId.ToString()] = true;
+                    MonitoredItemNotification.SkipFirst[nodeId.ToString()] = true;
                 }
 
                 Program.Instance.Logger.Information($"{logPrefix} Now monitoring OPC UA node {(expandedNodeId == null ? nodeId.ToString() : expandedNodeId.ToString())} on endpoint {session.ConfiguredEndpoint.EndpointUrl}");

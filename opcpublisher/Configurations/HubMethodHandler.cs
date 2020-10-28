@@ -189,6 +189,9 @@ namespace OpcPublisher
                 }
             }
 
+            // update our publishednodes JSON persistency
+            PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient).Wait();
+
             // adjust response size
             AdjustResponse(ref statusResponse);
 
@@ -308,6 +311,9 @@ namespace OpcPublisher
                     statusCode = HttpStatusCode.InternalServerError;
                 }
             }
+
+            // update our publishednodes JSON persistency
+            PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient).Wait();
 
             // adjust response size
             AdjustResponse(ref statusResponse);

@@ -82,28 +82,35 @@ namespace OpcPublisher
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
                         
             long eventsAtStart = Metrics.NumberOfEvents;
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived();
-            long eventsAfterConnect = Metrics.NumberOfEvents;
-            await Task.Delay(2500).ConfigureAwait(false);
-            long eventsAfterDelay = Metrics.NumberOfEvents;
-            _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            _output.WriteLine($"waited {seconds} seconds till monitoring started");
-            Assert.Equal(3, eventsAfterDelay - eventsAtStart);
-            _uaClient.UnpublishAllNodes();
-            hubClientWrapper.Close();
-            Metrics.Clear();
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+                int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived();
+                long eventsAfterConnect = Metrics.NumberOfEvents;
+                await Task.Delay(2000).ConfigureAwait(false);
+                long eventsAfterDelay = Metrics.NumberOfEvents;
+                _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                _output.WriteLine($"waited {seconds} seconds till monitoring started");
+                Assert.Equal(2, eventsAfterDelay - eventsAfterConnect);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                hubClientWrapper.Close();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -159,29 +166,36 @@ namespace OpcPublisher
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
-            long eventsAfterConnect = Metrics.NumberOfEvents;
-            await Task.Delay(3000).ConfigureAwait(false);
-            long eventsAfterDelay = Metrics.NumberOfEvents;
-            _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.Equal(1, eventsAfterDelay - eventsAtStart);
-            _uaClient.UnpublishAllNodes();
-            hubClientWrapper.Close();
-            Metrics.Clear();
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+                int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
+                long eventsAfterConnect = Metrics.NumberOfEvents;
+                await Task.Delay(2000).ConfigureAwait(false);
+                long eventsAfterDelay = Metrics.NumberOfEvents;
+                _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
+                Assert.Equal(1, eventsAfterDelay - eventsAfterConnect);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                hubClientWrapper.Close();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -237,29 +251,36 @@ namespace OpcPublisher
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
-            long eventsAfterConnect = Metrics.NumberOfEvents;
-            await Task.Delay(1900).ConfigureAwait(false);
-            long eventsAfterDelay = Metrics.NumberOfEvents;
-            _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.True(eventsAfterDelay - eventsAtStart == 1);
-            _uaClient.UnpublishAllNodes();
-            hubClientWrapper.Close();
-            Metrics.Clear();
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+                int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
+                long eventsAfterConnect = Metrics.NumberOfEvents;
+                await Task.Delay(2000).ConfigureAwait(false);
+                long eventsAfterDelay = Metrics.NumberOfEvents;
+                _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
+                Assert.Equal(2, eventsAfterDelay - eventsAtStart);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                hubClientWrapper.Close();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -315,29 +336,36 @@ namespace OpcPublisher
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
-            long eventsAfterConnect = Metrics.NumberOfEvents;
-            await Task.Delay(3000).ConfigureAwait(false);
-            long eventsAfterDelay = Metrics.NumberOfEvents;
-            _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.True(eventsAfterDelay - eventsAtStart == 0);
-            _uaClient.UnpublishAllNodes();
-            hubClientWrapper.Close();
-            Metrics.Clear();
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+                int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
+                long eventsAfterConnect = Metrics.NumberOfEvents;
+                await Task.Delay(2000).ConfigureAwait(false);
+                long eventsAfterDelay = Metrics.NumberOfEvents;
+                _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
+                Assert.Equal(1, eventsAfterDelay - eventsAtStart);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                hubClientWrapper.Close();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -393,29 +421,36 @@ namespace OpcPublisher
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
-            long eventsAfterConnect = Metrics.NumberOfEvents;
-            await Task.Delay(5000).ConfigureAwait(false);
-            long eventsAfterDelay = Metrics.NumberOfEvents;
-            _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.Equal(2, eventsAfterDelay - eventsAtStart);
-            _uaClient.UnpublishAllNodes();
-            hubClientWrapper.Close();
-            Metrics.Clear();
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+                int seconds = UnitTestHelper.WaitTilItemsAreMonitored();
+                long eventsAfterConnect = Metrics.NumberOfEvents;
+                await Task.Delay(2000).ConfigureAwait(false);
+                long eventsAfterDelay = Metrics.NumberOfEvents;
+                _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
+                Assert.Equal(1, eventsAfterDelay - eventsAfterConnect);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                hubClientWrapper.Close();
+                Metrics.Clear();
+            }
         }
 
         /// <summary>
@@ -471,29 +506,36 @@ namespace OpcPublisher
             await Task.Delay(5000);
 
             PublishedNodesConfiguration.ReadConfig(_uaClient, await _application.ApplicationConfiguration.SecurityConfiguration.ApplicationCertificate.LoadPrivateKey(null));
+            await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
 
             _output.WriteLine($"now testing: {SettingsConfiguration.PublisherNodeConfigurationFilename}");
             Assert.True(File.Exists(SettingsConfiguration.PublisherNodeConfigurationFilename));
 
             int eventsReceived = 0;
             long eventsAtStart = Metrics.NumberOfEvents;
-            
-            Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
-            Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
-            Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
-            int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived();
-            long eventsAfterConnect = Metrics.NumberOfEvents;
-            await Task.Delay(3000).ConfigureAwait(false);
-            long eventsAfterDelay = Metrics.NumberOfEvents;
-            _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
-            _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
-            _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
-            _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
-            _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
-            Assert.True(eventsAfterDelay - eventsAtStart == 2);
-            _uaClient.UnpublishAllNodes();
-            hubClientWrapper.Close();
-            Metrics.Clear();
+
+            try
+            {
+                Assert.True(Metrics.NumberOfOpcSessionsConnected == configuredSessions, "wrong # of sessions");
+                Assert.True(Metrics.NumberOfOpcSubscriptionsConnected == configuredSubscriptions, "wrong # of subscriptions");
+                Assert.True(Metrics.NumberOfOpcMonitoredItemsMonitored == configuredMonitoredItems, "wrong # of monitored items");
+                int seconds = UnitTestHelper.WaitTilItemsAreMonitoredAndFirstEventReceived();
+                long eventsAfterConnect = Metrics.NumberOfEvents;
+                await Task.Delay(2000).ConfigureAwait(false);
+                long eventsAfterDelay = Metrics.NumberOfEvents;
+                _output.WriteLine($"# of events at start: {eventsAtStart}, # events after connect: {eventsAfterConnect}, # events after delay: {eventsAfterDelay}");
+                _output.WriteLine($"sessions configured {Metrics.NumberOfOpcSessionsConnected}, connected {Metrics.NumberOfOpcSessionsConnected}");
+                _output.WriteLine($"subscriptions configured {Metrics.NumberOfOpcSubscriptionsConnected}, connected {Metrics.NumberOfOpcSubscriptionsConnected}");
+                _output.WriteLine($"items configured {Metrics.NumberOfOpcMonitoredItemsMonitored}, monitored {Metrics.NumberOfOpcMonitoredItemsMonitored}");
+                _output.WriteLine($"waited {seconds} seconds till monitoring started, events generated {eventsReceived}");
+                Assert.Equal(1, eventsAfterDelay - eventsAtStart);
+            }
+            finally
+            {
+                _uaClient.UnpublishAllNodes();
+                hubClientWrapper.Close();
+                Metrics.Clear();
+            }
         }
 
         public static IEnumerable<object[]> PnPlcCurrentTime =>

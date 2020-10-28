@@ -48,9 +48,14 @@ namespace OpcPublisher.Configurations
                                                      !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IOTEDGE_MODULEID"));
 
         /// <summary>
-        /// Name of the node configuration file.
+        /// Name of the node configuration file
         /// </summary>
         public static string PublisherNodeConfigurationFilename { get; set; } = $"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}publishednodes.json";
+
+        /// <summary>
+        /// Name of the persistency file
+        /// </summary>
+        public static string PublisherNodePersistencyFilename { get; set; } = $"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}persistency.json";
 
         /// <summary>
         /// Specifies the queue capacity for monitored item events.

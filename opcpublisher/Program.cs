@@ -160,6 +160,9 @@ namespace OpcPublisher
                     Logger.Error($"Processing of published nodes JSON file failed with {ex.Message}. Please update the file.");
                 }
 
+                // update our publishednodes JSON persistency
+                await PublishedNodesConfiguration.UpdateNodeConfigurationFileAsync(_uaClient);
+
                 // startup completed
                 Metrics.StartupCompleted = true;
 
@@ -191,9 +194,6 @@ namespace OpcPublisher
 
                 // shutdown the IoTHub messaging
                 _hubClientWrapper.Close();
-
-                // free resources
-                ShutdownTokenSource = null;
             }
             catch (Exception e)
             {

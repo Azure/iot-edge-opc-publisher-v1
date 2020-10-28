@@ -15,7 +15,7 @@ namespace OpcPublisher
     /// <summary>
     /// Wrapper for the OPC UA monitored item, which monitored a nodes we need to publish.
     /// </summary>
-    public class OpcUaMonitoredItemWrapper
+    public class MonitoredItemNotification
     {
         /// <summary>
         /// Skip first notification dictionary
@@ -25,7 +25,7 @@ namespace OpcPublisher
         /// <summary>
         /// The notification that the data for a monitored item has changed on an OPC UA server.
         /// </summary>
-        public static void MonitoredItemNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
+        public static void DataChangedEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
         {
             try
             {
@@ -34,7 +34,7 @@ namespace OpcPublisher
                     return;
                 }
 
-                if (!(e.NotificationValue is MonitoredItemNotification notification))
+                if (!(e.NotificationValue is Opc.Ua.MonitoredItemNotification notification))
                 {
                     return;
                 }

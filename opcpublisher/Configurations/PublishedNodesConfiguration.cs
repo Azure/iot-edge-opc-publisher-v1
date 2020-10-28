@@ -17,11 +17,6 @@ namespace OpcPublisher.Configurations
     public class PublishedNodesConfiguration
     {
         /// <summary>
-        /// Keeps the version of the node configuration that has lastly been persisted
-        /// </summary>
-        private static uint _lastNodeConfigVersion = 0;
-
-        /// <summary>
         /// Read and parse the publisher node configuration file.
         /// </summary>
         /// <returns></returns>
@@ -156,27 +151,19 @@ namespace OpcPublisher.Configurations
         /// <summary>
         /// Updates the configuration file to persist all currently published nodes
         /// </summary>
-        public static async Task UpdateNodeConfigurationFileAsync(UAClient client, uint nodeConfigVersion)
+        public static async Task UpdateNodeConfigurationFileAsync(UAClient client)
         {
-            // only persist newer versions
-            if (nodeConfigVersion > _lastNodeConfigVersion)
+            try
             {
-                try
-                {
-                    // iterate through all sessions, subscriptions and monitored items and create config file entries
-                    List<ConfigurationFileEntryModel> publisherNodeConfiguration = client.GetListofPublishedNodes();
+                // iterate through all sessions, subscriptions and monitored items and create config file entries
+                List<ConfigurationFileEntryModel> publisherNodeConfiguration = client.GetListofPublishedNodes();
 
-                    Program.Instance.Logger.Debug($"Update node configuration file, version: {_lastNodeConfigVersion:X8}");
-
-                    // update the config file
-                    await File.WriteAllTextAsync(SettingsConfiguration.PublisherNodeConfigurationFilename, JsonConvert.SerializeObject(publisherNodeConfiguration, Formatting.Indented)).ConfigureAwait(false);
-
-                    _lastNodeConfigVersion = nodeConfigVersion;
-                }
-                catch (Exception e)
-                {
-                    Program.Instance.Logger.Error(e, "Update of node configuration file failed.");
-                }
+                // update the config file
+                await File.WriteAllTextAsync(SettingsConfiguration.PublisherNodePersistencyFilename, JsonConvert.SerializeObject(publisherNodeConfiguration, Formatting.Indented)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Program.Instance.Logger.Error(ex, "Update of persistency file failed.");
             }
         }
     }
