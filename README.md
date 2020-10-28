@@ -15,7 +15,7 @@ Please use our released Docker containers for OPC Publisher available in the Mic
 
 <img src="image-20201028141833399.png" style="zoom:50%;" />
 
-Simply click the Get it now button, pick your IoT Hub (the OPC Publisher is supposed to send data to) as well as your IoT Edge device (the OPC Publisher is supposed to run on) and click Create.
+Simply click the Get It Now button, pick the IoT Hub (the OPC Publisher is supposed to send data to) as well as the IoT Edge device (the OPC Publisher is supposed to run on) and click Create.
 
 ##### Accessing the Microsoft Container Registry Docker containers for OPC Publisher manually
 
@@ -158,7 +158,7 @@ When deploying OPC Publisher through the Azure Portal, container create options 
 A typical set of IoT Edge Module Container Create Options for OPC Publisher is:
 ```
 {
-  	"Hostname": "opcpublisher",
+    "Hostname": "opcpublisher",
     "Cmd": [
         "--pf=./pn.json",
         "--aa"
@@ -186,6 +186,7 @@ If you need to connect to an OPC UA server using the hostname of the OPC UA serv
     ]
 }
 ```
+
 
 
 ## Performance and Memory Tuning OPC Publisher V2.5 and below
