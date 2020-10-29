@@ -12,28 +12,8 @@ namespace OpcPublisher
     /// <summary>
     /// Describes the information of an event.
     /// </summary>
-    public class EventConfigurationModel
+    public class EventPublishingConfigurationModel : NodePublishingConfigurationModel
     {
-        /// <summary>
-        /// The endpoint URL of the OPC UA server.
-        /// </summary>
-        public string EndpointUrl { get; set; }
-
-        /// <summary>
-        /// Flag if a secure transport should be used to connect to the endpoint.
-        /// </summary>
-        public bool UseSecurity { get; set; }
-
-        /// <summary>
-        /// The event source to monitor.
-        /// </summary>
-        public string Id { get; set; }
-
-        /// <summary>
-        /// The display name to use for the node in telemetry events.
-        /// </summary>
-        public string DisplayName { get; set; }
-
         /// <summary>
         /// The select clauses of the event.
         /// </summary>
@@ -42,21 +22,7 @@ namespace OpcPublisher
         /// <summary>
         /// The where clauses of the event.
         /// </summary>
-        public List<WhereClauseElement> WhereClause { get; set; }
-
-        /// <summary>
-        /// Ctor of the object.
-        /// </summary>
-        public EventConfigurationModel(string endpointUrl, bool? useSecurity,
-            string id, string displayName, List<SelectClause> selectClauses, List<WhereClauseElement> whereClause)
-        {
-            EndpointUrl = endpointUrl;
-            UseSecurity = useSecurity ?? true;
-            Id = id;
-            DisplayName = displayName;
-            SelectClauses = selectClauses;
-            WhereClause = whereClause;
-        }
+        public List<WhereClauseElement> WhereClauses { get; set; }
     }
 
     /// <summary>
@@ -259,7 +225,7 @@ namespace OpcPublisher
                 List<QualifiedName> browsePaths = new List<QualifiedName>();
                 if (SimpleAttribute.BrowsePaths != null)
                 {
-                    foreach (var browsePath in SimpleAttribute.BrowsePaths)
+                    foreach (string browsePath in SimpleAttribute.BrowsePaths)
                     {
                         browsePaths.Add(new QualifiedName(browsePath));
                     }
@@ -336,7 +302,7 @@ namespace OpcPublisher
         /// The WhereClause to specify which events are of interest.
         /// </summary>
         [JsonProperty(Required = Required.Always)]
-        public List<WhereClauseElement> WhereClause;
+        public List<WhereClauseElement> WhereClauses;
 
         /// <summary>
         /// Ctor of an object.
@@ -346,18 +312,18 @@ namespace OpcPublisher
             Id = string.Empty;
             DisplayName = string.Empty;
             SelectClauses = new List<SelectClause>();
-            WhereClause = new List<WhereClauseElement>();
+            WhereClauses = new List<WhereClauseElement>();
         }
 
         /// <summary>
         /// Ctor of an object using a configuration object.
         /// </summary>
-        public OpcEventOnEndpointModel(EventConfigurationModel eventConfiguration)
+        public OpcEventOnEndpointModel(EventPublishingConfigurationModel eventConfiguration)
         {
-            Id = eventConfiguration.Id;
+            Id = eventConfiguration.NodeId.ToString();
             DisplayName = eventConfiguration.DisplayName;
             SelectClauses = eventConfiguration.SelectClauses;
-            WhereClause = eventConfiguration.WhereClause;
+            WhereClauses = eventConfiguration.WhereClauses;
         }
     }
 }

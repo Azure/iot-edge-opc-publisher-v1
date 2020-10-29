@@ -65,7 +65,7 @@ namespace OpcPublisher.Configurations
                                 if (opcNode.ExpandedNodeId != null)
                                 {
                                     ExpandedNodeId expandedNodeId = ExpandedNodeId.Parse(opcNode.ExpandedNodeId);
-                                    NodePublishingConfigurationModel publishingInfo = new NodePublishingConfigurationModel() {
+                                    EventPublishingConfigurationModel publishingInfo = new EventPublishingConfigurationModel() {
                                         ExpandedNodeId = expandedNodeId,
                                         NodeId = opcNode.ExpandedNodeId,
                                         EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString,
@@ -87,7 +87,7 @@ namespace OpcPublisher.Configurations
                                     {
                                         // ExpandedNodeId format
                                         ExpandedNodeId expandedNodeId = ExpandedNodeId.Parse(opcNode.Id);
-                                        NodePublishingConfigurationModel publishingInfo = new NodePublishingConfigurationModel() {
+                                        EventPublishingConfigurationModel publishingInfo = new EventPublishingConfigurationModel() {
                                             ExpandedNodeId = expandedNodeId,
                                             NodeId = opcNode.Id,
                                             EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString,
@@ -106,7 +106,7 @@ namespace OpcPublisher.Configurations
                                     {
                                         // NodeId format
                                         NodeId nodeId = NodeId.Parse(opcNode.Id);
-                                        NodePublishingConfigurationModel publishingInfo = new NodePublishingConfigurationModel {
+                                        EventPublishingConfigurationModel publishingInfo = new EventPublishingConfigurationModel {
                                             ExpandedNodeId = nodeId,
                                             NodeId = opcNode.Id,
                                             EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString,
@@ -123,11 +123,25 @@ namespace OpcPublisher.Configurations
                                     }
                                 }
                             }
+
+                            // process event configuration
+                            foreach (var opcEvent in publisherConfigFileEntryLegacy.OpcEvents)
+                            {
+                                EventPublishingConfigurationModel publishingInfo = new EventPublishingConfigurationModel() {
+                                    EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString,
+                                    UseSecurity = publisherConfigFileEntryLegacy.UseSecurity,
+                                    NodeId = opcEvent.Id,
+                                    DisplayName = opcEvent.DisplayName,
+                                    SelectClauses = opcEvent.SelectClauses,
+                                    WhereClauses = opcEvent.WhereClauses
+                                };
+                                client.PublishNode(publishingInfo);
+                            }
                         }
                         else
                         {
                             // NodeId (ns=) format node configuration syntax using default sampling and publishing interval.
-                            NodePublishingConfigurationModel publishingInfo = new NodePublishingConfigurationModel() {
+                            EventPublishingConfigurationModel publishingInfo = new EventPublishingConfigurationModel() {
                                 ExpandedNodeId = publisherConfigFileEntryLegacy.NodeId,
                                 NodeId = publisherConfigFileEntryLegacy.NodeId.ToString(),
                                 EndpointUrl = publisherConfigFileEntryLegacy.EndpointUrl.OriginalString,

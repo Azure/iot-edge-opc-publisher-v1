@@ -117,7 +117,7 @@ namespace OpcPublisher
                 {
                     foreach (OpcNodeOnEndpointModel nodeOnEndpoint in publishNodesMethodData.OpcNodes)
                     {
-                        NodePublishingConfigurationModel node = new NodePublishingConfigurationModel {
+                        EventPublishingConfigurationModel node = new EventPublishingConfigurationModel {
                             NodeId = nodeOnEndpoint.Id,
                             ExpandedNodeId = nodeOnEndpoint.ExpandedNodeId,
                             EndpointUrl = new Uri(publishNodesMethodData.EndpointUrl).ToString(),

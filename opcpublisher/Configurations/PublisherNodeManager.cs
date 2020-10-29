@@ -447,7 +447,7 @@ namespace OpcPublisher
             // find/create a session to the endpoint URL and start monitoring the node.
             try
             {
-                NodePublishingConfigurationModel node = new NodePublishingConfigurationModel {
+                EventPublishingConfigurationModel node = new EventPublishingConfigurationModel {
                     NodeId = nodeId,
                     ExpandedNodeId = expandedNodeId,
                     EndpointUrl = endpointUri.ToString()

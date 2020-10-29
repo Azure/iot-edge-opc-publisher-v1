@@ -1,6 +1,6 @@
 ﻿[
   {
-    "EndpointUrl": "opc.tcp://erichb2:62563/Quickstarts/SimpleEventsServer",
+    "EndpointUrl": "opc.tcp://localhost:62563/Quickstarts/SimpleEventsServer",
     "OpcEvents": [
       {
         "Id": "i=2253",

@@ -258,7 +258,7 @@ namespace OpcPublisher
             }
         }
 
-        public HttpStatusCode PublishNode(NodePublishingConfigurationModel node)
+        public HttpStatusCode PublishNode(EventPublishingConfigurationModel node)
         {
             // find or create the session we need to monitor the node
             Session opcSession = ConnectSessionAsync(node.EndpointUrl, node.AuthCredential).Result;
@@ -308,7 +308,9 @@ namespace OpcPublisher
                     node.OpcSamplingInterval,
                     node.DisplayName,
                     node.HeartbeatInterval,
-                    node.SkipFirst);
+                    node.SkipFirst,
+                    node.SelectClauses,
+                    node.WhereClauses);
             }
             else
             {
@@ -322,7 +324,9 @@ namespace OpcPublisher
                     node.OpcSamplingInterval,
                     node.DisplayName,
                     node.HeartbeatInterval,
-                    node.SkipFirst);
+                    node.SkipFirst,
+                    node.SelectClauses,
+                    node.WhereClauses);
             }
         }
 
@@ -338,7 +342,9 @@ namespace OpcPublisher
             int opcSamplingInterval,
             string displayName,
             int heartbeatInterval,
-            bool skipFirst)
+            bool skipFirst,
+            List<SelectClause> selectClauses = null,
+            List<WhereClauseElement> whereClauses = null)
         {
             string logPrefix = "AddNodeForMonitoringAsync:";
             Subscription opcSubscription = null;
@@ -383,12 +389,12 @@ namespace OpcPublisher
 
                 // resolve all node and namespace references in the select and where clauses
                 EventFilter eventFilter = new EventFilter();
-                foreach (var selectClause in unmonitoredEvent.EventConfiguration.SelectClauses)
+                foreach (var selectClause in selectClauses)
                 {
                     SimpleAttributeOperand simpleAttributeOperand = new SimpleAttributeOperand();
                     simpleAttributeOperand.AttributeId = selectClause.AttributeId.ResolveAttributeId();
                     simpleAttributeOperand.IndexRange = selectClause.IndexRange;
-                    NodeId typeId = selectClause.TypeId.ToNodeId(_namespaceTable);
+                    NodeId typeId = selectClause.TypeId.ToNodeId(session.NamespaceUris);
                     simpleAttributeOperand.TypeDefinitionId = new NodeId(typeId);
                     QualifiedNameCollection browsePaths = new QualifiedNameCollection();
                     foreach (var browsePath in selectClause.BrowsePaths)
@@ -398,7 +404,7 @@ namespace OpcPublisher
                     simpleAttributeOperand.BrowsePath = browsePaths;
                     eventFilter.SelectClauses.Add(simpleAttributeOperand);
                 }
-                foreach (var whereClauseElement in unmonitoredEvent.EventConfiguration.WhereClause)
+                foreach (var whereClauseElement in whereClauses)
                 {
                     ContentFilterElement contentFilterElement = new ContentFilterElement();
                     contentFilterElement.FilterOperator = whereClauseElement.Operator.ResolveFilterOperator();

@@ -116,5 +116,13 @@ namespace OpcPublisher
 #pragma warning disable CA2227 // Collection properties should be read only
         public List<OpcNodeOnEndpointModel> OpcNodes { get; set; }
 #pragma warning restore CA2227 // Collection properties should be read only
+
+        /// <summary>
+        /// Event and Conditions are defined here.
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+#pragma warning disable CA2227 // Collection properties should be read only
+        public List<OpcEventOnEndpointModel> OpcEvents { get; set; }
+#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

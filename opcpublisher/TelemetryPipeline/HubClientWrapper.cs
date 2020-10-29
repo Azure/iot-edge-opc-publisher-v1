@@ -285,6 +285,7 @@ namespace OpcPublisher
                     await _jsonWriter.WriteEndObjectAsync().ConfigureAwait(false);
                     await _jsonWriter.FlushAsync().ConfigureAwait(false);
                 }
+
                 return _jsonStringBuilder.ToString();
             }
             catch (Exception e)
@@ -297,7 +298,7 @@ namespace OpcPublisher
         /// <summary>
         /// Creates a IoTHub JSON message for an event notification, based on the telemetry configuration for the endpoint.
         /// </summary>
-        private async Task<string> CreateJsonForEventAsync(EventMessageData eventData)
+        private async Task<string> CreateJsonForEventAsync(EventMessageDataModel eventData)
         {
             try
             {
@@ -313,20 +314,9 @@ namespace OpcPublisher
                     await _jsonWriter.WriteStartObjectAsync().ConfigureAwait(false);
                     string telemetryValue = string.Empty;
 
-                    const string EndpointUrlName = "EndpointUrl";
-                    const string ExpandedNodeIdName = "ExpandedNodeId";
-                    const string ApplicationUriName = "ApplicationUri";
-                    const string DisplayNameName = "DisplayName";
-                    const string ValueName = "Value";
-                    const string SourceTimestampName = "SourceTimestamp";
-                    const string StatusName = "Status";
-                    const string StatusCodeName = "StatusCode";
-
                     // process EndpointUrl
-                    
-                        await _jsonWriter.WritePropertyNameAsync("EndpointUrl").ConfigureAwait(false);
-                        await _jsonWriter.WriteValueAsync(eventData.EndpointUrl).ConfigureAwait(false);
-                    
+                    await _jsonWriter.WritePropertyNameAsync("EndpointUrl").ConfigureAwait(false);
+                    await _jsonWriter.WriteValueAsync(eventData.EndpointUrl).ConfigureAwait(false);
 
                     // process NodeId
                     if (!string.IsNullOrEmpty(eventData.NodeId))
@@ -338,30 +328,24 @@ namespace OpcPublisher
                     // process MonitoredItem object properties
                     if (!string.IsNullOrEmpty(eventData.ApplicationUri) || !string.IsNullOrEmpty(eventData.DisplayName))
                     {
-                        if (!(bool)MonitoredItemFlat)
-                        {
-                            await _jsonWriter.WritePropertyNameAsync("MonitoredItem").ConfigureAwait(false);
-                            await _jsonWriter.WriteStartObjectAsync().ConfigureAwait(false);
-                        }
-
+                        await _jsonWriter.WritePropertyNameAsync("MonitoredItem").ConfigureAwait(false);
+                        await _jsonWriter.WriteStartObjectAsync().ConfigureAwait(false);
+      
                         // process ApplicationUri
                         if (!string.IsNullOrEmpty(eventData.ApplicationUri))
                         {
-                            await _jsonWriter.WritePropertyNameAsync(MonitoredItem.ApplicationUri.Name).ConfigureAwait(false);
+                            await _jsonWriter.WritePropertyNameAsync("ApplicationUri").ConfigureAwait(false);
                             await _jsonWriter.WriteValueAsync(eventData.ApplicationUri).ConfigureAwait(false);
                         }
 
                         // process DisplayName
                         if (!string.IsNullOrEmpty(eventData.DisplayName))
                         {
-                            await _jsonWriter.WritePropertyNameAsync(MonitoredItem.DisplayName.Name).ConfigureAwait(false);
+                            await _jsonWriter.WritePropertyNameAsync("DisplayName").ConfigureAwait(false);
                             await _jsonWriter.WriteValueAsync(eventData.DisplayName).ConfigureAwait(false);
                         }
 
-                        if (!(bool)MonitoredItem.Flat)
-                        {
-                            await _jsonWriter.WriteEndObjectAsync().ConfigureAwait(false);
-                        }
+                        await _jsonWriter.WriteEndObjectAsync().ConfigureAwait(false);
                     }
 
                     // process EventValues object properties
@@ -384,12 +368,13 @@ namespace OpcPublisher
                     // process PublishTime
                     if (!string.IsNullOrEmpty(eventData.PublishTime))
                     {
-                        await _jsonWriter.WritePropertyNameAsync(Value.PublishTime.Name).ConfigureAwait(false);
+                        await _jsonWriter.WritePropertyNameAsync("PublishTime").ConfigureAwait(false);
                         await _jsonWriter.WriteValueAsync(eventData.PublishTime).ConfigureAwait(false);
                     }
                     await _jsonWriter.WriteEndObjectAsync().ConfigureAwait(false);
                     await _jsonWriter.FlushAsync().ConfigureAwait(false);
                 }
+
                 return _jsonStringBuilder.ToString();
             }
             catch (Exception e)
@@ -466,8 +451,8 @@ namespace OpcPublisher
 
                         bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, millisToWait, cancellationToken);
 
-                        DataChangeMessageData dataChangeMessageData = messageData?.DataChangeMessageData;
-                        EventMessageData eventMessageData = messageData?.EventMessageData;
+                        MessageDataModel dataChangeMessageData = messageData;
+                        EventMessageDataModel eventMessageData = (EventMessageDataModel)messageData;
 
                         // the two commandline parameter --ms (message size) and --si (send interval) control when data is sent to IoTHub/EdgeHub
                         // pls see detailed comments on performance and memory consumption at https://github.com/Azure/iot-edge-opc-publisher

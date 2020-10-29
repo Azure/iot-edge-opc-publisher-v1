@@ -49,10 +49,10 @@ namespace OpcPublisher
                     return;
                 }
 
-                EventMessageData eventMessageData = new EventMessageData();
-                eventMessageData.EndpointUrl = EndpointUrl;
+                EventMessageDataModel eventMessageData = new EventMessageDataModel();
+                eventMessageData.EndpointUrl = monitoredItem.Subscription.Session.ConfiguredEndpoint.EndpointUrl.AbsoluteUri;
                 eventMessageData.PublishTime = message.PublishTime.ToString("o", CultureInfo.InvariantCulture);
-                eventMessageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(OpcSession.PublisherSite) ? "" : $":{OpcSession.PublisherSite}");
+                eventMessageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(SettingsConfiguration.PublisherSite) ? "" : $":{SettingsConfiguration.PublisherSite}");
                 eventMessageData.DisplayName = monitoredItem.DisplayName;
                 eventMessageData.NodeId = monitoredItem.StartNodeId.ToString();
                 foreach (var eventList in notificationData)
@@ -90,13 +90,53 @@ namespace OpcPublisher
                 }
 
                 // enqueue the telemetry event
-                MessageData messageData = new MessageData();
-                messageData.EventMessageData = eventMessageData;
-                Hub.Enqueue(messageData);
+                HubClientWrapper.Enqueue(eventMessageData);
             }
             catch (Exception ex)
             {
                 Program.Instance.Logger.Error(ex, "Error processing monitored item notification");
+            }
+        }
+
+        /// <summary>
+        /// Encode a value and returns is as string. If the value is a string with quotes, we need to preserve the quotes.
+        /// </summary>
+        private static void EncodeValue(DataValue value, ServiceMessageContext messageContext, out string encodedValue, out bool preserveValueQuotes)
+        {
+            // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
+            JsonEncoder encoder = new JsonEncoder(messageContext, false);
+            value.ServerTimestamp = DateTime.MinValue;
+            value.SourceTimestamp = DateTime.MinValue;
+            value.StatusCode = StatusCodes.Good;
+            encoder.WriteDataValue("Value", value);
+            string valueString = encoder.CloseAndReturnText();
+            // we only want the value string, search for everything till the real value starts
+            // and get it
+            string marker = "{\"Value\":{\"Value\":";
+            int markerStart = valueString.IndexOf(marker, StringComparison.InvariantCulture);
+            preserveValueQuotes = true;
+            if (markerStart >= 0)
+            {
+                // we either have a value in quotes or just a value
+                int valueLength;
+                int valueStart = marker.Length;
+                if (valueString.IndexOf("\"", valueStart, StringComparison.InvariantCulture) >= 0)
+                {
+                    // value is in quotes and two closing curly brackets at the end
+                    valueStart++;
+                    valueLength = valueString.Length - valueStart - 3;
+                }
+                else
+                {
+                    // value is without quotes with two curly brackets at the end
+                    valueLength = valueString.Length - marker.Length - 2;
+                    preserveValueQuotes = false;
+                }
+                encodedValue = valueString.Substring(valueStart, valueLength);
+            }
+            else
+            {
+                encodedValue = string.Empty;
             }
         }
 
@@ -151,37 +191,10 @@ namespace OpcPublisher
                 
                 if (value.Value != null)
                 {
-                    // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
-                    JsonEncoder encoder = new JsonEncoder(monitoredItem.Subscription.Session.MessageContext, false);
-                    value.ServerTimestamp = DateTime.MinValue;
-                    value.SourceTimestamp = DateTime.MinValue;
-                    value.StatusCode = StatusCodes.Good;
-                    encoder.WriteDataValue("Value", value);
-                    string valueString = encoder.CloseAndReturnText();
-                    // we only want the value string, search for everything till the real value starts
-                    // and get it
-                    string marker = "{\"Value\":{\"Value\":";
-                    int markerStart = valueString.IndexOf(marker, StringComparison.InvariantCulture);
-                    messageData.PreserveValueQuotes = true;
-                    if (markerStart >= 0)
-                    {
-                        // we either have a value in quotes or just a value
-                        int valueLength;
-                        int valueStart = marker.Length;
-                        if (valueString.IndexOf("\"", valueStart, StringComparison.InvariantCulture) >= 0)
-                        {
-                            // value is in quotes and two closing curly brackets at the end
-                            valueStart++;
-                            valueLength = valueString.Length - valueStart - 3;
-                        }
-                        else
-                        {
-                            // value is without quotes with two curly brackets at the end
-                            valueLength = valueString.Length - marker.Length - 2;
-                            messageData.PreserveValueQuotes = false;
-                        }
-                        messageData.Value = valueString.Substring(valueStart, valueLength);
-                    }
+                    string encodedValue = string.Empty;
+                    EncodeValue(value, monitoredItem.Subscription.Session.MessageContext, out encodedValue, out bool preserveValueQuotes);
+                    messageData.Value = encodedValue;
+                    messageData.PreserveValueQuotes = preserveValueQuotes;
                 }
 
                 Program.Instance.Logger.Debug($"   ApplicationUri: {messageData.ApplicationUri}");

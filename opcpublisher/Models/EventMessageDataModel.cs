@@ -10,7 +10,7 @@ namespace OpcPublisher
     /// <summary>
     /// Class used to pass data from the Event MonitoredItem event notification to the hub message processing.
     /// </summary>
-    public class EventMessageData : MessageDataModel
+    public class EventMessageDataModel : MessageDataModel
     {
         /// <summary>
         /// The value of the node.
@@ -25,7 +25,7 @@ namespace OpcPublisher
         /// <summary>
         /// Ctor of the object.
         /// </summary>
-        public EventMessageData()
+        public EventMessageDataModel()
         {
             EventValues = new List<EventValue>();
             PublishTime = null;
