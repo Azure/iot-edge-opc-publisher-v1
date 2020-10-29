@@ -15,7 +15,14 @@ Please use our released Docker containers for OPC Publisher available in the Mic
 
 [<img src="image-20201028141833399.png" style="zoom:50%;" />](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/microsoft_iot.iotedge-opc-publisher)
 
-Simply click the Get It Now button, pick the IoT Hub (the OPC Publisher is supposed to send data to) as well as the IoT Edge device (the OPC Publisher is supposed to run on) and click Create.
+Simply click the Get It Now button to log into the [Azure Portal](https://portal.azure.com) and deploy OPC Publisher. The following steps are required:
+
+1. Pick the Azure subscription to use. If no Azure subscription is available, one must be created.
+2. Pick the IoT Hub the OPC Publisher is supposed to send data to. If no IoT Hub is available, one must be created.
+3. Pick the IoT Edge device the OPC Publisher is supposed to run on (or enter a name for a new IoT Edge device to be created).
+4. Click Create. The "Set modules on Device" page for the selected IoT Edge device opens.
+5. Click on "OPCPublisher" to open the OPC Publisher's "Update IoT Edge Module" page and then select "Container Create Options".
+6. Specify additional container create options based on your usage of OPC Publisher, see next section below.
 
 ##### Accessing the Microsoft Container Registry Docker containers for OPC Publisher manually
 
@@ -28,7 +35,7 @@ docker run mcr.microsoft.com/iotedge/opc-publisher:latest <name>
 Where "name" is the name for the container.
 
 
-## Specifying Container Create Options in the Azure Portal
+### Specifying Container Create Options in the Azure Portal
 When deploying OPC Publisher through the Azure Portal, container create options can be specified in the Update IoT Edge Module page of OPC Publisher. These create options must be in JSON format. The OPC Publisher command line arguments can be specified via the Cmd key, e.g.:
 ```
 "Cmd": [
@@ -55,11 +62,11 @@ A typical set of IoT Edge Module Container Create Options for OPC Publisher is:
 
 With these options specified, OPC Publisher will read the configuration file `./pn.json`. The OPC Publisher's working directory is set to
 `/appdata` at startup and thus OPC Publisher will read the file `/appdata/pn.json` inside its Docker container. 
-OPC Publisher's log file `publisher-publisher.log` (the default name) will be written to `/appdata` and the `CertificateStores` directory (used for OPC UA certificates) will also be created in this directory. To make these files available in the IoT Edge host file system the container configuration requires a bind mount volume. The `/iiotedge:/appdata` bind will map the directory `/appdata` (which is the current working directory on container startup) to the host directory `/iiotedge` (which will be created by the IoT Edge runtime if it doesn't exist). 
+OPC Publisher's log file will be written to `/appdata` and the `CertificateStores` directory (used for OPC UA certificates) will also be created in this directory. To make these files available in the IoT Edge host file system, the container configuration requires a bind mount volume. The `/iiotedge:/appdata` bind will map the directory `/appdata` to the host directory `/iiotedge` (which will be created by the IoT Edge runtime if it doesn't exist). 
 
 **Without this bind mount volume, all OPC Publisher configuration files will be lost when the container is restarted.**
 
-A connection to an OPC UA server using the hostname of the OPC UA server without a DNS server configured on the network can be achieved by adding an `ExtraHosts` configuration to the `HostConfig` object:
+A connection to an OPC UA server using its hostname without a DNS server configured on the network can be achieved by adding an `ExtraHosts` entry to the `HostConfig` section:
 
 ```
 "HostConfig": {
@@ -68,6 +75,7 @@ A connection to an OPC UA server using the hostname of the OPC UA server without
     ]
 }
 ```
+
 
 
 ## Configuring OPC Publisher
@@ -234,28 +242,26 @@ OPC Publisher allows filtering the parts of the non-standardized, simple telemet
 When running OPC Publisher in production setups, network performance requirements (throughput and latency) and memory resources must be considered. OPC Publisher exposes the following command line parameters to help meet these requirements:
 
 * Message queue capacity (`mq` for version 2.5 and below, not available in version 2.6, `om` for version 2.7)
-* IoTHub send interval (`si`)
-* IoTHub message size (`ms`)
+* IoT Hub send interval (`si`)
+* IoT Hub message size (`ms`)
 
-The `mq/om` parameter controls the upper limit of the capacity of the internal message queue. This queue buffers all messages before they are sent to IoT Hub. The default size of the queue is up to 2MB for OPC Publisher version 2.5 and below and 4000 IoT Hub messages for version 2.7 (i.e., if the setting for the IoT Hub message size is 256 KB, the size of the queue will be up to 1 GB). If OPC Publisher is not able to send messages to IoT Hub fast enough, the number of items in this queue increases. If this happens during test runs, the following must be done to mitigate:
+The `mq/om` parameter controls the upper limit of the capacity of the internal message queue. This queue buffers all messages before they are sent to IoT Hub. The default size of the queue is up to 2 MB for OPC Publisher version 2.5 and below and 4000 IoT Hub messages for version 2.7 (i.e., if the setting for the IoT Hub message size is 256 KB, the size of the queue will be up to 1 GB). If OPC Publisher is not able to send messages to IoT Hub fast enough, the number of items in this queue increases. If this happens during test runs, one or both of the following can be done to mitigate:
 
-* decrease the IoTHub send interval (`si`)
+* decrease the IoT Hub send interval (`si`)
 
-* increase the IoTHub message size (`ms`, the maximum this can be set to is 256 KB)
+* increase the IoT Hub message size (`ms`, the maximum this can be set to is 256 KB)
 
-Otherwise, the queue will keep growing until the maximum capacity is reached and messages will be lost. The`mq/om` parameter also has the biggest impact on the memory consumption by OPC Publisher. Since both the `si` and `ms` parameter have physical limits, messages will still be lost if the Internet connection between OPC Publisher and IoT Hub is simply not fast enough for the amount of messages that must be sent in a given scenario. In that case, only setting up several, parallel OPC Publishers will help.
+If the queue keeps growing even though the `si` and `ms` parameters have been adjusted, eventually the maximum queue capacity will be reached and messages will be lost. This is due to the fact that both the `si` and `ms` parameter have physical limits and the Internet connection between OPC Publisher and IoT Hub is simply not fast enough for the amount of messages that must be sent in a given scenario. In that case, only setting up several, parallel OPC Publishers will help. The `mq/om` parameter also has the biggest impact on the memory consumption by OPC Publisher. 
 
-The `si` parameter forces OPC Publisher to send messages to IoT Hub at the specified interval. A message is sent either when the message size is reached (triggering the send interval to reset) or when the specified interval time has passed. If the message size parameter is disabled by setting it to 0, OPC Publisher uses the maximum IoTHub message size of 256 KB to batch data.
+The `si` parameter forces OPC Publisher to send messages to IoT Hub at the specified interval. A message is sent either when the maximum IoT Hub message size of 256 KB of data is available (triggering the send interval to reset) or when the specified interval time has passed.
 
-The `ms` parameter enables batching of messages sent to IoTHub. In most network setups, the latency of sending a single message to IoT Hub is high, compared to the time it takes to transmit the payload. This is mainly due to Quality of Service (QoS) requirements, since messages are acknowledged only once they have safely been processed by IoT Hub). Therefore, if a delay for the data to arrive at IoT Hub is acceptable, OPC Publisher should be configured to use the maximal message size of 256 KB. It is also the most cost-effective way to use OPC Publisher.
+The `ms` parameter enables batching of messages sent to IoT Hub. In most network setups, the latency of sending a single message to IoT Hub is high, compared to the time it takes to transmit the payload. This is mainly due to Quality of Service (QoS) requirements, since messages are acknowledged only once they have been processed by IoT Hub). Therefore, if a delay for the data to arrive at IoT Hub is acceptable, OPC Publisher should be configured to use the maximal message size of 256 KB by setting the `ms` parameter to 0. It is also the most cost-effective way to use OPC Publisher.
 
 The default configuration sends data to IoT Hub every 10 seconds (`si=10`) or when 256 KB of IoT Hub message data is available (`ms=0`). This adds a maximum delay of 10 seconds, but has low probability of losing data because of the large message size. The metric `monitored item notifications enqueue failure`  in OPC Publisher version 2.5 and below and `messages lost` in OPC Publisher version 2.7 shows how many messages were lost.
 
-When both `si` and `ms` are set to 0, OPC Publisher sends a message to IoTHub straight away. The results in an average message size of just over 200 bytes. However, the advantage of this configuration is that OPC Publisher sends the data from the connected asset without delay. The number of lost messages will be high for use cases where a large amount of data must be published and hence this is not recommended for these scenarios.
+When both `si` and `ms` parameters are set to 0, OPC Publisher sends a message to IoT Hub as soon as data is available. This results in an average IoT Hub message size of just over 200 bytes. However, the advantage of this configuration is that OPC Publisher sends the data from the connected asset without delay. The number of lost messages will be high for use cases where a large amount of data must be published and hence this is not recommended for these scenarios.
 
-On the other hand, maximum batching (`si=0` and `ms=262144`) batches as much asset data as possible before sending it to IoT Hub. This configuration has the least probability of losing any messages and can be used for publishing a high amount of data. However, when using this configuration, it must be ensured that the scenario does not require data to arrive with low latency for further processing in the cloud as it could take a long time until an IoT Hub message has "filled up" and therefore sent to IoT Hub.
-
-To measure the performance of OPC Publisher,  the `di` command line parameter can be used to print performance metrics to the trace log in the interval specified (in seconds).
+To measure the performance of OPC Publisher,  the `di` parameter can be used to print performance metrics to the trace log in the interval specified (in seconds).
 
 
 
