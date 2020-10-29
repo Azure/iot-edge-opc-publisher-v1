@@ -414,7 +414,7 @@ namespace OpcPublisher
                         case FilterOperator.InView:
                             if (whereClauseElement.Operands.Count != 1)
                             {
-                                Program.Instance.Logger.Error($"The where clause element '{whereClauseElement.ToString()}' must contain 1 operands.");
+                                Program.Instance.Logger.Error($"The where clause element '{whereClauseElement}' must contain 1 operands.");
                                 continue;
                             }
                             FilterOperand[] filterOperands = new FilterOperand[1];
@@ -438,11 +438,9 @@ namespace OpcPublisher
                         case FilterOperator.Cast:
                         case FilterOperator.BitwiseAnd:
                         case FilterOperator.BitwiseOr:
-                        //case FilterOperator.InView:
-                        //case FilterOperator.OfType:
                         case FilterOperator.RelatedTo:
                         default:
-                            Program.Instance.Logger.Error($"The operator '{contentFilterElement.FilterOperator.ToString()}' is not supported.");
+                            Program.Instance.Logger.Error($"The operator '{contentFilterElement.FilterOperator}' is not supported.");
                             break;
                     }
                 }
@@ -461,9 +459,20 @@ namespace OpcPublisher
                     StartNodeId = nodeId,
                     AttributeId = Attributes.Value,
                     DisplayName = displayName,
-                    SamplingInterval = (int)opcSamplingInterval
+                    SamplingInterval = (int)opcSamplingInterval,
+                    Filter = eventFilter
                 };
-                newMonitoredItem.Notification += MonitoredItemNotification.DataChangedEventHandler;
+
+                if (eventFilter.SelectClauses.Count > 0)
+                {
+                    // event
+                    newMonitoredItem.Notification += MonitoredItemNotification.EventNotificationEventHandler;
+                }
+                else
+                {
+                    // data change
+                    newMonitoredItem.Notification += MonitoredItemNotification.DataChangedEventHandler;
+                }
 
                 opcSubscription.AddItem(newMonitoredItem);
                 opcSubscription.ApplyChanges();

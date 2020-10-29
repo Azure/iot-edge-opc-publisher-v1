@@ -25,7 +25,7 @@ namespace OpcPublisher
         /// <summary>
         /// The notification that a monitored item event has occured on an OPC UA server.
         /// </summary>
-        public static void MonitoredItemEventNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
+        public static void EventNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
         {
             try
             {
