@@ -1,0 +1,47 @@
+﻿[
+  {
+    "EndpointUrl": "opc.tcp://erichb2:62563/Quickstarts/SimpleEventsServer",
+    "OpcEvents": [
+      {
+        "Id": "i=2253",
+        "DisplayName": "SimpleEventServerEvents",
+        "SelectClauses": [
+          {
+            "TypeId": "i=2041",
+            "BrowsePaths": [
+              "EventId"
+            ]
+          },
+          {
+            "TypeId": "i=2041",
+            "BrowsePaths": [
+              "Message"
+            ]
+          },
+          {
+            "TypeId": "nsu=http://opcfoundation.org/Quickstarts/SimpleEvents;i=235",
+            "BrowsePaths": [
+              "/2:CycleId"
+            ]
+          },
+          {
+            "TypeId": "nsu=http://opcfoundation.org/Quickstarts/SimpleEvents;i=235",
+            "BrowsePaths": [
+              "/2:CurrentStep"
+            ]
+          }
+        ],
+        "WhereClause": [
+          {
+            "Operator": "OfType",
+            "Operands": [
+              {
+                "Literal": "ns=2;i=235"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
