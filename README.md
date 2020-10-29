@@ -37,13 +37,13 @@ OPC Publisher has several interfaces that can be used to configure it.
 
 IoT Edge provides OPC Publisher with its security configuration for accessing IoT Hub automatically. OPC Publisher can also run as a standalone Docker container by specifying a device connection string for accessing IoT Hub via the `dc` command line parameter. A device for IoT Hub can be created and its connection string retrieved through the Azure Portal.
 
-For accessing OPC UA-enabled assets, X.509 certificates and their associated private keys are used by OPC UA. OPC Publisher uses a file system-based certificate store to manage all certificates. During startup, OPC Publisher checks if there is a certificate it can use in this certificate stores and creates a new self-signed certificate and new associated private key if there is none. Self-signed certificates provide weak authentication, since they are not signed by a trusted CA, but at least the communication to the OPC UA-enabled asset can be encrypted this way.
+For accessing OPC UA-enabled assets, X.509 certificates and their associated private keys are used by OPC UA. OPC Publisher uses a file system-based certificate store to manage all certificates. During startup, OPC Publisher checks if there is a certificate it can use in this certificate stores and creates a new self-signed certificate and new associated private key if there is none. Self-signed certificates provide weak authentication, since they are not signed by a trusted Certificate Authority, but at least the communication to the OPC UA-enabled asset can be encrypted this way.
 
 To persist the security configuration of OPC Publisher across restarts, the certificate and private key located in the the certificate store directory must be mapped to the IoT Edge host OS filesystem. Please see [Specifying Container Create Options in the Azure Portal](https://github.com/Azure/iot-edge-opc-publisher/tree/docs#specifying-container-create-options-in-the-azure-portal).
 
 ### Configuration via Configuration File
 
-The simplest way to configure OPC Publisher is via a configuration file. An example configuration file as well as documentation regarding its format is provided via the file `publishednodes.json` in this repository.
+The simplest way to configure OPC Publisher is via a configuration file. An example configuration file as well as documentation regarding its format is provided via the file [`publishednodes.json`](https://github.com/Azure/iot-edge-opc-publisher/tree/publishednodes.json) in this repository.
 Configuration file syntax has changed over time and OPC Publisher still can read old formats, but converts them into the latest format when persisting the configuration, done regularly in an automated fashion.
 
 An basic configuration file looks like this:
