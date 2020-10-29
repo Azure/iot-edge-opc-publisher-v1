@@ -39,7 +39,7 @@
     <Content Include="Configurations\Opc.Publisher.Config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="publishednodes.json">
+    <Content Include="published_events.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

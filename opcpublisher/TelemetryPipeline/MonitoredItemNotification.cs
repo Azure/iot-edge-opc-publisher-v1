@@ -21,7 +21,85 @@ namespace OpcPublisher
         /// Skip first notification dictionary
         /// </summary>
         public static Dictionary<string, bool> SkipFirst { get; set; } = new Dictionary<string, bool>();
-        
+
+        /// <summary>
+        /// The notification that a monitored item event has occured on an OPC UA server.
+        /// </summary>
+        public static void MonitoredItemEventNotificationEventHandler(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)
+        {
+            try
+            {
+                if (e == null || e.NotificationValue == null || monitoredItem == null || monitoredItem.Subscription == null || monitoredItem.Subscription.Session == null)
+                {
+                    return;
+                }
+
+                if (!(e.NotificationValue is EventFieldList notificationValue))
+                {
+                    return;
+                }
+
+                if (!(notificationValue.Message is NotificationMessage message))
+                {
+                    return;
+                }
+
+                if (!(message.NotificationData is ExtensionObjectCollection notificationData) || notificationData.Count == 0)
+                {
+                    return;
+                }
+
+                EventMessageData eventMessageData = new EventMessageData();
+                eventMessageData.EndpointUrl = EndpointUrl;
+                eventMessageData.PublishTime = message.PublishTime.ToString("o", CultureInfo.InvariantCulture);
+                eventMessageData.ApplicationUri = monitoredItem.Subscription.Session.Endpoint.Server.ApplicationUri + (string.IsNullOrEmpty(OpcSession.PublisherSite) ? "" : $":{OpcSession.PublisherSite}");
+                eventMessageData.DisplayName = monitoredItem.DisplayName;
+                eventMessageData.NodeId = monitoredItem.StartNodeId.ToString();
+                foreach (var eventList in notificationData)
+                {
+                    EventNotificationList eventNotificationList = eventList.Body as EventNotificationList;
+                    foreach (var eventFieldList in eventNotificationList.Events)
+                    {
+                        int i = 0;
+                        foreach (var eventField in eventFieldList.EventFields)
+                        {
+                            // prepare event field values
+                            EventValue eventValue = new EventValue();
+                            eventValue.Name = monitoredItem.GetFieldName(i++);
+
+                            // use the Value as reported in the notification event argument encoded with the OPC UA JSON endcoder
+                            DataValue value = new DataValue(eventField);
+                            string encodedValue = string.Empty;
+                            EncodeValue(value, monitoredItem.Subscription.Session.MessageContext, out encodedValue, out bool preserveValueQuotes);
+                            eventValue.Value = encodedValue;
+                            eventValue.PreserveValueQuotes = preserveValueQuotes;
+                            eventMessageData.EventValues.Add(eventValue);
+                        }
+                    }
+                }
+
+                // add message to fifo send queue
+                if (monitoredItem.Subscription == null)
+                {
+                    Program.Instance.Logger.Debug($"Subscription already removed. No more details available.");
+                }
+                else
+                {
+                    Program.Instance.Logger.Debug($"Enqueue a new message from subscription {(monitoredItem.Subscription == null ? "removed" : monitoredItem.Subscription.Id.ToString(CultureInfo.InvariantCulture))}");
+                    Program.Instance.Logger.Debug($" with publishing interval: {monitoredItem?.Subscription?.PublishingInterval} and sampling interval: {monitoredItem?.SamplingInterval}):");
+                }
+
+                // enqueue the telemetry event
+                MessageData messageData = new MessageData();
+                messageData.EventMessageData = eventMessageData;
+                Hub.Enqueue(messageData);
+            }
+            catch (Exception ex)
+            {
+                Program.Instance.Logger.Error(ex, "Error processing monitored item notification");
+            }
+        }
+
         /// <summary>
         /// The notification that the data for a monitored item has changed on an OPC UA server.
         /// </summary>

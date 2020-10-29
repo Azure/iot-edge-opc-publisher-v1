@@ -381,6 +381,66 @@ namespace OpcPublisher
                     }
                 }
 
+                // resolve all node and namespace references in the select and where clauses
+                EventFilter eventFilter = new EventFilter();
+                foreach (var selectClause in unmonitoredEvent.EventConfiguration.SelectClauses)
+                {
+                    SimpleAttributeOperand simpleAttributeOperand = new SimpleAttributeOperand();
+                    simpleAttributeOperand.AttributeId = selectClause.AttributeId.ResolveAttributeId();
+                    simpleAttributeOperand.IndexRange = selectClause.IndexRange;
+                    NodeId typeId = selectClause.TypeId.ToNodeId(_namespaceTable);
+                    simpleAttributeOperand.TypeDefinitionId = new NodeId(typeId);
+                    QualifiedNameCollection browsePaths = new QualifiedNameCollection();
+                    foreach (var browsePath in selectClause.BrowsePaths)
+                    {
+                        browsePaths.Add(QualifiedName.Parse(browsePath));
+                    }
+                    simpleAttributeOperand.BrowsePath = browsePaths;
+                    eventFilter.SelectClauses.Add(simpleAttributeOperand);
+                }
+                foreach (var whereClauseElement in unmonitoredEvent.EventConfiguration.WhereClause)
+                {
+                    ContentFilterElement contentFilterElement = new ContentFilterElement();
+                    contentFilterElement.FilterOperator = whereClauseElement.Operator.ResolveFilterOperator();
+                    switch (contentFilterElement.FilterOperator)
+                    {
+                        case FilterOperator.OfType:
+                        case FilterOperator.InView:
+                            if (whereClauseElement.Operands.Count != 1)
+                            {
+                                Program.Instance.Logger.Error($"The where clause element '{whereClauseElement.ToString()}' must contain 1 operands.");
+                                continue;
+                            }
+                            FilterOperand[] filterOperands = new FilterOperand[1];
+                            TypeInfo typeInfo = new TypeInfo(BuiltInType.NodeId, ValueRanks.Scalar);
+                            filterOperands[0] = whereClauseElement.Operands[0].GetOperand(typeInfo);
+                            //filterOperands[0] = whereClauseElement.Operands[0].GetOperand(DataTypeIds.NodeId);
+                            eventFilter.WhereClause.Push(contentFilterElement.FilterOperator, filterOperands);
+                            break;
+                        case FilterOperator.Equals:
+                        case FilterOperator.IsNull:
+                        case FilterOperator.GreaterThan:
+                        case FilterOperator.LessThan:
+                        case FilterOperator.GreaterThanOrEqual:
+                        case FilterOperator.LessThanOrEqual:
+                        case FilterOperator.Like:
+                        case FilterOperator.Not:
+                        case FilterOperator.Between:
+                        case FilterOperator.InList:
+                        case FilterOperator.And:
+                        case FilterOperator.Or:
+                        case FilterOperator.Cast:
+                        case FilterOperator.BitwiseAnd:
+                        case FilterOperator.BitwiseOr:
+                        //case FilterOperator.InView:
+                        //case FilterOperator.OfType:
+                        case FilterOperator.RelatedTo:
+                        default:
+                            Program.Instance.Logger.Error($"The operator '{contentFilterElement.FilterOperator.ToString()}' is not supported.");
+                            break;
+                    }
+                }
+
                 // if it is already published, we do nothing, else we create a new monitored item
                 foreach (MonitoredItem monitoredItem in opcSubscription.MonitoredItems)
                 {
