@@ -315,7 +315,7 @@
 | **si\|iothubsendinterval**                        | The trigger batching interval in  seconds.                   |
 | **ms\|iothubmessagesize**                         | The maximum size of the (IoT D2C) message.                   |
 | **om\|maxoutgressmessages**                       | The maximum  size of the (IoT D2C) message egress buffer.    |
-| **di\|diagnosticsinterval**                       | Shows publisher diagnostic info at the  specified interval in seconds (need log level info).    -1  disables remote diagnostic log and diagnostic output |
+| **di\|diagnosticsinterval**                       | Shows publisher diagnostic info at the  specified interval in seconds (need log level info). -1  disables remote diagnostic log and diagnostic output |
 | **lt\|logflugtimespan**                           | The timespan in seconds when the  logfile should be flushed. |
 | **ih\|iothubprotocol**                            | Protocol to use for communication with the  hub. Allowed values: AmqpOverTcp, AmqpOverWebsocket, MqttOverTcp,  MqttOverWebsocket, Amqp, Mqtt, Tcp, Websocket, Any |
 | **hb\|heartbeatinterval**                         | The publisher is using this as  default value in seconds for the heartbeat interval setting of nodes without  a heartbeat interval setting. |
