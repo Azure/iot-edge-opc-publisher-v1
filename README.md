@@ -115,12 +115,12 @@ A basic configuration file looks like this:
 
 OPC UA assets optimizes network bandwidth by only sending data changes to OPC Publisher when the data has changed. If data changes need to be published more often or at regular intervals, OPC Publisher supports a "heartbeat" for every configured data item that can be enabled by additionally specifying the HeartbeatInterval key in the data item's configuration. The interval is specified in seconds:
 ```
-    "HeartbeatInterval": 3600,
+ "HeartbeatInterval": 3600,
 ```
 
 An OPC UA asset always send the current value of a data item when OPC Publisher first connects to it. To prevent publishing this data to IoT Hub, the SkipFirst key can be additionally specified in the data item's configuration:
 ```
-    "SkipFirst": true,
+ "SkipFirst": true,
 ```
 
 Both settings can be enabled globally via command line options, too.
