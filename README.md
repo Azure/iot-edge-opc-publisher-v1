@@ -121,22 +121,65 @@ A cloud-based, companion microservice with a REST interface is described and ava
 
 ## OPC Publisher Telemetry Format
 
-OPC Publisher version 2.6 and above supports standardized OPC UA PubSub JSON format as specified in [part 14 of the OPC UA specification](https://opcfoundation.org/developer-tools/specifications-unified-architecture/part-14-pubsub/). 
-
-In addition, all versions of OPC Publisher support a non-standardized, simple JSON telemetry format, which is compatible with [Azure Time Series Insights](https://azure.microsoft.com/en-us/services/time-series-insights/) and looks like this:
+OPC Publisher version 2.6 and above supports standardized OPC UA PubSub JSON format as specified in [part 14 of the OPC UA specification](https://opcfoundation.org/developer-tools/specifications-unified-architecture/part-14-pubsub/) and looks like this:
 ```
 {
-    "NodeId": "i=2058",
-    "ApplicationUri": "urn:myopcserver",
-    "DisplayName": "CurrentTime",
-    "Value": {
-        "Value": "10.11.2017 14:03:17",
-        "SourceTimestamp": "2017-11-10T14:03:17Z"
+    "body": {
+        "MessageId": "18",
+        "MessageType": "ua-data",
+        "PublisherId": "uat46f9f8f82fd5c1b42a7de31b5dc2c11ef418a62f",
+        "DataSetClassId": "78c4e91c-82cb-444e-a8e0-6bbacc9a946d",
+        "Messages": [
+            {
+                "DataSetWriterId": "uat46f9f8f82fd5c1b42a7de31b5dc2c11ef418a62f",
+                "SequenceNumber": 18,
+                "MetaDataVersion": {
+                    "MajorVersion": 1,
+                    "MinorVersion": 1
+                },
+                "Timestamp": "2020-03-24T23:30:56.9597112Z",
+                "Status": null,
+                "Payload": {
+                    "http://test.org/UA/Data/#i=10845": {
+                        "Value": 99,
+                        "SourceTimestamp": "2020-03-24T23:30:55.9891469Z",
+                        "ServerTimestamp": "2020-03-24T23:30:55.9891469Z"
+                    },
+                    "http://test.org/UA/Data/#i=10846": {
+                        "Value": 251,
+                        "SourceTimestamp": "2020-03-24T23:30:55.9891469Z",
+                        "ServerTimestamp": "2020-03-24T23:30:55.9891469Z"
+                    }
+                }
+            }
+        ]
     }
 }
 ```
 
-If OPC Publisher is configured to batch several JSON telemetry messages into a single IoT Hub message, the batched JSON telemetry messages are sent as a JSON array.
+In addition, all versions of OPC Publisher support a non-standardized, simple JSON telemetry format, which is compatible with [Azure Time Series Insights](https://azure.microsoft.com/en-us/services/time-series-insights/) and looks like this:
+```
+[
+    {
+        "NodeId": "i=2058",
+        "ApplicationUri": "urn:myfirstopcserver",
+        "DisplayName": "CurrentTime",
+            "Value": {
+            "Value": "10.11.2017 14:03:17",
+            "SourceTimestamp": "2017-11-10T14:03:17Z"
+        }
+    },
+    {
+        "NodeId": "i=2058",
+        "ApplicationUri": "urn:mysecondopcserver",
+        "DisplayName": "CurrentTime",
+            "Value": {
+            "Value": "10.11.2017 14:03:16",
+            "SourceTimestamp": "2017-11-10T13:03:17Z"
+        }
+    }
+]
+```
 
 ### Configuration of the simple JSON telemetry format via Separate Configuration File
 
