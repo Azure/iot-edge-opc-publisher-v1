@@ -28,6 +28,47 @@ docker run mcr.microsoft.com/iotedge/opc-publisher:latest <name>
 Where "name" is the name for the container.
 
 
+## Specifying Container Create Options in the Azure Portal
+When deploying OPC Publisher through the Azure Portal, container create options can be specified in the Update IoT Edge Module page of OPC Publisher. These create options must be in JSON format. The OPC Publisher command line arguments can be specified via the Cmd key, e.g.:
+```
+"Cmd": [
+    "--pf=./pn.json",
+    "--aa"
+],
+```
+
+A typical set of IoT Edge Module Container Create Options for OPC Publisher is:
+```
+{
+    "Hostname": "opcpublisher",
+    "Cmd": [
+        "--pf=./pn.json",
+        "--aa"
+    ],
+    "HostConfig": {
+        "Binds": [
+            "/iiotedge:/appdata"
+        ]
+    }
+}
+```
+
+With these options specified, OPC Publisher will read the configuration file `./pn.json`. The OPC Publisher's working directory is set to
+`/appdata` at startup and thus OPC Publisher will read the file `/appdata/pn.json` inside its Docker container. 
+OPC Publisher's log file `publisher-publisher.log` (the default name) will be written to `/appdata` and the `CertificateStores` directory (used for OPC UA certificates) will also be created in this directory. To make these files available in the IoT Edge host file system the container configuration requires a bind mount volume. The `/iiotedge:/appdata` bind will map the directory `/appdata` (which is the current working directory on container startup) to the host directory `/iiotedge` (which will be created by the IoT Edge runtime if it doesn't exist). 
+
+**Without this bind mount volume, all OPC Publisher configuration files will be lost when the container is restarted.**
+
+A connection to an OPC UA server using the hostname of the OPC UA server without a DNS server configured on the network can be achieved by adding an `ExtraHosts` configuration to the `HostConfig` object:
+
+```
+"HostConfig": {
+    "ExtraHosts": [
+        "opctestsvr:192.168.178.26"
+    ]
+}
+```
+
 
 ## Configuring OPC Publisher
 
@@ -46,7 +87,7 @@ To persist the security configuration of OPC Publisher across restarts, the cert
 The simplest way to configure OPC Publisher is via a configuration file. An example configuration file as well as documentation regarding its format is provided via the file [`publishednodes.json`](https://raw.githubusercontent.com/Azure/iot-edge-opc-publisher/master/opcpublisher/publishednodes.json) in this repository.
 Configuration file syntax has changed over time and OPC Publisher still can read old formats, but converts them into the latest format when persisting the configuration, done regularly in an automated fashion.
 
-An basic configuration file looks like this:
+A basic configuration file looks like this:
 ```
 [
   {
@@ -164,7 +205,7 @@ In addition, all versions of OPC Publisher support a non-standardized, simple JS
         "NodeId": "i=2058",
         "ApplicationUri": "urn:myfirstopcserver",
         "DisplayName": "CurrentTime",
-            "Value": {
+        "Value": {
             "Value": "10.11.2017 14:03:17",
             "SourceTimestamp": "2017-11-10T14:03:17Z"
         }
@@ -173,7 +214,7 @@ In addition, all versions of OPC Publisher support a non-standardized, simple JS
         "NodeId": "i=2058",
         "ApplicationUri": "urn:mysecondopcserver",
         "DisplayName": "CurrentTime",
-            "Value": {
+        "Value": {
             "Value": "10.11.2017 14:03:16",
             "SourceTimestamp": "2017-11-10T13:03:17Z"
         }
@@ -186,49 +227,6 @@ In addition, all versions of OPC Publisher support a non-standardized, simple JS
 **Please note: This feature is only available in version 2.5 and below of OPC Publisher.**
 
 OPC Publisher allows filtering the parts of the non-standardized, simple telemetry format via a separate configuration file, which can be specified via the `tc` command line option. If no configuration file is specified, the full JSON telemetry format is sent to IoT Hub. The format of the separate telemetry configuration file is described [here](TelemetryFormatConfiguration.md).
-
-
-
-## Specifying Container Create Options in the Azure Portal
-When deploying OPC Publisher through the Azure Portal, container create options can be specified in the Update IoT Edge Module page of OPC Publisher. These create options must be in JSON format. The OPC Publisher command line arguments can be specified via the Cmd key, e.g.:
-```
-"Cmd": [
-    "--pf=./pn.json",
-    "--aa"
-],
-```
-
-A typical set of IoT Edge Module Container Create Options for OPC Publisher is:
-```
-{
-    "Hostname": "opcpublisher",
-    "Cmd": [
-        "--pf=./pn.json",
-        "--aa"
-    ],
-    "HostConfig": {
-        "Binds": [
-            "/iiotedge:/appdata"
-        ]
-    }
-}
-```
-
-With these options specified, OPC Publisher will read the configuration file `./pn.json`. The OPC Publisher's working directory is set to
-`/appdata` at startup and thus OPC Publisher will read the file `/appdata/pn.json` inside its Docker container. 
-OPC Publisher's log file `publisher-publisher.log` (the default name) will be written to `/appdata` and the `CertificateStores` directory (used for OPC UA certificates) will also be created in this directory. To make these files available in the IoT Edge host file system the container configuration requires a bind mount volume. The `/iiotedge:/appdata` bind will map the directory `/appdata` (which is the current working directory on container startup) to the host directory `/iiotedge` (which will be created by the IoT Edge runtime if it doesn't exist). 
-
-**Without this bind mount volume, all OPC Publisher configuration files will be lost when the container is restarted.**
-
-A connection to an OPC UA server using the hostname of the OPC UA server without a DNS server configured on the network can be achieved by adding an `ExtraHosts` configuration to the `HostConfig` object:
-
-```
-"HostConfig": {
-    "ExtraHosts": [
-        "opctestsvr:192.168.178.26"
-    ]
-}
-```
 
 
 
