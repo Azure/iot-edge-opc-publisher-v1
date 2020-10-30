@@ -462,11 +462,12 @@ namespace OpcPublisher
                     SamplingInterval = (int)opcSamplingInterval,
                     Filter = eventFilter
                 };
-
+                
                 if (eventFilter.SelectClauses.Count > 0)
                 {
                     // event
                     newMonitoredItem.Notification += MonitoredItemNotification.EventNotificationEventHandler;
+                    newMonitoredItem.AttributeId = Attributes.EventNotifier;
                 }
                 else
                 {

@@ -31,7 +31,7 @@
             ]
           }
         ],
-        "WhereClause": [
+        "WhereClauses": [
           {
             "Operator": "OfType",
             "Operands": [

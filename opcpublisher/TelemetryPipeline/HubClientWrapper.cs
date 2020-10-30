@@ -460,8 +460,6 @@ namespace OpcPublisher
                         // check if we got an item or if we hit the timeout or got canceled
                         if (gotItem)
                         {
-                            Metrics.EnqueueFailureCount--;
-
                             if (dataChangeMessageData != null)
                             {
                                 jsonMessage = await CreateJsonForDataChangeAsync(dataChangeMessageData).ConfigureAwait(false);
