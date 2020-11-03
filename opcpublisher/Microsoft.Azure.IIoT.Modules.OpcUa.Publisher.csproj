@@ -14,12 +14,18 @@
     <Compile Remove="CertificateStores\**" />
     <Compile Remove="Logs\**" />
     <Compile Remove="pki\**" />
+    <Compile Remove="pkiown\**" />
+    <Compile Remove="pkitrusted\**" />
     <EmbeddedResource Remove="CertificateStores\**" />
     <EmbeddedResource Remove="Logs\**" />
     <EmbeddedResource Remove="pki\**" />
+    <EmbeddedResource Remove="pkiown\**" />
+    <EmbeddedResource Remove="pkitrusted\**" />
     <None Remove="CertificateStores\**" />
     <None Remove="Logs\**" />
     <None Remove="pki\**" />
+    <None Remove="pkiown\**" />
+    <None Remove="pkitrusted\**" />
   </ItemGroup>
   <ItemGroup>
     <ProjectCapability Include="AzureIoTEdgeModule" />
