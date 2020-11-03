@@ -141,11 +141,11 @@ OPC Publisher has a built-in OPC UA server, running on port 62222. It implements
 
 This interface can be accessed using an OPC UA client application, for example [UA Expert](https://www.unified-automation.com/products/development-tools/uaexpert.html).
 
-### Configuration via IoTHub Direct Methods
+### Configuration via IoT Hub Direct Methods
 
 **Please note: This feature is only available in version 2.5 and below of OPC Publisher.**
 
-OPC Publisher implements the following [IoTHub Direct Methods](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-direct-methods) which can be called from an application (from anywhere in the world) leveraging the [IoT Hub Device SDK](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-sdks):
+OPC Publisher implements the following [IoT Hub Direct Methods](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-direct-methods) which can be called from an application (from anywhere in the world) leveraging the [IoT Hub Device SDK](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-sdks):
 
   - PublishNodes
   - UnpublishNodes

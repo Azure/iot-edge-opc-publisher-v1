@@ -1,3 +1,4 @@
+### OPC Publisher Telemetry Configuration File Format
 ```
     // The configuration settings file consists of two objects:
     // 1) The 'Defaults' object, which defines defaults for the telemetry configuration
