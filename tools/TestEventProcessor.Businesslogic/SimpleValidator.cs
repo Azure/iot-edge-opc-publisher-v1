@@ -240,6 +240,13 @@ namespace TestEventProcessor.Businesslogic
 
                             var iotHubEnqueuedTime = _iotHubMessageEnqueuedTimes[missingSequence.Key];
                             var durationDifference = iotHubEnqueuedTime.Subtract(timeStamp);
+                            if (durationDifference.TotalMilliseconds < 0)
+                            {
+                                _logger.Warning("Total duration is negative number, , OPC UA Server time {OPCUATime}, IoTHub enqueue time {IoTHubTime}, delta {Diff}",
+                                    timeStamp.ToString(_dateTimeFormat, formatInfoProvider),
+                                    iotHubEnqueuedTime.ToString(_dateTimeFormat, formatInfoProvider),
+                                    durationDifference);
+                            }
                             if (Math.Round(durationDifference.TotalMilliseconds) > _expectedMaximalDuration)
                             {
                                 _logger.Information("Total duration exceeded limit, OPC UA Server time {OPCUATime}, IoTHub enqueue time {IoTHubTime}, delta {Diff}",
