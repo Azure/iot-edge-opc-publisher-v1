@@ -67,7 +67,7 @@ namespace OpcPublisher
             }
 
             // check if we already have a session for the requested endpoint
-            lock (_sessionsLock)
+            lock (_sessions)
             {
                 foreach (Session session in _sessions)
                 {
@@ -141,7 +141,7 @@ namespace OpcPublisher
             newSession.KeepAlive += StandardClient_KeepAlive;
 
             // add the session to our list
-            lock (_sessionsLock)
+            lock (_sessions)
             {
                 _sessions.Add(newSession);
                 Metrics.NumberOfOpcSessionsConnected = _sessions.Count;
@@ -153,7 +153,7 @@ namespace OpcPublisher
         public void UnpublishAllNodes()
         {
             // loop through all sessions
-            lock (_sessionsLock)
+            lock (_sessions)
             {
                 _heartbeats.Clear();
 
@@ -389,59 +389,65 @@ namespace OpcPublisher
 
                 // resolve all node and namespace references in the select and where clauses
                 EventFilter eventFilter = new EventFilter();
-                foreach (var selectClause in selectClauses)
+                if (selectClauses != null)
                 {
-                    SimpleAttributeOperand simpleAttributeOperand = new SimpleAttributeOperand();
-                    simpleAttributeOperand.AttributeId = selectClause.AttributeId.ResolveAttributeId();
-                    simpleAttributeOperand.IndexRange = selectClause.IndexRange;
-                    NodeId typeId = selectClause.TypeId.ToNodeId(session.NamespaceUris);
-                    simpleAttributeOperand.TypeDefinitionId = new NodeId(typeId);
-                    QualifiedNameCollection browsePaths = new QualifiedNameCollection();
-                    foreach (var browsePath in selectClause.BrowsePaths)
+                    foreach (var selectClause in selectClauses)
                     {
-                        browsePaths.Add(QualifiedName.Parse(browsePath));
+                        SimpleAttributeOperand simpleAttributeOperand = new SimpleAttributeOperand();
+                        simpleAttributeOperand.AttributeId = selectClause.AttributeId.ResolveAttributeId();
+                        simpleAttributeOperand.IndexRange = selectClause.IndexRange;
+                        NodeId typeId = selectClause.TypeId.ToNodeId(session.NamespaceUris);
+                        simpleAttributeOperand.TypeDefinitionId = new NodeId(typeId);
+                        QualifiedNameCollection browsePaths = new QualifiedNameCollection();
+                        foreach (var browsePath in selectClause.BrowsePaths)
+                        {
+                            browsePaths.Add(QualifiedName.Parse(browsePath));
+                        }
+                        simpleAttributeOperand.BrowsePath = browsePaths;
+                        eventFilter.SelectClauses.Add(simpleAttributeOperand);
                     }
-                    simpleAttributeOperand.BrowsePath = browsePaths;
-                    eventFilter.SelectClauses.Add(simpleAttributeOperand);
                 }
-                foreach (var whereClauseElement in whereClauses)
+                if (whereClauses != null)
                 {
-                    ContentFilterElement contentFilterElement = new ContentFilterElement();
-                    contentFilterElement.FilterOperator = whereClauseElement.Operator.ResolveFilterOperator();
-                    switch (contentFilterElement.FilterOperator)
+                    foreach (var whereClauseElement in whereClauses)
                     {
-                        case FilterOperator.OfType:
-                        case FilterOperator.InView:
-                            if (whereClauseElement.Operands.Count != 1)
-                            {
-                                Program.Instance.Logger.Error($"The where clause element '{whereClauseElement}' must contain 1 operands.");
-                                continue;
-                            }
-                            FilterOperand[] filterOperands = new FilterOperand[1];
-                            TypeInfo typeInfo = new TypeInfo(BuiltInType.NodeId, ValueRanks.Scalar);
-                            filterOperands[0] = whereClauseElement.Operands[0].GetOperand(typeInfo);
-                            //filterOperands[0] = whereClauseElement.Operands[0].GetOperand(DataTypeIds.NodeId);
-                            eventFilter.WhereClause.Push(contentFilterElement.FilterOperator, filterOperands);
-                            break;
-                        case FilterOperator.Equals:
-                        case FilterOperator.IsNull:
-                        case FilterOperator.GreaterThan:
-                        case FilterOperator.LessThan:
-                        case FilterOperator.GreaterThanOrEqual:
-                        case FilterOperator.LessThanOrEqual:
-                        case FilterOperator.Like:
-                        case FilterOperator.Not:
-                        case FilterOperator.Between:
-                        case FilterOperator.InList:
-                        case FilterOperator.And:
-                        case FilterOperator.Or:
-                        case FilterOperator.Cast:
-                        case FilterOperator.BitwiseAnd:
-                        case FilterOperator.BitwiseOr:
-                        case FilterOperator.RelatedTo:
-                        default:
-                            Program.Instance.Logger.Error($"The operator '{contentFilterElement.FilterOperator}' is not supported.");
-                            break;
+                        ContentFilterElement contentFilterElement = new ContentFilterElement();
+                        contentFilterElement.FilterOperator = whereClauseElement.Operator.ResolveFilterOperator();
+                        switch (contentFilterElement.FilterOperator)
+                        {
+                            case FilterOperator.OfType:
+                            case FilterOperator.InView:
+                                if (whereClauseElement.Operands.Count != 1)
+                                {
+                                    Program.Instance.Logger.Error($"The where clause element '{whereClauseElement}' must contain 1 operands.");
+                                    continue;
+                                }
+                                FilterOperand[] filterOperands = new FilterOperand[1];
+                                TypeInfo typeInfo = new TypeInfo(BuiltInType.NodeId, ValueRanks.Scalar);
+                                filterOperands[0] = whereClauseElement.Operands[0].GetOperand(typeInfo);
+                                //filterOperands[0] = whereClauseElement.Operands[0].GetOperand(DataTypeIds.NodeId);
+                                eventFilter.WhereClause.Push(contentFilterElement.FilterOperator, filterOperands);
+                                break;
+                            case FilterOperator.Equals:
+                            case FilterOperator.IsNull:
+                            case FilterOperator.GreaterThan:
+                            case FilterOperator.LessThan:
+                            case FilterOperator.GreaterThanOrEqual:
+                            case FilterOperator.LessThanOrEqual:
+                            case FilterOperator.Like:
+                            case FilterOperator.Not:
+                            case FilterOperator.Between:
+                            case FilterOperator.InList:
+                            case FilterOperator.And:
+                            case FilterOperator.Or:
+                            case FilterOperator.Cast:
+                            case FilterOperator.BitwiseAnd:
+                            case FilterOperator.BitwiseOr:
+                            case FilterOperator.RelatedTo:
+                            default:
+                                Program.Instance.Logger.Error($"The operator '{contentFilterElement.FilterOperator}' is not supported.");
+                                break;
+                        }
                     }
                 }
 
@@ -459,8 +465,7 @@ namespace OpcPublisher
                     StartNodeId = nodeId,
                     AttributeId = Attributes.Value,
                     DisplayName = displayName,
-                    SamplingInterval = (int)opcSamplingInterval,
-                    Filter = eventFilter
+                    SamplingInterval = opcSamplingInterval
                 };
                 
                 if (eventFilter.SelectClauses.Count > 0)
@@ -468,6 +473,7 @@ namespace OpcPublisher
                     // event
                     newMonitoredItem.Notification += MonitoredItemNotification.EventNotificationEventHandler;
                     newMonitoredItem.AttributeId = Attributes.EventNotifier;
+                    newMonitoredItem.Filter = eventFilter;
                 }
                 else
                 {
@@ -579,7 +585,7 @@ namespace OpcPublisher
             try
             {
                 // loop through all sessions
-                lock (_sessionsLock)
+                lock (_sessions)
                 {
                     foreach (Session session in _sessions)
                     {
@@ -632,14 +638,9 @@ namespace OpcPublisher
         }
 
         private ApplicationConfiguration _uaApplicationConfiguration;
-        
         private List<Session> _sessions = new List<Session>();
-        private object _sessionsLock = new object();
-
         private List<HeartBeatPublishing> _heartbeats = new List<HeartBeatPublishing>();
-
         private Dictionary<string, uint> _missedKeepAlives = new Dictionary<string, uint>();
-
         private Dictionary<string, EndpointDescription> _endpointDescriptionCache = new Dictionary<string, EndpointDescription>();
     }
 }

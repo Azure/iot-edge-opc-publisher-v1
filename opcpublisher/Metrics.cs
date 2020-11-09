@@ -92,6 +92,8 @@ namespace OpcPublisher
         /// </summary>
         public static long FailedMessages { get; set; } = 0;
 
+        public static long AverageMessageLatency { get; set; } = 0;
+
         public void Init()
         {
             // kick off the task to show diagnostic info
@@ -269,7 +271,8 @@ namespace OpcPublisher
                     Program.Instance.Logger.Information($"messages sent to IoTHub: {diagnosticInfo.SentMessages}");
                     Program.Instance.Logger.Information($"last successful msg sent @: {diagnosticInfo.SentLastTime}");
                     Program.Instance.Logger.Information($"bytes sent to IoTHub: {diagnosticInfo.SentBytes}");
-                    Program.Instance.Logger.Information($"avg msg size: {diagnosticInfo.SentBytes / (diagnosticInfo.SentMessages == 0 ? 1 : diagnosticInfo.SentMessages)}");
+                    Program.Instance.Logger.Information($"avg msg size (bytes): {diagnosticInfo.SentBytes / (diagnosticInfo.SentMessages == 0 ? 1 : diagnosticInfo.SentMessages)}");
+                    Program.Instance.Logger.Information($"avg message latency (ms): {AverageMessageLatency}");
                     Program.Instance.Logger.Information($"msg send failures: {diagnosticInfo.FailedMessages}");
                     Program.Instance.Logger.Information($"messages too large to sent to IoTHub: {diagnosticInfo.TooLargeCount}");
                     Program.Instance.Logger.Information($"times we missed send interval: {diagnosticInfo.MissedSendIntervalCount}");
