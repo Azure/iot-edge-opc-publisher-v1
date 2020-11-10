@@ -5,7 +5,6 @@
 
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
-using Opc.Ua;
 using OpcPublisher.Configurations;
 using System;
 using System.Collections.Generic;
