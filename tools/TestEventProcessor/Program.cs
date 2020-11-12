@@ -3,6 +3,8 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using Serilog.Extensions.Logging;
+
 namespace TestEventProcessor
 {
     using Mono.Options;
@@ -47,14 +49,18 @@ namespace TestEventProcessor
             .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}][{Level:u3}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
-            var validator = new SimpleValidator(Log.Logger,
-                iotHubConnectionString,
-                storageConnectionString,
-                expectedValueChangesPerTimestamp,
-                expectedIntervalOfValueChanges,
-                expectedMaximalTotalDuration,
-                blobContainerName,
-                eventHubConsumerGroup);
+            var configuration = new ValidatorConfiguration() {
+                BlobContainerName = blobContainerName,
+                EventHubConsumerGroup = eventHubConsumerGroup,
+                ExpectedIntervalOfValueChanges = expectedIntervalOfValueChanges,
+                ExpectedMaximalDuration = expectedMaximalTotalDuration,
+                ExpectedValueChangesPerTimestamp = expectedValueChangesPerTimestamp,
+                IoTHubEventHubEndpointConnectionString = iotHubConnectionString,
+                StorageConnectionString = storageConnectionString,
+            };
+
+            var validator = new SimpleValidator(null);
+            await validator.StartAsync(configuration);
             
             var cts = new CancellationTokenSource();
             
@@ -63,12 +69,10 @@ namespace TestEventProcessor
                 if (cancelArgs.SpecialKey == ConsoleSpecialKey.ControlC)
                 {
                     Log.Information("Cancellation requested by hitting ctrl+c");
-                    cts.Cancel();
+                    validator.StopAsync().Wait();
                 }
             };
             
-            Log.Information("TestEventProcessor starting");
-            await validator.RunAsync(cts.Token);
             Log.Information("TestEventProcessor stopped");
         }
 

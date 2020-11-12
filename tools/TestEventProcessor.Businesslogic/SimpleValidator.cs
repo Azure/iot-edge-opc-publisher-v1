@@ -3,6 +3,10 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+
 namespace TestEventProcessor.Businesslogic
 {
     using System;
@@ -18,40 +22,27 @@ namespace TestEventProcessor.Businesslogic
     using Azure.Messaging.EventHubs.Processor;
     using Azure.Storage.Blobs;
     using Newtonsoft.Json;
-    using Serilog;
 
     /// <summary>
     /// Validates the value changes within IoT Hub Methods
     /// </summary>
-    public class SimpleValidator
+    public class SimpleValidator : ISimpleValidator
     {
+        private CancellationTokenSource _cancellationTokenSource;
+        private EventProcessorClient _client = null;
+
         /// <summary>
         /// Dictionary containing all sequence numbers related to a timestamp
         /// </summary>
         private ConcurrentDictionary<string, List<int>> _missingSequences;
+
         /// <summary>
         /// Dictionary containing timestamps the were observed
         /// </summary>
         private ConcurrentQueue<string> _observedTimestamps;
 
         private ConcurrentDictionary<string, DateTime> _iotHubMessageEnqueuedTimes;
-        /// <summary>
-        /// Number of value changes per timestamp
-        /// </summary>
-        private uint _expectedValueChangesPerTimestamp;
-        /// <summary>
-        /// Time difference between values changes in milliseconds
-        /// </summary>
-        private uint _expectedIntervalOfValueChanges;
-        /// <summary>
-        /// Time difference between OPC UA Server fires event until Changes Received in IoT Hub in milliseconds 
-        /// </summary>
-        private uint _expectedMaximalDuration;
-        /// <summary>
-        /// Value that will be used to define range within timings expected as equal (in milliseconds)
-        ///  Current Value need to be within range of Expected Value +/- threshold
-        /// </summary>
-        private int _thresholdValue;
+
         /// <summary>
         /// Format to be used for Timestamps
         /// </summary>
@@ -59,25 +50,12 @@ namespace TestEventProcessor.Businesslogic
         /// <summary>
         /// Instance to write logs 
         /// </summary>
-        private ILogger _logger;
+        private ILogger<SimpleValidator> _logger;
+
         /// <summary>
-        /// Connection string for integrated event hub endpoint of IoTHub
+        /// The current configuration the validator is using.
         /// </summary>
-        private readonly string _iotHubConnectionString;
-        /// <summary>
-        /// Connection string for storage account
-        /// </summary>
-        private readonly string _storageConnectionString;
-        /// <summary>
-        /// Identifier of blob container within storage account
-        /// </summary>
-        /// <remarks>Default: Checkpoint</remarks>
-        private readonly string _blobContainerName;
-        /// <summary>
-        /// Identifier of consumer group of event hub
-        /// </summary>
-        /// <remarks>Default: $Default</remarks>
-        private readonly string _eventHubConsumerGroup;
+        private ValidatorConfiguration _currentConfiguration;
 
         /// <summary>
         /// All expected value changes for timestamp are received
@@ -93,6 +71,11 @@ namespace TestEventProcessor.Businesslogic
         public event EventHandler<DurationExceededEventArgs> DurationExceeded;
 
         /// <summary>
+        /// Gets the current status of the validator.
+        /// </summary>
+        public ValidationStatus Status => new ValidationStatus(_cancellationTokenSource != null);
+
+        /// <summary>
         /// Create instance of SimpleValidator 
         /// </summary>
         /// <param name="logger">Instance to write logs</param>
@@ -103,45 +86,9 @@ namespace TestEventProcessor.Businesslogic
         /// <param name="blobContainerName">Identifier of blob container within storage account</param>
         /// <param name="eventHubConsumerGroup">Identifier of consumer group of event hub</param>
         /// <param name="thresholdValue">Value that will be used to define range within timings expected as equal (in milliseconds)</param>
-        public SimpleValidator(ILogger logger,
-            string iotHubConnectionString,
-            string storageConnectionString,
-            uint expectedValueChangesPerTimestamp,
-            uint expectedIntervalOfValueChanges,
-            uint expectedMaximalDuration,
-            string blobContainerName = "checkpoint",
-            string eventHubConsumerGroup = "$Default",
-            int thresholdValue = 50)
+        public SimpleValidator(ILogger<SimpleValidator> logger)
         {
-            if (expectedValueChangesPerTimestamp == 0)
-            {
-                throw new ArgumentNullException("Invalid configuration detected, expected value changes per timestamp can't be zero");
-            }
-            if (expectedIntervalOfValueChanges == 0)
-            {
-                throw new ArgumentNullException("Invalid configuration detected, expected interval of value changes can't be zero");
-            }
-            if (expectedMaximalDuration == 0)
-            {
-                throw new ArgumentNullException("Invalid configuration detected, maximal total duration can't be zero");
-            }
-            if (thresholdValue <= 0)
-            {
-                throw new ArgumentNullException("Invalid configuration detected, threshold can't be negative or zero");
-            }
-
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _iotHubConnectionString = iotHubConnectionString ?? throw new ArgumentNullException(nameof(iotHubConnectionString));
-            _storageConnectionString = storageConnectionString ?? throw new ArgumentNullException(nameof(storageConnectionString));
-            _blobContainerName = blobContainerName ?? throw new ArgumentNullException(nameof(blobContainerName));
-            _eventHubConsumerGroup = eventHubConsumerGroup ?? throw new ArgumentNullException(nameof(eventHubConsumerGroup));
-            _expectedValueChangesPerTimestamp = expectedValueChangesPerTimestamp;
-            _expectedIntervalOfValueChanges = expectedIntervalOfValueChanges;
-            _expectedMaximalDuration = expectedMaximalDuration;
-            _thresholdValue = thresholdValue;
-            _missingSequences = new ConcurrentDictionary<string, List<int>>(4, 500);
-            _iotHubMessageEnqueuedTimes = new ConcurrentDictionary<string, DateTime>(4, 500);
-            _observedTimestamps = new ConcurrentQueue<string>();
         }
 
         /// <summary>
@@ -151,52 +98,104 @@ namespace TestEventProcessor.Businesslogic
         /// </summary>
         /// <param name="token">Token to cancel the operation</param>
         /// <returns>Task that run until token is canceled</returns>
-        public async Task RunAsync(CancellationToken token)
+        public async Task StartAsync(ValidatorConfiguration configuration)
         {
-            EventProcessorClient client = null;
-            try
+            if (_cancellationTokenSource != null)
             {
-                token.ThrowIfCancellationRequested();
-                _logger.Information("Connecting to blob storage...");
-
-                var blobContainerClient = new BlobContainerClient(_storageConnectionString, _blobContainerName);
-
-                _logger.Information("Connecting to IoT Hub...");
-
-                client = new EventProcessorClient(blobContainerClient, _eventHubConsumerGroup, _iotHubConnectionString);
-                client.PartitionInitializingAsync += Client_PartitionInitializingAsync;
-                client.ProcessEventAsync += Client_ProcessEventAsync;
-                client.ProcessErrorAsync += Client_ProcessErrorAsync;
-
-                _logger.Information("Starting monitoring of events...");
-                await client.StartProcessingAsync(token);
-                CheckForMissingValueChangesAsync(token).Start();
-                CheckForMissingTimestampsAsync(token).Start();
-                await Task.Delay(-1, token);
-                
+                return;
             }
-            catch (OperationCanceledException oce)
+
+            if (configuration == null)
             {
-                if (oce.CancellationToken != token)
-                {
-                    throw;
-                }
+                throw new ArgumentNullException(nameof(configuration));
             }
-            catch (Exception ex)
+
+            if (configuration.ExpectedValueChangesPerTimestamp == 0)
             {
-                _logger.Error(ex, "Error while processing events from Event Processor host");
+                throw new ArgumentNullException("Invalid configuration detected, expected value changes per timestamp can't be zero");
             }
-            finally
+            if (configuration.ExpectedIntervalOfValueChanges == 0)
             {
-                if (client != null)
-                {
-                    client.PartitionInitializingAsync -= Client_PartitionInitializingAsync;
-                    client.ProcessEventAsync -= Client_ProcessEventAsync;
-                    client.ProcessErrorAsync -= Client_ProcessErrorAsync;
-                }
-                _logger.Information("Stopped monitoring of events...");
+                throw new ArgumentNullException("Invalid configuration detected, expected interval of value changes can't be zero");
             }
+            if (configuration.ExpectedMaximalDuration == 0)
+            {
+                throw new ArgumentNullException("Invalid configuration detected, maximal total duration can't be zero");
+            }
+            if (configuration.ThresholdValue <= 0)
+            {
+                throw new ArgumentNullException("Invalid configuration detected, threshold can't be negative or zero");
+            }
+
+            if (string.IsNullOrWhiteSpace(configuration.IoTHubEventHubEndpointConnectionString)) throw new ArgumentNullException(nameof(configuration.IoTHubEventHubEndpointConnectionString));
+            if (string.IsNullOrWhiteSpace(configuration.StorageConnectionString)) throw new ArgumentNullException(nameof(configuration.StorageConnectionString));
+            if (string.IsNullOrWhiteSpace(configuration.BlobContainerName)) throw new ArgumentNullException(nameof(configuration.BlobContainerName));
+            if (string.IsNullOrWhiteSpace(configuration.EventHubConsumerGroup)) throw new ArgumentNullException(nameof(configuration.EventHubConsumerGroup));
+
+            _currentConfiguration = configuration;
+
+            _missingSequences = new ConcurrentDictionary<string, List<int>>(4, 500);
+            _iotHubMessageEnqueuedTimes = new ConcurrentDictionary<string, DateTime>(4, 500);
+            _observedTimestamps = new ConcurrentQueue<string>();
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            var token = _cancellationTokenSource.Token;
+
+            token.ThrowIfCancellationRequested();
+            _logger.LogInformation("Connecting to blob storage...");
+
+            var blobContainerClient = new BlobContainerClient(configuration.StorageConnectionString, configuration.BlobContainerName);
+
+            _logger.LogInformation("Connecting to IoT Hub...");
+
+            _client = new EventProcessorClient(blobContainerClient, configuration.EventHubConsumerGroup, configuration.IoTHubEventHubEndpointConnectionString);
+            _client.PartitionInitializingAsync += Client_PartitionInitializingAsync;
+            _client.ProcessEventAsync += Client_ProcessEventAsync;
+            _client.ProcessErrorAsync += Client_ProcessErrorAsync;
+
+            _logger.LogInformation("Starting monitoring of events...");
+            await _client.StartProcessingAsync(token);
+            CheckForMissingValueChangesAsync(token).Start();
+            CheckForMissingTimestampsAsync(token).Start();
         }
+
+        /// <summary>
+        /// Stop monitoring of events.
+        /// </summary>
+        /// <returns></returns>
+        public async Task StopAsync()
+        {
+            if (_cancellationTokenSource != null)
+            {
+                _cancellationTokenSource.Cancel();
+                _cancellationTokenSource = null;
+            }
+
+            StopAndDisposeEventProcessorClientAsync();
+        }
+
+        /// <summary>
+        /// Stops the Event Hub Client and deregisters event handlers.
+        /// </summary>
+        /// <returns></returns>
+        private async Task StopAndDisposeEventProcessorClientAsync()
+        {
+            _logger.LogInformation("Stopping monitoring of events...");
+
+            if (_client != null)
+            {
+                var tempClient = _client;
+                _client = null;
+                await tempClient.StopProcessingAsync();
+                tempClient.PartitionInitializingAsync -= Client_PartitionInitializingAsync;
+                tempClient.ProcessEventAsync -= Client_ProcessEventAsync;
+                tempClient.ProcessErrorAsync -= Client_ProcessErrorAsync;
+            }
+            
+            _logger.LogInformation("Stopped monitoring of events.");
+        }
+
+
 
         /// <summary>
         /// Running a thread that analyze the value changes per timestamp 
@@ -216,9 +215,9 @@ namespace TestEventProcessor.Businesslogic
                         foreach (var missingSequence in _missingSequences)
                         {
                             var numberOfValueChanges = missingSequence.Value.Count;
-                            if (numberOfValueChanges >= _expectedValueChangesPerTimestamp)
+                            if (numberOfValueChanges >= _currentConfiguration.ExpectedValueChangesPerTimestamp)
                             {
-                                _logger.Information(
+                                _logger.LogInformation(
                                     "Received {NumberOfValueChanges} value changes for timestamp {Timestamp}",
                                     numberOfValueChanges, missingSequence.Key);
 
@@ -235,21 +234,21 @@ namespace TestEventProcessor.Businesslogic
 
                             if (!success)
                             {
-                                _logger.Warning("Can't recreate Timestamp from string");
+                                _logger.LogWarning("Can't recreate Timestamp from string");
                             }
 
                             var iotHubEnqueuedTime = _iotHubMessageEnqueuedTimes[missingSequence.Key];
                             var durationDifference = iotHubEnqueuedTime.Subtract(timeStamp);
                             if (durationDifference.TotalMilliseconds < 0)
                             {
-                                _logger.Warning("Total duration is negative number, , OPC UA Server time {OPCUATime}, IoTHub enqueue time {IoTHubTime}, delta {Diff}",
+                                _logger.LogWarning("Total duration is negative number, , OPC UA Server time {OPCUATime}, IoTHub enqueue time {IoTHubTime}, delta {Diff}",
                                     timeStamp.ToString(_dateTimeFormat, formatInfoProvider),
                                     iotHubEnqueuedTime.ToString(_dateTimeFormat, formatInfoProvider),
                                     durationDifference);
                             }
-                            if (Math.Round(durationDifference.TotalMilliseconds) > _expectedMaximalDuration)
+                            if (Math.Round(durationDifference.TotalMilliseconds) > _currentConfiguration.ExpectedMaximalDuration)
                             {
-                                _logger.Information("Total duration exceeded limit, OPC UA Server time {OPCUATime}, IoTHub enqueue time {IoTHubTime}, delta {Diff}",
+                                _logger.LogInformation("Total duration exceeded limit, OPC UA Server time {OPCUATime}, IoTHub enqueue time {IoTHubTime}, delta {Diff}",
                                     timeStamp.ToString(_dateTimeFormat, formatInfoProvider),
                                     iotHubEnqueuedTime.ToString(_dateTimeFormat, formatInfoProvider),
                                     durationDifference);
@@ -270,25 +269,25 @@ namespace TestEventProcessor.Businesslogic
 
                             if (!success)
                             {
-                                _logger.Error(
+                                _logger.LogError(
                                     "Could not remove timestamp {Timestamp} with all value changes from internal list",
                                     entry);
                             }
                             else
                             {
-                                _logger.Information("[Success] All value changes received for {Timestamp}", entry);
+                                _logger.LogInformation("[Success] All value changes received for {Timestamp}", entry);
                             }
                         }
 
                         // Log total amount of missing value changes for each timestamp that already reported 80% of value changes
                         foreach (var missingSequence in _missingSequences)
                         {
-                            if (missingSequence.Value.Count > (int)(_expectedValueChangesPerTimestamp * 0.8))
+                            if (missingSequence.Value.Count > (int)(_currentConfiguration.ExpectedValueChangesPerTimestamp * 0.8))
                             {
-                                _logger.Information(
+                                _logger.LogInformation(
                                     "For timestamp {Timestamp} there are {NumberOfMissing} value changes missing",
                                     missingSequence.Key,
-                                    _expectedValueChangesPerTimestamp - missingSequence.Value.Count);
+                                    _currentConfiguration.ExpectedValueChangesPerTimestamp - missingSequence.Value.Count);
                             }
                         }
                         
@@ -329,21 +328,21 @@ namespace TestEventProcessor.Businesslogic
                                 formatInfoProvider, DateTimeStyles.None, out var newer);
                             if (!success)
                             {
-                                _logger.Error("Can't dequeue timestamps from internal storage");
+                                _logger.LogError("Can't dequeue timestamps from internal storage");
                             }
 
                             // compare on milliseconds isn't useful, instead try time window of 100 milliseconds
-                            var expectedTime = older.AddMilliseconds(_expectedIntervalOfValueChanges);
+                            var expectedTime = older.AddMilliseconds(_currentConfiguration.ExpectedIntervalOfValueChanges);
                             if (newer.Hour != expectedTime.Hour
                             || newer.Minute != expectedTime.Minute
                             || newer.Second != expectedTime.Second
-                            || newer.Millisecond < (expectedTime.Millisecond - _thresholdValue)
-                            || newer.Millisecond > (expectedTime.Millisecond + _thresholdValue))
+                            || newer.Millisecond < (expectedTime.Millisecond - _currentConfiguration.ThresholdValue)
+                            || newer.Millisecond > (expectedTime.Millisecond + _currentConfiguration.ThresholdValue))
                             {
                                 var expectedTS = expectedTime.ToString(_dateTimeFormat);
                                 var olderTS = older.ToString(_dateTimeFormat);
                                 var newerTS = newer.ToString(_dateTimeFormat);
-                                _logger.Warning(
+                                _logger.LogWarning(
                                     "Missing timestamp, value changes for {ExpectedTs} not received, predecessor {Older} successor {Newer}",
                                     expectedTS,
                                     olderTS,
@@ -376,7 +375,7 @@ namespace TestEventProcessor.Businesslogic
         {
             if (!arg.HasEvent)
             {
-                _logger.Warning("Received partition event without content");
+                _logger.LogWarning("Received partition event without content");
                 return;
             }
 
@@ -415,7 +414,7 @@ namespace TestEventProcessor.Businesslogic
                 }
             }
 
-            _logger.Verbose("Received {NumberOfValueChanges} from IoTHub, partition {PartitionId}, ", 
+            _logger.LogDebug("Received {NumberOfValueChanges} from IoTHub, partition {PartitionId}, ", 
                 valueChangesCount, 
                 arg.Partition.PartitionId);
         }
@@ -427,7 +426,7 @@ namespace TestEventProcessor.Businesslogic
         /// <returns>Completed Task, no async work needed</returns>
         private Task Client_PartitionInitializingAsync(PartitionInitializingEventArgs arg)
         {
-            _logger.Information("EventProcessorClient initializing, start with latest position for partition {PartitionId}", arg.PartitionId);
+            _logger.LogInformation("EventProcessorClient initializing, start with latest position for partition {PartitionId}", arg.PartitionId);
             arg.DefaultStartingPosition = EventPosition.Latest;
             return Task.CompletedTask;
         }
@@ -439,7 +438,7 @@ namespace TestEventProcessor.Businesslogic
         /// <returns>Completed Task, no async work needed</returns>
         private Task Client_ProcessErrorAsync(ProcessErrorEventArgs arg)
         {
-            _logger.Error(arg.Exception, "Issue reported by EventProcessorClient, partition {PartitionId}, operation {Operation}",
+            _logger.LogError(arg.Exception, "Issue reported by EventProcessorClient, partition {PartitionId}, operation {Operation}",
                 arg.PartitionId,
                 arg.Operation);
             return Task.CompletedTask;
