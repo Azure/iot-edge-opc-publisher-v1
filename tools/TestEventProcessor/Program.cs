@@ -18,7 +18,7 @@ namespace TestEventProcessor
     {
         static async Task Main(string[] args)
         {
-            string iotHubConnectionString = null;
+            string ioTHubEventHubEndpointConnectionString = null;
             string storageConnectionString = null;
             string blobContainerName = "checkpoint";
             string eventHubConsumerGroup = "$Default";
@@ -29,7 +29,7 @@ namespace TestEventProcessor
 
             var options = new OptionSet
             {
-                {"c|connectionString=", "The connection string of the IoT Hub Device/Module that receives telemetry", s => iotHubConnectionString = s },
+                {"c|connectionString=", "The connection string of the IoT Hub Device/Module that receives telemetry", s => ioTHubEventHubEndpointConnectionString = s },
                 {"sc|storageConnectionString=", "The connection string of the storage account to store checkpoints.", s => storageConnectionString = s },
                 {"ee|expectedEvents=", "The amount of value changes per ServerTimestamp that is expected", (uint i) => expectedValueChangesPerTimestamp = i},
                 {"ei|expectedInterval=", "The time in milliseconds between value changes that is expected", (uint i) => expectedIntervalOfValueChanges = i},
@@ -55,7 +55,7 @@ namespace TestEventProcessor
                 ExpectedIntervalOfValueChanges = expectedIntervalOfValueChanges,
                 ExpectedMaximalDuration = expectedMaximalTotalDuration,
                 ExpectedValueChangesPerTimestamp = expectedValueChangesPerTimestamp,
-                IoTHubEventHubEndpointConnectionString = iotHubConnectionString,
+                IoTHubEventHubEndpointConnectionString = ioTHubEventHubEndpointConnectionString,
                 StorageConnectionString = storageConnectionString,
             };
 
