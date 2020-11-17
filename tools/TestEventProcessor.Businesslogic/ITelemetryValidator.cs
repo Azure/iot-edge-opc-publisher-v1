@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace TestEventProcessor.Businesslogic
+namespace TestEventProcessor.BusinessLogic
 {
     /// <summary>
     /// Interface to validate incoming message on an IoT Hub.
     /// </summary>
-    public interface ISimpleValidator
+    public interface ITelemetryValidator
     {
         /// <summary>
         /// All expected value changes for timestamp are received
@@ -30,10 +30,12 @@ namespace TestEventProcessor.Businesslogic
         /// </summary>
         /// <param name="token">Token to cancel the operation</param>
         /// <returns>Task that run until token is canceled</returns>
-        Task StartAsync(ValidatorConfiguration configuration);
+        Task<StartResult> StartAsync(ValidatorConfiguration configuration);
 
-        Task StopAsync();
-
-        ValidationStatus Status { get; }
+        /// <summary>
+        /// Stop the monitoring and disposes all related resources..
+        /// </summary>
+        /// <returns></returns>
+        Task<StopResult> StopAsync();
     }
 }

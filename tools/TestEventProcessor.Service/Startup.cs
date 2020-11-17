@@ -11,14 +11,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using TestEventProcessor.Businesslogic;
-using IHostingEnvironment = Microsoft.Extensions.Hosting.IHostingEnvironment;
+using TestEventProcessor.BusinessLogic;
 
 namespace TestEventProcessor.Service
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -45,7 +44,7 @@ namespace TestEventProcessor.Service
 
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            builder.RegisterType<SimpleValidator>().As<ISimpleValidator>().SingleInstance();
+            builder.RegisterType<TelemetryValidator>().As<ITelemetryValidator>().SingleInstance();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

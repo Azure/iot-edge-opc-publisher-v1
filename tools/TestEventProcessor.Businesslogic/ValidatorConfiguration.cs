@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace TestEventProcessor.Businesslogic
+namespace TestEventProcessor.BusinessLogic
 {
     /// <summary>
     /// Model class to encapsule the configuration required to monitor and validate IoT Hub events.
@@ -45,11 +45,9 @@ namespace TestEventProcessor.Businesslogic
         public string EventHubConsumerGroup { get; set; } = "$Default";
 
         /// <summary>
-        /// Gets or setes the value that will be used to define range within timings expected as equal (in milliseconds)
+        /// Gets or sets the value that will be used to define range within timings expected as equal (in milliseconds)
         /// Current Value need to be within range of Expected Value +/- threshold
         /// </summary>
         public int ThresholdValue { get; set; } = 50;
-
-
     }
 }

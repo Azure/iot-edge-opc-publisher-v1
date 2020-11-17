@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TestEventProcessor.Businesslogic\TestEventProcessor.Businesslogic.csproj" />
+    <ProjectReference Include="..\TestEventProcessor.Businesslogic\TestEventProcessor.BusinessLogic.csproj" />
   </ItemGroup>
 
 

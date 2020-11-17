@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using TestEventProcessor.Businesslogic;
+using TestEventProcessor.BusinessLogic;
 using TestEventProcessor.Service.Authentication;
 using TestEventProcessor.Service.Enums;
 using TestEventProcessor.Service.Models;
@@ -20,10 +20,15 @@ namespace TestEventProcessor.Service.Controllers
     [BasicAuthentication]
     public class RuntimeController : ControllerBase
     {
-        private readonly ILogger<RuntimeController> _logger;
-        private readonly ISimpleValidator _validator;
+        private readonly ILogger _logger;
+        private readonly ITelemetryValidator _validator;
 
-        public RuntimeController(ILogger<RuntimeController> logger, ISimpleValidator validator)
+        /// <summary>
+        /// Creates a new instance of the RuntimeController.
+        /// </summary>
+        /// <param name="logger">The logger to use to log messages.</param>
+        /// <param name="validator">The validator to use to validate telemetry.</param>
+        public RuntimeController(ILogger logger, ITelemetryValidator validator)
         {
             _logger = logger;
             _validator = validator;
@@ -34,30 +39,24 @@ namespace TestEventProcessor.Service.Controllers
         /// the model needs to be passed. For "Stop", no additional information is required.
         /// </summary>
         /// <param name="command">The command to process.</param>
-        /// <returns></returns>
+        /// <returns>Result of the command.</returns>
         [HttpPut]
-        public async Task Command(CommandModel command)
+        public async Task<IResult> Command(CommandModel command)
         {
+            IResult result;
+
             switch (command.CommandType)
             {
                 case CommandEnum.Start:
-                    await _validator.StartAsync(command.Configuration);
+                    result= await _validator.StartAsync(command.Configuration);
                     break;
                 case CommandEnum.Stop:
-                    await _validator.StopAsync();
+                    result = await _validator.StopAsync();
                     break;
                 default: throw new NotImplementedException($"Unknown command: {command.CommandType}");
             }
-        }
 
-        /// <summary>
-        /// Get the current status of the monitoring.
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public Task<ValidationStatus> Status()
-        {
-            return Task.FromResult(_validator.Status);
+            return result;
         }
     }
 }

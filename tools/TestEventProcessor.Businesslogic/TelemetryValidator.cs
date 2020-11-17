@@ -3,11 +3,12 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-namespace TestEventProcessor.Businesslogic
+namespace TestEventProcessor.BusinessLogic
 {
     using System;
     using System.Collections.Concurrent;
@@ -26,15 +27,16 @@ namespace TestEventProcessor.Businesslogic
     /// <summary>
     /// Validates the value changes within IoT Hub Methods
     /// </summary>
-    public class SimpleValidator : ISimpleValidator
+    public class TelemetryValidator : ITelemetryValidator
     {
         private CancellationTokenSource _cancellationTokenSource;
         private EventProcessorClient _client = null;
+        private TimeSpan opcDiffToNow = TimeSpan.MinValue;
 
         /// <summary>
         /// Dictionary containing all sequence numbers related to a timestamp
         /// </summary>
-        private ConcurrentDictionary<string, List<int>> _missingSequences;
+        private ConcurrentDictionary<string, int> _valueChangesPerTimestamp;
 
         /// <summary>
         /// Dictionary containing timestamps the were observed
@@ -50,7 +52,7 @@ namespace TestEventProcessor.Businesslogic
         /// <summary>
         /// Instance to write logs 
         /// </summary>
-        private ILogger<SimpleValidator> _logger;
+        private ILogger _logger;
 
         /// <summary>
         /// The current configuration the validator is using.
@@ -71,12 +73,7 @@ namespace TestEventProcessor.Businesslogic
         public event EventHandler<DurationExceededEventArgs> DurationExceeded;
 
         /// <summary>
-        /// Gets the current status of the validator.
-        /// </summary>
-        public ValidationStatus Status => new ValidationStatus(_cancellationTokenSource != null);
-
-        /// <summary>
-        /// Create instance of SimpleValidator 
+        /// Create instance of TelemetryValidator 
         /// </summary>
         /// <param name="logger">Instance to write logs</param>
         /// <param name="iotHubConnectionString">Connection string for integrated event hub endpoint of IoTHub</param>
@@ -86,7 +83,7 @@ namespace TestEventProcessor.Businesslogic
         /// <param name="blobContainerName">Identifier of blob container within storage account</param>
         /// <param name="eventHubConsumerGroup">Identifier of consumer group of event hub</param>
         /// <param name="thresholdValue">Value that will be used to define range within timings expected as equal (in milliseconds)</param>
-        public SimpleValidator(ILogger<SimpleValidator> logger)
+        public TelemetryValidator(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -98,11 +95,11 @@ namespace TestEventProcessor.Businesslogic
         /// </summary>
         /// <param name="token">Token to cancel the operation</param>
         /// <returns>Task that run until token is canceled</returns>
-        public async Task StartAsync(ValidatorConfiguration configuration)
+        public async Task<StartResult> StartAsync(ValidatorConfiguration configuration)
         {
             if (_cancellationTokenSource != null)
             {
-                return;
+                return new StartResult();
             }
 
             if (configuration == null)
@@ -134,7 +131,7 @@ namespace TestEventProcessor.Businesslogic
 
             _currentConfiguration = configuration;
 
-            _missingSequences = new ConcurrentDictionary<string, List<int>>(4, 500);
+            _valueChangesPerTimestamp = new ConcurrentDictionary<string, int>(4, 500);
             _iotHubMessageEnqueuedTimes = new ConcurrentDictionary<string, DateTime>(4, 500);
             _observedTimestamps = new ConcurrentQueue<string>();
 
@@ -157,13 +154,15 @@ namespace TestEventProcessor.Businesslogic
             await _client.StartProcessingAsync(token);
             CheckForMissingValueChangesAsync(token).Start();
             CheckForMissingTimestampsAsync(token).Start();
+
+            return new StartResult();
         }
 
         /// <summary>
         /// Stop monitoring of events.
         /// </summary>
         /// <returns></returns>
-        public async Task StopAsync()
+        public Task<StopResult> StopAsync()
         {
             if (_cancellationTokenSource != null)
             {
@@ -171,14 +170,18 @@ namespace TestEventProcessor.Businesslogic
                 _cancellationTokenSource = null;
             }
 
-            StopAndDisposeEventProcessorClientAsync();
+            // the stop procedure takes about a minute, so we fire and forget.
+            StopEventProcessorClientAsync().Start();
+
+            // TODO Remove mock and replace with real result.
+            return Task.FromResult(new StopResult() {IsSuccess = true});
         }
 
         /// <summary>
         /// Stops the Event Hub Client and deregisters event handlers.
         /// </summary>
         /// <returns></returns>
-        private async Task StopAndDisposeEventProcessorClientAsync()
+        private async Task StopEventProcessorClientAsync()
         {
             _logger.LogInformation("Stopping monitoring of events...");
 
@@ -212,9 +215,9 @@ namespace TestEventProcessor.Businesslogic
                     while (!token.IsCancellationRequested)
                     {
                         var entriesToDelete = new List<string>(50);
-                        foreach (var missingSequence in _missingSequences)
+                        foreach (var missingSequence in _valueChangesPerTimestamp)
                         {
-                            var numberOfValueChanges = missingSequence.Value.Count;
+                            var numberOfValueChanges = missingSequence.Value;
                             if (numberOfValueChanges >= _currentConfiguration.ExpectedValueChangesPerTimestamp)
                             {
                                 _logger.LogInformation(
@@ -241,7 +244,7 @@ namespace TestEventProcessor.Businesslogic
                             var durationDifference = iotHubEnqueuedTime.Subtract(timeStamp);
                             if (durationDifference.TotalMilliseconds < 0)
                             {
-                                _logger.LogWarning("Total duration is negative number, , OPC UA Server time {OPCUATime}, IoTHub enqueue time {IoTHubTime}, delta {Diff}",
+                                _logger.LogWarning("Total duration is negative number, OPC UA Server time {OPCUATime}, IoTHub enqueue time {IoTHubTime}, delta {Diff}",
                                     timeStamp.ToString(_dateTimeFormat, formatInfoProvider),
                                     iotHubEnqueuedTime.ToString(_dateTimeFormat, formatInfoProvider),
                                     durationDifference);
@@ -264,7 +267,7 @@ namespace TestEventProcessor.Businesslogic
                         // Remove all timestamps that are completed (all value changes received)
                         foreach (var entry in entriesToDelete)
                         {
-                            var success = _missingSequences.TryRemove(entry, out var values);
+                            var success = _valueChangesPerTimestamp.TryRemove(entry, out var values);
                             success &= _iotHubMessageEnqueuedTimes.TryRemove(entry, out var enqueuedTime);
 
                             if (!success)
@@ -280,14 +283,14 @@ namespace TestEventProcessor.Businesslogic
                         }
 
                         // Log total amount of missing value changes for each timestamp that already reported 80% of value changes
-                        foreach (var missingSequence in _missingSequences)
+                        foreach (var missingSequence in _valueChangesPerTimestamp)
                         {
-                            if (missingSequence.Value.Count > (int)(_currentConfiguration.ExpectedValueChangesPerTimestamp * 0.8))
+                            if (missingSequence.Value > (int)(_currentConfiguration.ExpectedValueChangesPerTimestamp * 0.8))
                             {
                                 _logger.LogInformation(
                                     "For timestamp {Timestamp} there are {NumberOfMissing} value changes missing",
                                     missingSequence.Key,
-                                    _currentConfiguration.ExpectedValueChangesPerTimestamp - missingSequence.Value.Count);
+                                    _currentConfiguration.ExpectedValueChangesPerTimestamp - missingSequence.Value);
                             }
                         }
                         
@@ -332,12 +335,12 @@ namespace TestEventProcessor.Businesslogic
                             }
 
                             // compare on milliseconds isn't useful, instead try time window of 100 milliseconds
-                            var expectedTime = older.AddMilliseconds(_currentConfiguration.ExpectedIntervalOfValueChanges);
-                            if (newer.Hour != expectedTime.Hour
-                            || newer.Minute != expectedTime.Minute
-                            || newer.Second != expectedTime.Second
-                            || newer.Millisecond < (expectedTime.Millisecond - _currentConfiguration.ThresholdValue)
-                            || newer.Millisecond > (expectedTime.Millisecond + _currentConfiguration.ThresholdValue))
+                            var expectedTime =
+                                older.AddMilliseconds(_currentConfiguration.ExpectedIntervalOfValueChanges);
+                            var expectedMin = expectedTime.AddMilliseconds(-_currentConfiguration.ThresholdValue);
+                            var expectedMax = expectedTime.AddMilliseconds(_currentConfiguration.ThresholdValue);
+
+                            if (newer < expectedMin || newer > expectedMax)
                             {
                                 var expectedTS = expectedTime.ToString(_dateTimeFormat);
                                 var olderTS = older.ToString(_dateTimeFormat);
@@ -348,7 +351,8 @@ namespace TestEventProcessor.Businesslogic
                                     olderTS,
                                     newerTS);
 
-                                MissingTimestamp?.Invoke(this, new MissingTimestampEventArgs(expectedTS, olderTS, newerTS));
+                                MissingTimestamp?.Invoke(this,
+                                    new MissingTimestampEventArgs(expectedTS, olderTS, newerTS));
                             }
                         }
 
@@ -373,6 +377,11 @@ namespace TestEventProcessor.Businesslogic
         /// <returns>Task that run until token is canceled</returns>
         private async Task Client_ProcessEventAsync(ProcessEventArgs arg)
         {
+            if (_cancellationTokenSource == null) //we already in stop process, so do not do anything new.
+            {
+                return;
+            }
+
             if (!arg.HasEvent)
             {
                 _logger.LogWarning("Received partition event without content");
@@ -388,18 +397,33 @@ namespace TestEventProcessor.Businesslogic
 
             foreach (dynamic entry in json)
             {
-                var sequence = (int)entry.SequenceNumber;
-                var timestamp = ((DateTime)entry.Value.SourceTimestamp).ToString(_dateTimeFormat);
+                string timestamp = null;
+                int sequence = int.MinValue;
 
-                _missingSequences.AddOrUpdate(
+                try
+                {
+                    sequence = (int)entry.SequenceNumber;
+                    timestamp = ((DateTime)entry.Value.SourceTimestamp).ToString(_dateTimeFormat);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not read sequence number and/or timestamp from message. Please make sure that publisher is running with samples format and with --fm parameter set.");
+                    return;
+                }
+
+                var newOpcDiffToNow = DateTime.UtcNow - (DateTime)entry.Value.SourceTimestamp;
+
+                if (newOpcDiffToNow != opcDiffToNow)
+                {
+                    _logger.LogWarning("The different between UtcNow and Opc Source Timestamp has changed by {diff}", (newOpcDiffToNow - opcDiffToNow));
+                }
+
+                opcDiffToNow = newOpcDiffToNow;
+
+                _valueChangesPerTimestamp.AddOrUpdate(
                     timestamp,
-                    (ts) => {
-                        return new List<int>(500) { sequence };
-                    },
-                    (ts, list) => {
-                        list.Add(sequence);
-                        return list;
-                    });
+                    (ts) => 0,
+                    (ts, value) => ++value);
 
                 valueChangesCount++;
 

@@ -12,7 +12,7 @@ namespace TestEventProcessor
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using Businesslogic;
+    using BusinessLogic;
 
     class Program
     {
@@ -59,7 +59,11 @@ namespace TestEventProcessor
                 StorageConnectionString = storageConnectionString,
             };
 
-            var validator = new SimpleValidator(null);
+
+            var loggerProvider = new SerilogLoggerProvider(Log.Logger);
+            var melLogger = loggerProvider.CreateLogger(nameof(TelemetryValidator));
+
+            var validator = new TelemetryValidator(melLogger);
             await validator.StartAsync(configuration);
             
             var cts = new CancellationTokenSource();

@@ -1,4 +1,4 @@
-﻿using TestEventProcessor.Businesslogic;
+﻿using TestEventProcessor.BusinessLogic;
 using TestEventProcessor.Service.Enums;
 
 namespace TestEventProcessor.Service.Models
