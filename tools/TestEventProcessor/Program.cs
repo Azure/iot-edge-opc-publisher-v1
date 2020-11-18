@@ -3,6 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using Microsoft.Extensions.Logging;
 using Serilog.Extensions.Logging;
 
 namespace TestEventProcessor
@@ -60,8 +61,8 @@ namespace TestEventProcessor
             };
 
 
-            var loggerProvider = new SerilogLoggerProvider(Log.Logger);
-            var melLogger = loggerProvider.CreateLogger(nameof(TelemetryValidator));
+            var loggerFactory = new SerilogLoggerFactory(Log.Logger);
+            var melLogger = loggerFactory.CreateLogger<TelemetryValidator>();
 
             var validator = new TelemetryValidator(melLogger);
             await validator.StartAsync(configuration);

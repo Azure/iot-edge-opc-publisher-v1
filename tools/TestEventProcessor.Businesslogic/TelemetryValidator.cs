@@ -32,6 +32,7 @@ namespace TestEventProcessor.BusinessLogic
         private CancellationTokenSource _cancellationTokenSource;
         private EventProcessorClient _client = null;
         private TimeSpan opcDiffToNow = TimeSpan.MinValue;
+        private bool _missedMessage = false;
 
         /// <summary>
         /// Dictionary containing all sequence numbers related to a timestamp
@@ -83,7 +84,7 @@ namespace TestEventProcessor.BusinessLogic
         /// <param name="blobContainerName">Identifier of blob container within storage account</param>
         /// <param name="eventHubConsumerGroup">Identifier of consumer group of event hub</param>
         /// <param name="thresholdValue">Value that will be used to define range within timings expected as equal (in milliseconds)</param>
-        public TelemetryValidator(ILogger logger)
+        public TelemetryValidator(ILogger<TelemetryValidator> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -129,6 +130,7 @@ namespace TestEventProcessor.BusinessLogic
             if (string.IsNullOrWhiteSpace(configuration.BlobContainerName)) throw new ArgumentNullException(nameof(configuration.BlobContainerName));
             if (string.IsNullOrWhiteSpace(configuration.EventHubConsumerGroup)) throw new ArgumentNullException(nameof(configuration.EventHubConsumerGroup));
 
+            _missedMessage = false;
             _currentConfiguration = configuration;
 
             _valueChangesPerTimestamp = new ConcurrentDictionary<string, int>(4, 500);
@@ -171,10 +173,9 @@ namespace TestEventProcessor.BusinessLogic
             }
 
             // the stop procedure takes about a minute, so we fire and forget.
-            StopEventProcessorClientAsync().Start();
+            StopEventProcessorClientAsync();
 
-            // TODO Remove mock and replace with real result.
-            return Task.FromResult(new StopResult() {IsSuccess = true});
+            return Task.FromResult(new StopResult() {IsSuccess = !_missedMessage});
         }
 
         /// <summary>
@@ -350,6 +351,8 @@ namespace TestEventProcessor.BusinessLogic
                                     expectedTS,
                                     olderTS,
                                     newerTS);
+
+                                _missedMessage = true;
 
                                 MissingTimestamp?.Invoke(this,
                                     new MissingTimestampEventArgs(expectedTS, olderTS, newerTS));

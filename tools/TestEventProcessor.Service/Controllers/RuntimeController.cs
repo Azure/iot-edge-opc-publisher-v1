@@ -28,7 +28,7 @@ namespace TestEventProcessor.Service.Controllers
         /// </summary>
         /// <param name="logger">The logger to use to log messages.</param>
         /// <param name="validator">The validator to use to validate telemetry.</param>
-        public RuntimeController(ILogger logger, ITelemetryValidator validator)
+        public RuntimeController(ILogger<RuntimeController> logger, ITelemetryValidator validator)
         {
             _logger = logger;
             _validator = validator;
