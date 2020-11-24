@@ -363,8 +363,9 @@ namespace OpcPublisher
                                 Metrics.SentLastTime = DateTime.UtcNow;
                                 Program.Instance.Logger.Debug($"Sending {encodedhubMessage.BodyStream.Length} bytes to hub.");
                             }
-                            catch
+                            catch (Exception ex)
                             {
+                                Program.Instance.Logger.Error(ex, "Error while sending a message to EdgeHub/IoTHub.");
                                 Metrics.FailedMessages++;
                             }
 
