@@ -83,9 +83,6 @@ namespace OpcPublisher
             return null;
         }
 
-        /// <summary>
-        /// Connects the session if it is disconnected.
-        /// </summary>
         private async Task<Session> ConnectSessionAsync(string endpointUrl, NetworkCredential credentials)
         {
             // check if we have the required session already
@@ -137,7 +134,7 @@ namespace OpcPublisher
                 Program.Instance.Logger.Information($"the Server has updated the EndpointUrl to '{selectedEndpoint.EndpointUrl}'");
             }
 
-            // init object state and install keep alive
+            // register keep alive callback
             newSession.KeepAlive += StandardClient_KeepAlive;
 
             // add the session to our list
@@ -184,9 +181,6 @@ namespace OpcPublisher
             }
         }
 
-        /// <summary>
-        /// Create a subscription in the session.
-        /// </summary>
         private Subscription CreateSubscription(Session session, ref int publishingInterval)
         {
             Subscription subscription = new Subscription(session.DefaultSubscription) {
@@ -209,9 +203,6 @@ namespace OpcPublisher
             return subscription;
         }
 
-        /// <summary>
-        /// Handler for the standard "keep alive" event sent by all OPC UA servers
-        /// </summary>
         private void StandardClient_KeepAlive(Session session, KeepAliveEventArgs eventArgs)
         {
             if (eventArgs != null && session != null && session.ConfiguredEndpoint != null)
@@ -330,10 +321,6 @@ namespace OpcPublisher
             }
         }
 
-        /// <summary>
-        /// Adds a node to be monitored. If there is no subscription with the requested publishing interval,
-        /// one is created.
-        /// </summary>
         private HttpStatusCode AddNodeForMonitoring(
             Session session,
             NodeId nodeId,
