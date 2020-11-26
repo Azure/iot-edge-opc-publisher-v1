@@ -11,7 +11,6 @@ using Serilog;
 using System;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -139,7 +138,7 @@ namespace OpcPublisher
                     return;
                 }
 
-                // initialize and start EdgeHub communication
+                // initialize and start Hub communication
                 _hubClientWrapper.InitHubCommunication(_uaClient, SettingsConfiguration.RunningInIoTEdgeContext, SettingsConfiguration.DeviceConnectionString);
                 
                 // initialize message processing
