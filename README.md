@@ -216,24 +216,32 @@ OPC Publisher version 2.6 and above supports standardized OPC UA PubSub JSON for
 In addition, all versions of OPC Publisher support a non-standardized, simple JSON telemetry format, which is compatible with [Azure Time Series Insights](https://azure.microsoft.com/en-us/services/time-series-insights/) and looks like this:
 ```
 [
-    {
-        "NodeId": "i=2058",
-        "ApplicationUri": "urn:myfirstopcserver",
-        "DisplayName": "CurrentTime",
-        "Value": {
-            "Value": "10.11.2017 14:03:17",
-            "SourceTimestamp": "2017-11-10T14:03:17Z"
-        }
-    },
-    {
-        "NodeId": "i=2058",
-        "ApplicationUri": "urn:mysecondopcserver",
-        "DisplayName": "CurrentTime",
-        "Value": {
-            "Value": "10.11.2017 14:03:16",
-            "SourceTimestamp": "2017-11-10T13:03:17Z"
-        }
-    }
+   {
+      "EndpointUrl": "opc.tcp://192.168.178.3:49320/",
+      "NodeId": "ns=2;s=Pump\\234754a-c63-b9601",
+      "MonitoredItem": {
+         "ApplicationUri": "urn:myfirstOPCServer"
+      },
+      "Value": {
+         "Value": 973,
+         "SourceTimestamp": "2020-11-30T07:21:31.2604024Z",
+         "StatusCode": 0,
+         "Status": "Good"
+      }
+  },
+  {
+      "EndpointUrl": "opc.tcp://192.168.178.4:49320/",
+      "NodeId": "ns=2;s=Boiler\\234754a-c63-b9601",
+      "MonitoredItem": {
+         "ApplicationUri": "urn:mySecondOPCServer"
+      },
+      "Value": {
+         "Value": 974,
+         "SourceTimestamp": "2020-11-30T07:21:32.2625062Z",
+         "StatusCode": 0,
+         "Status": "Good"
+      }
+   }
 ]
 ```
 
