@@ -39,7 +39,7 @@ Where "name" is the name for the container.
 When deploying OPC Publisher through the Azure Portal, container create options can be specified in the Update IoT Edge Module page of OPC Publisher. These create options must be in JSON format. The OPC Publisher command line arguments can be specified via the Cmd key, e.g.:
 ```
 "Cmd": [
-    "--pf=./pn.json",
+    "--pf=./publishednodes.json",
     "--aa"
 ],
 ```
@@ -49,7 +49,7 @@ A typical set of IoT Edge Module Container Create Options for OPC Publisher is:
 {
     "Hostname": "opcpublisher",
     "Cmd": [
-        "--pf=./pn.json",
+        "--pf=./publishednodes.json",
         "--aa"
     ],
     "HostConfig": {
@@ -60,8 +60,8 @@ A typical set of IoT Edge Module Container Create Options for OPC Publisher is:
 }
 ```
 
-With these options specified, OPC Publisher will read the configuration file `./pn.json`. The OPC Publisher's working directory is set to
-`/appdata` at startup and thus OPC Publisher will read the file `/appdata/pn.json` inside its Docker container. 
+With these options specified, OPC Publisher will read the configuration file `./publishednodes.json`. The OPC Publisher's working directory is set to
+`/appdata` at startup and thus OPC Publisher will read the file `/appdata/publishednodes.json` inside its Docker container. 
 OPC Publisher's log file will be written to `/appdata` and the `CertificateStores` directory (used for OPC UA certificates) will also be created in this directory. To make these files available in the IoT Edge host file system, the container configuration requires a bind mount volume. The `/iiotedge:/appdata` bind will map the directory `/appdata` to the host directory `/iiotedge` (which will be created by the IoT Edge runtime if it doesn't exist). 
 
 **Without this bind mount volume, all OPC Publisher configuration files will be lost when the container is restarted.**
