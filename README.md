@@ -24,6 +24,8 @@ Simply click the Get It Now button to log into the [Azure Portal](https://portal
 5. Click on "OPCPublisher" to open the OPC Publisher's "Update IoT Edge Module" page and then select "Container Create Options".
 6. Specify additional container create options based on your usage of OPC Publisher, see next section below.
 
+**Please note: Only one instance of OPC Publisher per IoT Edge deployment is currently supported.**
+
 ##### Accessing the Microsoft Container Registry Docker containers for OPC Publisher manually
 
 The latest released version of OPC Publisher can be run manually via:
