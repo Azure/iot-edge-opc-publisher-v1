@@ -191,12 +191,8 @@ In a nutshell, you would create two docker images (Prometheus and Grafana) and d
   - When prompted for a user name and password enter the values entered in the environment variables
   - **Note**: If using a VM make sure to add an inbound rule for port 3000
 - Prometheus has already been configured as a data source and can now be directly accessed. Prometheus is scraping Edge Hub and OPC Publisher metrics.
-- Select the dashboards option to view the available dashboards and select “Publisher” to view the pre-configured dashboard as shown below. You could also easily add/remove more panels to this dashboard as per your needs. 
+- Select the dashboards option to view the available dashboards and select “Publisher” to view the pre-configured dashboard as shown below. 
 
-![14](./media/14.JPG)
+  ![14](./media/14.JPG)
 
-
-
-
-
-.
+- You could easily add/remove more panels to this dashboard as per your needs.
