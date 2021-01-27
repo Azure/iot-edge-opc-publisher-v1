@@ -42,9 +42,9 @@ In a nutshell, two Docker images (Prometheus and Grafana) must be created and de
 
     - Navigate to **prometheus** folder as shown:
       
-      
+        
       ![02](./media/02.JPG)
-      
+        
       
       
     - Edit *prometheus.yml* if needed. It defaults to scraping EdgeHub metrics at 9600 and OPC Publisher metrics at 9702. If only OPC Publisher metrics are needed, then remove the scraping config of EdgeHub.
@@ -52,9 +52,9 @@ In a nutshell, two Docker images (Prometheus and Grafana) must be created and de
     - Run *buildimage.bat* and enter the _registryname_ , _password_ and _tagname_ when prompted. It will push the **edgeprometheus** image to container registry.
       
       
-      
+        
       ![03](./media/03.JPG)
-      
+        
       
       
     - Navigate back to the **grafana** folder and run *buildimage.bat* located in this folder. Enter the same information to push the **edgegrafana** image to ACR.
@@ -144,7 +144,7 @@ In a nutshell, two Docker images (Prometheus and Grafana) must be created and de
                     ]
                 }
             }
-    }
+        }
         ```
 
         
@@ -178,7 +178,7 @@ In a nutshell, two Docker images (Prometheus and Grafana) must be created and de
       - In the **Container Create Options** expose and bind the Grafana port 3000.
     
         ```json
-      {
+        {
             "Hostname": "grafana",
             "ExposedPorts": {
                 "3000/tcp": {}
@@ -190,9 +190,9 @@ In a nutshell, two Docker images (Prometheus and Grafana) must be created and de
                             "HostPort": 3000
                         }
                     ]
-            }
-            }
-    }
+                }
+              }
+         }
         ```
 
         
