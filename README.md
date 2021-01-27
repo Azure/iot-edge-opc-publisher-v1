@@ -284,6 +284,12 @@ To measure the performance of OPC Publisher,  the `di` parameter can be used to 
 
 
 
+## Local metrics dashboard for OPC Publisher
+
+To learn more about how to create a local metrics dashboard for OPC Publisher, please refer to the tutorial [here](./docs/prometheus-metrics/MetricsDashboard.md).
+
+
+
 ## Source Code Status
 
 |Branch|Status|
