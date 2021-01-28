@@ -1,6 +1,6 @@
 
 
-# Metrics Dashboard
+# Metrics Dashboard for OPC Publisher V2.7
 
 OPC Publisher is instrumented with Prometheus metrics. For troubleshooting and debugging, a local dashboard on Azure IoT Edge can be configured.
 
