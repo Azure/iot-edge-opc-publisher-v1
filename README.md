@@ -251,7 +251,7 @@ In addition, all versions of OPC Publisher support a non-standardized, simple JS
 
 **Please note: This feature is only available in version 2.5 and below of OPC Publisher.**
 
-OPC Publisher allows filtering the parts of the non-standardized, simple telemetry format via a separate configuration file, which can be specified via the `tc` command line option. If no configuration file is specified, the full JSON telemetry format is sent to IoT Hub. The format of the separate telemetry configuration file is described [here](TelemetryFormatConfiguration.md).
+OPC Publisher allows filtering the parts of the non-standardized, simple telemetry format via a separate configuration file, which can be specified via the `tc` command line option. If no configuration file is specified, the full JSON telemetry format is sent to IoT Hub. The format of the separate telemetry configuration file is described [here](./docs/TelemetryFormatConfiguration.md).
 
 
 
