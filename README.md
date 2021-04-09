@@ -200,7 +200,7 @@ OPC Publisher version 2.6 and above supports standardized OPC UA PubSub JSON for
     "Status": null,
     "Payload": {
       "http://test.org/UA/Data/#i=10845": {
-        "Value": 99,
+          "Value": 99,
           "SourceTimestamp": "2020-03-24T23:30:55.9891469Z",
           "ServerTimestamp": "2020-03-24T23:30:55.9891469Z"
         },
