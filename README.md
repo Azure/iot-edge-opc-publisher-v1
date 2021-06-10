@@ -138,7 +138,7 @@ Both settings can be enabled globally via command line options, too.
 
 ### Configuration via Command Line Arguments
 
-There are several command line arguments that can be used to set global settings for OPC Publisher. They are described [here](CommandLineArguments.md).
+There are several command line arguments that can be used to set global settings for OPC Publisher. They are described [here](docs/CommandLineArguments.md).
 
 
 ### Configuration via the built-in OPC UA Server Interface
