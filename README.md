@@ -1,3 +1,7 @@
+`This repository is archieved!` 
+
+_We made this decision to avoid any further confusion. **All OPC Publisher related issues are handled in [Azure Industrial IoT Repository](https://github.com/Azure/Industrial-IoT/).** It contains the latest sources, documentation and will be observed regarding issues for OPC Publisher both in standalone as well as in orchestrated mode (integrated in Azure Industrial IoT Platform)._
+
 Please note: This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 
