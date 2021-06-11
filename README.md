@@ -1,10 +1,6 @@
-`This repository is archieved!` 
-
-_We made this decision to avoid any further confusion. **All OPC Publisher related issues are handled in [Azure Industrial IoT Repository](https://github.com/Azure/Industrial-IoT/).** It contains the latest sources, documentation and will be observed regarding issues for OPC Publisher both in standalone as well as in orchestrated mode (integrated in Azure Industrial IoT Platform)._
+**All OPC Publisher related issues are handled in [Azure Industrial IoT Repository](https://github.com/Azure/Industrial-IoT/).** It contains the latest sources, documentation and will be monitored regularly for issues reported around OPC Publisher.
 
 Please note: This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-
 
 # Microsoft OPC Publisher
 OPC Publisher is a fully supported Microsoft product, developed in the open, that bridges the gap between industrial assets and the Microsoft Azure cloud. It does so by connecting to OPC UA-enabled assets or industrial connectivity software and publishes telemetry data to [Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) in various formats, including IEC62541 OPC UA PubSub standard format (from version 2.6 onwards).
