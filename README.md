@@ -1,4 +1,4 @@
-**All OPC Publisher related issues are handled in [Azure Industrial IoT Repository](https://github.com/Azure/Industrial-IoT/).** It contains the latest sources, documentation and will be monitored regularly for issues reported around OPC Publisher.
+**Please report all OPC Publisher related issues in [Azure Industrial IoT Repository](https://github.com/Azure/Industrial-IoT/).** It contains the latest sources, documentation and will be monitored regularly for issues reported around OPC Publisher.
 
 Please note: This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
